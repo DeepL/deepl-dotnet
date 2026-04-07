@@ -202,7 +202,8 @@ namespace DeepLTests {
       var options = new TranslatorOptions {
         ServerUrl = "https://external-api.example.com/deepl/",
         ClientFactory = () => new HttpClientAndDisposeFlag {
-              HttpClient = new HttpClient(handler), DisposeClient = true
+          HttpClient = new HttpClient(handler),
+          DisposeClient = true
         }
       };
       var translator = new Translator("test-auth-key:fx", options);

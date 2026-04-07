@@ -910,13 +910,29 @@ namespace DeepL {
             targetLanguageCode,
             options?.Formality,
             options?.GlossaryId,
-            options?.StyleId);
+            options?.StyleId,
+            options?.TranslationMemoryId);
 
       // Always send show_billed_characters=1, remove when the API default is changed to true
       bodyParams.Add(("show_billed_characters", "1"));
 
       if (options == null) {
         return bodyParams;
+      }
+
+      if (options.TranslationMemoryThreshold != null) {
+        if (options.TranslationMemoryId == null) {
+          throw new ArgumentException("TranslationMemoryThreshold requires TranslationMemoryId");
+        }
+
+        if (options.TranslationMemoryThreshold.Value < 0 || options.TranslationMemoryThreshold.Value > 100) {
+          throw new ArgumentOutOfRangeException(
+                nameof(options.TranslationMemoryThreshold),
+                options.TranslationMemoryThreshold.Value,
+                $"{nameof(options.TranslationMemoryThreshold)} must be between 0 and 100");
+        }
+
+        bodyParams.Add(("translation_memory_threshold", options.TranslationMemoryThreshold.Value.ToString()));
       }
 
       if (options.Context != null) {
@@ -990,7 +1006,8 @@ namespace DeepL {
           string targetLanguageCode,
           Formality? formality,
           string? glossaryId,
-          string? styleId = null) {
+          string? styleId = null,
+          string? translationMemoryId = null) {
       targetLanguageCode = LanguageCode.Standardize(targetLanguageCode);
       sourceLanguageCode = sourceLanguageCode == null ? null : LanguageCode.Standardize(sourceLanguageCode);
 
@@ -1011,6 +1028,10 @@ namespace DeepL {
 
       if (styleId != null) {
         bodyParams.Add(("style_id", styleId));
+      }
+
+      if (translationMemoryId != null) {
+        bodyParams.Add(("translation_memory_id", translationMemoryId));
       }
 
       switch (formality) {

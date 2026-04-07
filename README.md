@@ -135,6 +135,11 @@ foreach (var formality in new[] { Formality.Less, Formality.More }) {
   containing the glossary ID.
 - `StyleId`: specifies a style rule to use with translation, as a string
   containing the ID of the style rule.
+- `TranslationMemoryId`: specifies a translation memory to use with translation,
+  as a string containing the translation memory ID.
+- `TranslationMemoryThreshold`: specifies the minimum matching percentage
+  (0 to 100) for translation memory matches. We recommend a minimum
+  threshold of 75%.
 - `Context`: specifies additional context to influence translations, that is not
   translated itself. Characters in the `context` parameter are not counted toward billing.
   See the [API documentation][api-docs-context-param] for more information and
@@ -654,6 +659,63 @@ Use `DeleteStyleRuleAsync()` to delete a style rule by ID.
 
 ```c#
 await client.DeleteStyleRuleAsync("YOUR_STYLE_ID");
+```
+
+### Translation Memories
+
+Translation memories store and reuse previously created translations, helping to
+ensure consistency across your translations and reduce the number of characters
+that need to be translated.
+
+#### Uploading and managing translation memories
+
+Currently translation memories must be uploaded and managed in the DeepL UI via
+https://www.deepl.com/translation-memory. Full CRUD functionality via the APIs will
+come shortly.
+
+#### Listing translation memories
+
+Use `ListTranslationMemoriesAsync()` to retrieve all translation memories
+associated with your account:
+
+```c#
+var translationMemories = await client.ListTranslationMemoriesAsync();
+foreach (var tm in translationMemories) {
+  Console.WriteLine($"{tm.Name} ({tm.TranslationMemoryId})");
+}
+```
+
+#### Using a translation memory in translations
+
+You can use a translation memory for text translation by setting the
+`TranslationMemoryId` property in `TextTranslateOptions`. Optionally, set
+`TranslationMemoryThreshold` to control the minimum similarity score for matches:
+
+```c#
+var result = await client.TranslateTextAsync(
+    "Hello, world!",
+    "EN",
+    "DE",
+    new TextTranslateOptions {
+      TranslationMemoryId = "YOUR_TM_ID",
+      TranslationMemoryThreshold = 80
+    });
+Console.WriteLine(result.Text);
+```
+
+You can also construct `TextTranslateOptions` using a `TranslationMemoryInfo`
+object:
+
+```c#
+var translationMemories = await client.ListTranslationMemoriesAsync();
+var tm = translationMemories[0];
+
+var result = await client.TranslateTextAsync(
+    "Hello, world!",
+    "EN",
+    "DE",
+    new TextTranslateOptions(tm) { TranslationMemoryThreshold = 80 });
+Console.WriteLine(result.Text);
 ```
 
 ### Check account usage

@@ -54,7 +54,7 @@ namespace DeepL {
   ///   Client for the DeepL API. To use the DeepL API, initialize an instance of this class using your DeepL
   ///   Authentication Key. All functions are thread-safe, aside from <see cref="DeepLClient.Dispose" />.
   /// </summary>
-  public sealed class DeepLClient : Translator, IWriter, IGlossaryManager, IStyleRuleManager {
+  public sealed class DeepLClient : Translator, IWriter, IGlossaryManager, IStyleRuleManager, ITranslationMemoryManager {
     /// <summary>Initializes a new instance of the <see cref="AuthorizationException" /> class.</summary>
     /// <param name="message">The message that describes the error.</param>
     public DeepLClient(string authKey, DeepLClientOptions? options = null) : base(authKey, options) { }
@@ -132,6 +132,38 @@ namespace DeepL {
       var styleRuleList = await JsonUtils.DeserializeAsync<StyleRuleListResult>(responseMessage)
             .ConfigureAwait(false);
       return styleRuleList.StyleRules;
+    }
+
+    /// <summary>Retrieves a list of available translation memories. The maximum number of translation memories returned is controlled by pageSize (max 25).</summary>
+    /// <param name="page">Optional page number for pagination, 0-indexed.</param>
+    /// <param name="pageSize">Optional number of items per page.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>Array of <see cref="TranslationMemoryInfo" /> objects representing the available translation memories.</returns>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<TranslationMemoryInfo[]> ListTranslationMemoriesAsync(
+          int? page = null,
+          int? pageSize = null,
+          CancellationToken cancellationToken = default) {
+      var queryParams = new List<(string Key, string Value)>();
+
+      if (page != null) {
+        queryParams.Add(("page", page.Value.ToString()));
+      }
+
+      if (pageSize != null) {
+        queryParams.Add(("page_size", pageSize.Value.ToString()));
+      }
+
+      using var responseMessage = await _client
+            .ApiGetAsync("v3/translation_memories", cancellationToken, queryParams.ToArray()).ConfigureAwait(false);
+
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage).ConfigureAwait(false);
+      var translationMemoryList = await JsonUtils.DeserializeAsync<TranslationMemoryListResult>(responseMessage)
+            .ConfigureAwait(false);
+      return translationMemoryList.TranslationMemories;
     }
 
     /// <inheritdoc />
@@ -938,6 +970,19 @@ namespace DeepL {
     private static readonly JsonSerializerOptions SerializationOptions = new JsonSerializerOptions {
       DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
+
+    /// <summary>Class used for JSON-deserialization of translation memory list results.</summary>
+    private readonly struct TranslationMemoryListResult {
+      /// <summary>Initializes a new instance of <see cref="TranslationMemoryListResult" />, used for JSON deserialization.</summary>
+      [JsonConstructor]
+      public TranslationMemoryListResult(TranslationMemoryInfo[] translationMemories) {
+        TranslationMemories = translationMemories;
+      }
+
+      /// <summary>Array of <see cref="TranslationMemoryInfo" /> objects holding translation memory information.</summary>
+      [JsonPropertyName("translation_memories")]
+      public TranslationMemoryInfo[] TranslationMemories { get; }
+    }
 
     /// <summary>Class used for JSON-deserialization of style rule list results.</summary>
     private readonly struct StyleRuleListResult {

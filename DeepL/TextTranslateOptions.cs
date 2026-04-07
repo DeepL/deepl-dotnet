@@ -32,6 +32,12 @@ namespace DeepL {
       StyleId = styleRule.StyleId;
     }
 
+    /// <summary>Initializes a new <see cref="TextTranslateOptions" /> object including the given translation memory.</summary>
+    /// <param name="translationMemory">Translation memory to use in translation.</param>
+    public TextTranslateOptions(TranslationMemoryInfo translationMemory) : this() {
+      TranslationMemoryId = translationMemory.TranslationMemoryId;
+    }
+
     /// <summary>
     ///   Specifies additional context to influence translations, that is not translated itself.
     ///   Characters in the `context` parameter are not counted toward billing.
@@ -49,6 +55,12 @@ namespace DeepL {
 
     /// <summary>Specifies the ID of a style rule to use with the translation.</summary>
     public string? StyleId { get; set; }
+
+    /// <summary>Specifies the ID of a translation memory to use with the translation.</summary>
+    public string? TranslationMemoryId { get; set; }
+
+    /// <summary>Specifies the minimum similarity threshold for translation memory matches (0-100).</summary>
+    public int? TranslationMemoryThreshold { get; set; }
 
     /// <summary>Specifies a list of XML tags containing content that should not be translated.</summary>
     public List<string> IgnoreTags { get; } = new List<string>();
