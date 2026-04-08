@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.WebSockets;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
@@ -54,7 +55,7 @@ namespace DeepL {
   ///   Client for the DeepL API. To use the DeepL API, initialize an instance of this class using your DeepL
   ///   Authentication Key. All functions are thread-safe, aside from <see cref="DeepLClient.Dispose" />.
   /// </summary>
-  public sealed class DeepLClient : Translator, IWriter, IGlossaryManager, IStyleRuleManager {
+  public sealed class DeepLClient : Translator, IWriter, IGlossaryManager, IStyleRuleManager, IVoiceManager {
     /// <summary>Initializes a new instance of the <see cref="AuthorizationException" /> class.</summary>
     /// <param name="message">The message that describes the error.</param>
     public DeepLClient(string authKey, DeepLClientOptions? options = null) : base(authKey, options) { }
@@ -938,6 +939,79 @@ namespace DeepL {
     private static readonly JsonSerializerOptions SerializationOptions = new JsonSerializerOptions {
       DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
+
+    /// <inheritdoc />
+    public async Task<IVoiceSession> CreateVoiceSessionAsync(
+          VoiceSessionOptions options,
+          CancellationToken cancellationToken = default) {
+      if (options == null) {
+        throw new ArgumentNullException(nameof(options));
+      }
+
+      if (options.TargetLanguages == null || options.TargetLanguages.Length == 0) {
+        throw new ArgumentException("At least one target language must be specified");
+      }
+
+      if (options.TargetLanguages.Length > 5) {
+        throw new ArgumentException("Maximum 5 target languages per session");
+      }
+
+      var requestData = new Dictionary<string, object> {
+        ["source_media_content_type"] = options.SourceMediaContentType,
+        ["target_languages"] = options.TargetLanguages
+      };
+
+      if (options.MessageFormat != null) {
+        requestData["message_format"] = options.MessageFormat.Value.ToApiValue();
+      }
+
+      if (options.SourceLanguage != null) {
+        requestData["source_language"] = options.SourceLanguage;
+      }
+
+      if (options.SourceLanguageMode != null) {
+        requestData["source_language_mode"] = options.SourceLanguageMode.Value.ToApiValue();
+      }
+
+      if (options.TargetMediaLanguages != null) {
+        requestData["target_media_languages"] = options.TargetMediaLanguages;
+      }
+
+      if (options.TargetMediaContentType != null) {
+        requestData["target_media_content_type"] = options.TargetMediaContentType;
+      }
+
+      if (options.TargetMediaVoice != null) {
+        requestData["target_media_voice"] = options.TargetMediaVoice.Value.ToApiValue();
+      }
+
+      if (options.GlossaryId != null) {
+        requestData["glossary_id"] = options.GlossaryId;
+      }
+
+      if (options.Formality != null) {
+        requestData["formality"] = options.Formality;
+      }
+
+      using var responseMessage = await _client
+            .ApiPostJsonAsync("v3/voice/realtime", cancellationToken, requestData, SerializationOptions)
+            .ConfigureAwait(false);
+
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage).ConfigureAwait(false);
+      var sessionInfo = await JsonUtils.DeserializeAsync<VoiceSessionInfo>(responseMessage).ConfigureAwait(false);
+
+      // Establish WebSocket connection
+      var wsUri = new Uri($"{sessionInfo.StreamingUrl}?token={Uri.EscapeDataString(sessionInfo.Token)}");
+      var webSocket = new ClientWebSocket();
+      try {
+        await webSocket.ConnectAsync(wsUri, cancellationToken).ConfigureAwait(false);
+      } catch (Exception ex) {
+        webSocket.Dispose();
+        throw new DeepLException("Failed to establish Voice API WebSocket connection", ex);
+      }
+
+      return new VoiceSession(_client, webSocket, sessionInfo);
+    }
 
     /// <summary>Class used for JSON-deserialization of style rule list results.</summary>
     private readonly struct StyleRuleListResult {
