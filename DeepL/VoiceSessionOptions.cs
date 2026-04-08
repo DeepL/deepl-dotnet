@@ -18,7 +18,8 @@ namespace DeepL {
     public string SourceMediaContentType { get; set; } = DeepL.SourceMediaContentType.Auto;
 
     /// <summary>
-    ///   Message encoding format for WebSocket communication. Defaults to <see cref="VoiceMessageFormat.Json" />.
+    ///   Message encoding format for WebSocket communication. If <c>null</c>, the API default is used
+    ///   (currently <see cref="VoiceMessageFormat.Json" />).
     /// </summary>
     public VoiceMessageFormat? MessageFormat { get; set; }
 
