@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [1.21.0] - 2026-04-09
 ### Added
 - Added support for translation memories in text translation via
   `TranslationMemoryId` and `TranslationMemoryThreshold` properties in
@@ -256,7 +258,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - 2021-11-05
 Initial release.
 
-[Unreleased]: https://github.com/DeepLcom/deepl-dotnet/compare/v1.20.0...HEAD
+[Unreleased]: https://github.com/DeepLcom/deepl-dotnet/compare/v1.21.0...HEAD
+[1.21.0]: https://github.com/DeepLcom/deepl-dotnet/compare/v1.20.0...v1.21.0
 [1.20.0]: https://github.com/DeepLcom/deepl-dotnet/compare/v1.19.0...v1.20.0
 [1.19.0]: https://github.com/DeepLcom/deepl-dotnet/compare/v1.18.0...v1.19.0
 [1.18.0]: https://github.com/DeepLcom/deepl-dotnet/compare/v1.17.0...v1.18.0
