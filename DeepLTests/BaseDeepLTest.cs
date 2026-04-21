@@ -89,7 +89,7 @@ namespace DeepLTests {
         case "cs":
           return "protonový paprsek";
         case "da":
-          return "protonstråle";
+          return "Protonstråle";
         case "de":
           return "Protonenstrahl";
         case "el":
@@ -109,11 +109,11 @@ namespace DeepLTests {
         case "hu":
           return "protonnyaláb";
         case "id":
-          return "berkas proton";
+          return "sinar proton";
         case "it":
           return "fascio di protoni";
         case "ja":
-          return "陽子ビーム";
+          return "陽子線";
         case "ko":
           return "양성자 빔";
         case "lt":
@@ -128,12 +128,13 @@ namespace DeepLTests {
           return "wiązka protonów";
         case "pt":
         case "pt-BR":
-        case "pt-PT":
           return "feixe de prótons";
+        case "pt-PT":
+          return "feixe de protões";
         case "ro":
           return "fascicul de protoni";
         case "ru":
-          return "протонный луч";
+          return "протонный пучок";
         case "sk":
           return "protónový lúč";
         case "sl":
