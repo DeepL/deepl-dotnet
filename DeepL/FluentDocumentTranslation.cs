@@ -72,6 +72,7 @@ namespace DeepL {
     private string? _sourceLanguageCode;
     private string? _targetLanguageCode;
     private CancellationToken _cancellationToken;
+    private IProgress<DocumentStatus>? _progress;
 
     internal DocumentTranslationBuilder(ITranslator translator, FileInfo inputFileInfo) {
       _translator = translator;
@@ -151,29 +152,55 @@ namespace DeepL {
       return this;
     }
 
-    /// <summary>Associates a cancellation token with the eventual request(s).</summary>
+    /// <summary>
+    ///   Associates a cancellation token with the eventual request(s).
+    ///   For ad-hoc cancellation without a pre-built <see cref="CancellationTokenSource" />,
+    ///   prefer calling <see cref="DocumentTranslationJob.Cancel" /> on the handle returned from
+    ///   <see cref="SaveTo(FileInfo)" /> / <see cref="SaveTo(Stream)" />.
+    /// </summary>
     public DocumentTranslationBuilder WithCancellation(CancellationToken cancellationToken) {
       _cancellationToken = cancellationToken;
       return this;
     }
 
     /// <summary>
-    ///   Uploads, waits, and downloads the translated document to <paramref name="outputFileInfo" />.
-    ///   Returns a <see cref="Task" /> awaitable result.
+    ///   Attaches a progress callback that is invoked each time the document status is polled
+    ///   during the wait phase (between upload and download). Useful for UI progress indicators,
+    ///   structured logging, or webhook emissions.
     /// </summary>
-    public Task SaveTo(FileInfo outputFileInfo) {
+    /// <remarks>
+    ///   When a progress callback is attached, the fluent builder takes its own orchestration
+    ///   path (upload → poll → download) instead of delegating to
+    ///   <see cref="ITranslator.TranslateDocumentAsync(Stream,string,Stream,string?,string,DocumentTranslateOptions?,CancellationToken)" />.
+    ///   Document minification is not supported on the progress path;
+    ///   if both are required, fall back to configuring a <see cref="CancellationToken" /> and
+    ///   awaiting <see cref="SaveTo(Stream)" /> without progress.
+    /// </remarks>
+    public DocumentTranslationBuilder WithProgress(IProgress<DocumentStatus> progress) {
+      _progress = progress ?? throw new ArgumentNullException(nameof(progress));
+      return this;
+    }
+
+    /// <summary>
+    ///   Uploads, waits, and downloads the translated document to <paramref name="outputFileInfo" />.
+    ///   Returns a <see cref="DocumentTranslationJob" /> that is directly awaitable AND supports
+    ///   <see cref="DocumentTranslationJob.Cancel" /> for fluent, ad-hoc cancellation.
+    /// </summary>
+    public DocumentTranslationJob SaveTo(FileInfo outputFileInfo) {
       if (outputFileInfo == null) throw new ArgumentNullException(nameof(outputFileInfo));
       EnsureTargetLanguage();
-      return RunWithFileOutputAsync(outputFileInfo);
+      return Start(outputFileInfo, outputStream: null);
     }
 
     /// <summary>
     ///   Uploads, waits, and downloads the translated document into <paramref name="outputStream" />.
+    ///   Returns a <see cref="DocumentTranslationJob" /> that is directly awaitable AND supports
+    ///   <see cref="DocumentTranslationJob.Cancel" />.
     /// </summary>
-    public Task SaveTo(Stream outputStream) {
+    public DocumentTranslationJob SaveTo(Stream outputStream) {
       if (outputStream == null) throw new ArgumentNullException(nameof(outputStream));
       EnsureTargetLanguage();
-      return RunWithStreamOutputAsync(outputStream);
+      return Start(outputFile: null, outputStream);
     }
 
     /// <summary>
@@ -196,7 +223,31 @@ namespace DeepL {
             _cancellationToken);
     }
 
-    private async Task RunWithFileOutputAsync(FileInfo outputFileInfo) {
+    private DocumentTranslationJob Start(FileInfo? outputFile, Stream? outputStream) {
+      var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(_cancellationToken);
+      var task = RunAsync(outputFile, outputStream, linkedCts.Token);
+      // Dispose the CTS when the job completes, regardless of outcome.
+      _ = task.ContinueWith(
+            _ => linkedCts.Dispose(),
+            CancellationToken.None,
+            TaskContinuationOptions.ExecuteSynchronously,
+            TaskScheduler.Default);
+      return new DocumentTranslationJob(task, linkedCts);
+    }
+
+    private Task RunAsync(FileInfo? outputFile, Stream? outputStream, CancellationToken ct) {
+      // Without progress: delegate to the library's existing orchestration so we inherit its
+      // DocumentTranslationException wrapping AND document-minification support.
+      if (_progress == null) {
+        return outputFile != null
+              ? RunViaLibraryToFileAsync(outputFile, ct)
+              : RunViaLibraryToStreamAsync(outputStream!, ct);
+      }
+      // With progress: run upload → poll-with-callbacks → download in this layer.
+      return RunWithProgressAsync(outputFile, outputStream, ct);
+    }
+
+    private async Task RunViaLibraryToFileAsync(FileInfo outputFileInfo, CancellationToken ct) {
       if (_inputFileInfo != null) {
         await _translator.TranslateDocumentAsync(
                     _inputFileInfo,
@@ -204,7 +255,7 @@ namespace DeepL {
                     _sourceLanguageCode,
                     _targetLanguageCode!,
                     _options,
-                    _cancellationToken)
+                    ct)
               .ConfigureAwait(false);
         return;
       }
@@ -218,7 +269,7 @@ namespace DeepL {
                     _sourceLanguageCode,
                     _targetLanguageCode!,
                     _options,
-                    _cancellationToken)
+                    ct)
               .ConfigureAwait(false);
       } catch {
         try { outputFileInfo.Delete(); } catch { /* ignored */ }
@@ -226,9 +277,9 @@ namespace DeepL {
       }
     }
 
-    private Task RunWithStreamOutputAsync(Stream outputStream) {
+    private Task RunViaLibraryToStreamAsync(Stream outputStream, CancellationToken ct) {
       if (_inputFileInfo != null) {
-        return RunFromFileToStreamAsync(outputStream);
+        return RunFromFileToStreamViaLibraryAsync(outputStream, ct);
       }
 
       return _translator.TranslateDocumentAsync(
@@ -238,10 +289,10 @@ namespace DeepL {
             _sourceLanguageCode,
             _targetLanguageCode!,
             _options,
-            _cancellationToken);
+            ct);
     }
 
-    private async Task RunFromFileToStreamAsync(Stream outputStream) {
+    private async Task RunFromFileToStreamViaLibraryAsync(Stream outputStream, CancellationToken ct) {
       using var inputFile = _inputFileInfo!.OpenRead();
       await _translator.TranslateDocumentAsync(
                   inputFile,
@@ -250,8 +301,48 @@ namespace DeepL {
                   _sourceLanguageCode,
                   _targetLanguageCode!,
                   _options,
-                  _cancellationToken)
+                  ct)
             .ConfigureAwait(false);
+    }
+
+    private async Task RunWithProgressAsync(
+          FileInfo? outputFile, Stream? outputStream, CancellationToken ct) {
+      FileStream? openedOutputFile = null;
+      try {
+        // Upload
+        var handle = await UploadCoreAsync(ct).ConfigureAwait(false);
+
+        // Wait (with progress)
+        await DocumentPolling.WaitAsync(_translator, handle, _progress, ct).ConfigureAwait(false);
+
+        // Download
+        if (outputFile != null) {
+          openedOutputFile = outputFile.Open(FileMode.CreateNew, FileAccess.Write);
+          await _translator.TranslateDocumentDownloadAsync(handle, openedOutputFile, ct)
+                .ConfigureAwait(false);
+        } else {
+          await _translator.TranslateDocumentDownloadAsync(handle, outputStream!, ct)
+                .ConfigureAwait(false);
+        }
+      } catch {
+        // Mirror the library's cleanup behavior: remove the half-written output file on error.
+        if (outputFile != null) {
+          openedOutputFile?.Dispose();
+          try { outputFile.Refresh(); if (outputFile.Exists) outputFile.Delete(); } catch { /* ignored */ }
+        }
+        throw;
+      } finally {
+        openedOutputFile?.Dispose();
+      }
+    }
+
+    private Task<DocumentHandle> UploadCoreAsync(CancellationToken ct) {
+      if (_inputFileInfo != null) {
+        return _translator.TranslateDocumentUploadAsync(
+              _inputFileInfo, _sourceLanguageCode, _targetLanguageCode!, _options, ct);
+      }
+      return _translator.TranslateDocumentUploadAsync(
+            _inputStream!, _inputFileName!, _sourceLanguageCode, _targetLanguageCode!, _options, ct);
     }
 
     private void EnsureTargetLanguage() {
@@ -259,6 +350,82 @@ namespace DeepL {
         throw new InvalidOperationException(
               "Target language is required. Call .To(targetLanguageCode) before uploading / saving.");
       }
+    }
+  }
+
+  /// <summary>
+  ///   Handle to a running document-translation operation. Directly awaitable, and supports
+  ///   <see cref="Cancel" /> so callers can keep the fluent style instead of plumbing a
+  ///   <see cref="CancellationTokenSource" /> through by hand.
+  /// </summary>
+  /// <example>
+  ///   <code>
+  ///     var job = translator.TranslateDocument(input).To("de").SaveTo(output);
+  ///     // ...time passes, user clicks Cancel in UI...
+  ///     job.Cancel();
+  ///     try { await job; } catch (OperationCanceledException) { /* handled */ }
+  ///   </code>
+  /// </example>
+  public sealed class DocumentTranslationJob {
+    private readonly Task _task;
+    private readonly CancellationTokenSource _cts;
+
+    internal DocumentTranslationJob(Task task, CancellationTokenSource cts) {
+      _task = task;
+      _cts = cts;
+    }
+
+    /// <summary>The underlying <see cref="Task" /> representing the upload → poll → download flow.</summary>
+    public Task Task => _task;
+
+    /// <summary><c>true</c> once the job has completed (successfully, failed, or cancelled).</summary>
+    public bool IsCompleted => _task.IsCompleted;
+
+    /// <summary>
+    ///   Signals cancellation to the in-flight job. Safe to call after completion (no-op).
+    ///   Awaiting the job afterwards will typically surface an <see cref="OperationCanceledException" />.
+    /// </summary>
+    public void Cancel() {
+      try { _cts.Cancel(); } catch (ObjectDisposedException) { /* already finished */ }
+    }
+
+    /// <summary>Enables <c>await job</c> — waits until upload/poll/download finishes or is cancelled.</summary>
+    public TaskAwaiter GetAwaiter() => _task.GetAwaiter();
+
+    /// <summary>Implicit conversion so the job can be passed wherever a <see cref="Task" /> is expected.</summary>
+    public static implicit operator Task(DocumentTranslationJob job) =>
+          job?._task ?? throw new ArgumentNullException(nameof(job));
+  }
+
+  /// <summary>Shared poll loop used by <see cref="DocumentTranslationBuilder" /> and <see cref="DocumentRef" />.</summary>
+  internal static class DocumentPolling {
+    internal static async Task WaitAsync(
+          ITranslator translator,
+          DocumentHandle handle,
+          IProgress<DocumentStatus>? progress,
+          CancellationToken cancellationToken) {
+      var status = await translator.TranslateDocumentStatusAsync(handle, cancellationToken)
+            .ConfigureAwait(false);
+      progress?.Report(status);
+      while (status.Ok && !status.Done) {
+        await Task.Delay(CalculatePollDelay(status.SecondsRemaining), cancellationToken)
+              .ConfigureAwait(false);
+        status = await translator.TranslateDocumentStatusAsync(handle, cancellationToken)
+              .ConfigureAwait(false);
+        progress?.Report(status);
+      }
+      if (!status.Ok) {
+        throw new DeepLException(status.ErrorMessage ?? "Unknown error");
+      }
+    }
+
+    // Mirrors the library's internal CalculateDocumentWaitTime heuristic without reaching into it:
+    // fall back to a 5-second floor when the server gives no estimate, clamp to [1, 60] seconds.
+    private static TimeSpan CalculatePollDelay(int? secondsRemaining) {
+      var seconds = secondsRemaining.GetValueOrDefault(5);
+      if (seconds < 1) seconds = 1;
+      if (seconds > 60) seconds = 60;
+      return TimeSpan.FromSeconds(seconds);
     }
   }
 
@@ -277,9 +444,24 @@ namespace DeepL {
     public Task<DocumentStatus> GetStatusAsync(CancellationToken cancellationToken = default) =>
           _translator.TranslateDocumentStatusAsync(Handle, cancellationToken);
 
-    /// <summary>Polls until the translation is done or fails.</summary>
+    /// <summary>
+    ///   Polls until the translation is done or fails. Delegates to the library's built-in
+    ///   <see cref="ITranslator.TranslateDocumentWaitUntilDoneAsync" />.
+    /// </summary>
     public Task WaitUntilDoneAsync(CancellationToken cancellationToken = default) =>
           _translator.TranslateDocumentWaitUntilDoneAsync(Handle, cancellationToken);
+
+    /// <summary>
+    ///   Polls until the translation is done or fails, reporting each status tick through
+    ///   <paramref name="progress" />. Useful for UI progress indicators, structured logging,
+    ///   or webhook emissions during the wait phase.
+    /// </summary>
+    public Task WaitUntilDoneAsync(
+          IProgress<DocumentStatus> progress,
+          CancellationToken cancellationToken = default) {
+      if (progress == null) throw new ArgumentNullException(nameof(progress));
+      return DocumentPolling.WaitAsync(_translator, Handle, progress, cancellationToken);
+    }
 
     /// <summary>Downloads the translated document to a file.</summary>
     public Task DownloadToAsync(FileInfo outputFileInfo, CancellationToken cancellationToken = default) {

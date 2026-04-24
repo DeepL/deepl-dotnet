@@ -131,6 +131,41 @@ static class FluentDocumentExamples {
 
       Console.WriteLine($"  one-shot     : wrote {output.Length} bytes → {output.FullName}");
 
+      // With progress callback: each status poll is reported via IProgress<DocumentStatus>.
+      // Useful for UI progress bars, structured logging, webhook emissions.
+      var inputP = new FileInfo(Path.Combine(workDir.FullName, "hello-progress.txt"));
+      var outputP = new FileInfo(Path.Combine(workDir.FullName, $"hello-progress-{Guid.NewGuid():N}.txt"));
+      await File.WriteAllTextAsync(inputP.FullName, "Third doc — monitored via IProgress.");
+
+      var progress = new Progress<DocumentStatus>(status =>
+            Console.WriteLine(
+                  $"  progress     : {status.Status}  (remaining: {status.SecondsRemaining?.ToString() ?? "n/a"})"));
+
+      await client
+            .TranslateDocument(inputP)
+            .To(LanguageCode.German)
+            .WithProgress(progress)
+            .SaveTo(outputP);
+      Console.WriteLine($"  progress/done: wrote {outputP.Length} bytes → {outputP.FullName}");
+
+      // Fluent cancellation: SaveTo() returns a DocumentTranslationJob that supports .Cancel()
+      // without needing a pre-built CancellationTokenSource. The job is still awaitable.
+      var inputC = new FileInfo(Path.Combine(workDir.FullName, "hello-cancel.txt"));
+      var outputC = new FileInfo(Path.Combine(workDir.FullName, $"hello-cancel-{Guid.NewGuid():N}.txt"));
+      await File.WriteAllTextAsync(inputC.FullName, "Fourth doc — will be cancelled mid-flight.");
+
+      var job = client.TranslateDocument(inputC).To(LanguageCode.German).SaveTo(outputC);
+      _ = Task.Delay(TimeSpan.FromMilliseconds(150)).ContinueWith(_ => {
+        Console.WriteLine("  cancel       : requesting cancellation...");
+        job.Cancel();
+      });
+      try {
+        await job;
+        Console.WriteLine("  cancel       : finished before cancel fired (race; may happen on small docs)");
+      } catch (OperationCanceledException) {
+        Console.WriteLine("  cancel       : job cancelled cleanly");
+      }
+
       // Split flow: useful when you want to do work between upload and download
       // (e.g. queue a webhook, show a progress UI).
       var input2 = new FileInfo(Path.Combine(workDir.FullName, "hello2.txt"));
@@ -144,8 +179,8 @@ static class FluentDocumentExamples {
       var status = await client.Document(handle).GetStatusAsync();
       Console.WriteLine($"  split/status : {status.Status} (remaining: {status.SecondsRemaining?.ToString() ?? "n/a"})");
 
-      // Or block until done.
-      await client.Document(handle).WaitUntilDoneAsync();
+      // Or block until done (with optional progress reporter).
+      await client.Document(handle).WaitUntilDoneAsync(progress);
       await client.Document(handle).DownloadToAsync(output2);
       Console.WriteLine($"  split/done   : wrote {output2.Length} bytes → {output2.FullName}");
     } finally {

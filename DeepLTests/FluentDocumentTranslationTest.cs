@@ -3,6 +3,7 @@
 // license that can be found in the LICENSE file.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -136,22 +137,225 @@ namespace DeepLTests {
     }
 
     [Fact]
-    public async Task WithCancellation_PassesToken() {
+    public async Task WithCancellation_ExternalCancelPropagatesThroughLinkedToken() {
       var translator = Substitute.For<ITranslator>();
       using var input = new MemoryStream();
       using var output = new MemoryStream();
       using var cts = new CancellationTokenSource();
 
-      await translator.TranslateDocument(input, "in.docx").To("de").WithCancellation(cts.Token).SaveTo(output);
+      // Hold the library call open until we cancel, so the linked CTS survives long enough to observe.
+      var tcs = new TaskCompletionSource<bool>();
+      CancellationToken capturedToken = default;
+      translator.TranslateDocumentAsync(
+                  Arg.Any<Stream>(),
+                  Arg.Any<string>(),
+                  Arg.Any<Stream>(),
+                  Arg.Any<string?>(),
+                  Arg.Any<string>(),
+                  Arg.Any<DocumentTranslateOptions?>(),
+                  Arg.Do<CancellationToken>(t => {
+                    capturedToken = t;
+                    t.Register(() => tcs.TrySetCanceled(t));
+                  }))
+            .Returns(_ => tcs.Task);
 
-      await translator.Received(1).TranslateDocumentAsync(
-            input,
-            "in.docx",
-            output,
-            Arg.Any<string?>(),
-            "de",
-            Arg.Any<DocumentTranslateOptions?>(),
-            cts.Token);
+      var job = translator.TranslateDocument(input, "in.docx").To("de")
+            .WithCancellation(cts.Token).SaveTo(output);
+
+      // On net462 the Task continuation that invokes the library method (and runs our Arg.Do
+      // callback to capture the token) may not have landed yet. Wait briefly for the mock to
+      // record the token.
+      for (var i = 0; i < 50 && capturedToken == default; i++) {
+        await Task.Delay(10);
+      }
+      Assert.NotEqual(default, capturedToken);
+
+      // The token passed to the library is the LINKED token (not the user's raw cts.Token),
+      // but cancelling the original cts should propagate cancellation into it.
+      Assert.False(capturedToken.IsCancellationRequested);
+      cts.Cancel();
+      Assert.True(capturedToken.IsCancellationRequested);
+
+      await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await job);
+    }
+
+    // ---------- DocumentTranslationJob: Cancel() ----------
+
+    [Fact]
+    public async Task SaveTo_ReturnsAwaitableJob() {
+      var translator = Substitute.For<ITranslator>();
+      using var input = new MemoryStream();
+      using var output = new MemoryStream();
+
+      // The returned value must be awaitable as a Task (implicit conversion) and as a job.
+      DocumentTranslationJob job = translator.TranslateDocument(input, "in.docx").To("de").SaveTo(output);
+      await job;
+      Assert.True(job.IsCompleted);
+
+      // Implicit conversion to Task also works (Task.WhenAll, etc.)
+      using var input2 = new MemoryStream();
+      using var output2 = new MemoryStream();
+      Task t = translator.TranslateDocument(input2, "in.docx").To("de").SaveTo(output2);
+      await t;
+    }
+
+    [Fact]
+    public async Task Job_Cancel_PropagatesThroughLinkedToken() {
+      var translator = Substitute.For<ITranslator>();
+      using var input = new MemoryStream();
+      using var output = new MemoryStream();
+
+      // Capture the token the library receives, and make its Task never complete until cancelled.
+      var tcs = new TaskCompletionSource<bool>();
+      CancellationToken capturedToken = default;
+      translator.TranslateDocumentAsync(
+                  Arg.Any<Stream>(),
+                  Arg.Any<string>(),
+                  Arg.Any<Stream>(),
+                  Arg.Any<string?>(),
+                  Arg.Any<string>(),
+                  Arg.Any<DocumentTranslateOptions?>(),
+                  Arg.Do<CancellationToken>(t => {
+                    capturedToken = t;
+                    t.Register(() => tcs.TrySetCanceled(t));
+                  }))
+            .Returns(_ => tcs.Task);
+
+      var job = translator.TranslateDocument(input, "in.docx").To("de").SaveTo(output);
+
+      Assert.False(job.IsCompleted);
+      job.Cancel();
+      Assert.True(capturedToken.IsCancellationRequested);
+
+      await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await job);
+      Assert.True(job.IsCompleted);
+    }
+
+    [Fact]
+    public async Task Job_Cancel_AfterCompletion_IsNoOp() {
+      var translator = Substitute.For<ITranslator>();
+      using var input = new MemoryStream();
+      using var output = new MemoryStream();
+
+      var job = translator.TranslateDocument(input, "in.docx").To("de").SaveTo(output);
+      await job;
+
+      // Calling Cancel after completion must not throw (and must not affect anything).
+      job.Cancel();
+      job.Cancel();
+      Assert.True(job.IsCompleted);
+    }
+
+    // ---------- WithProgress: IProgress<DocumentStatus> callbacks ----------
+
+    [Fact]
+    public async Task WithProgress_ReportsStatusDuringPolling() {
+      var translator = Substitute.For<ITranslator>();
+      using var input = new MemoryStream();
+      using var output = new MemoryStream();
+      var handle = new DocumentHandle("doc-id", "doc-key");
+
+      // Return the handle from upload
+      translator.TranslateDocumentUploadAsync(
+                  Arg.Any<Stream>(), Arg.Any<string>(),
+                  Arg.Any<string?>(), Arg.Any<string>(),
+                  Arg.Any<DocumentTranslateOptions?>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(handle));
+
+      // Sequence of status ticks: translating → translating → done
+      var statusQueue = new Queue<DocumentStatus>(new[] {
+        new DocumentStatus("doc-id", DocumentStatus.StatusCode.Translating, 1, null, null),
+        new DocumentStatus("doc-id", DocumentStatus.StatusCode.Translating, 1, null, null),
+        new DocumentStatus("doc-id", DocumentStatus.StatusCode.Done, null, 42, null),
+      });
+      translator.TranslateDocumentStatusAsync(handle, Arg.Any<CancellationToken>())
+            .Returns(_ => statusQueue.Dequeue());
+
+      // Download does nothing; just return a completed Task.
+      translator.TranslateDocumentDownloadAsync(handle, Arg.Any<Stream>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+      var reported = new List<DocumentStatus>();
+      var progress = new Progress<DocumentStatus>(reported.Add);
+
+      await translator.TranslateDocument(input, "in.docx").To("de")
+            .WithProgress(progress)
+            .SaveTo(output);
+
+      // Progress should have been reported 3 times (matching the status sequence).
+      // Progress<T> marshals to the captured sync context; give it a tick to flush.
+      for (var i = 0; i < 50 && reported.Count < 3; i++) {
+        await Task.Delay(10);
+      }
+
+      Assert.Equal(3, reported.Count);
+      Assert.Equal(DocumentStatus.StatusCode.Translating, reported[0].Status);
+      Assert.Equal(DocumentStatus.StatusCode.Done, reported[reported.Count - 1].Status);
+
+      // The upload + download must have been invoked exactly once each.
+      await translator.Received(1).TranslateDocumentUploadAsync(
+            Arg.Any<Stream>(), Arg.Any<string>(),
+            Arg.Any<string?>(), Arg.Any<string>(),
+            Arg.Any<DocumentTranslateOptions?>(), Arg.Any<CancellationToken>());
+      await translator.Received(1).TranslateDocumentDownloadAsync(
+            handle, Arg.Any<Stream>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task WithProgress_ErrorStatus_ThrowsDeepLException() {
+      var translator = Substitute.For<ITranslator>();
+      using var input = new MemoryStream();
+      using var output = new MemoryStream();
+      var handle = new DocumentHandle("doc-id", "doc-key");
+
+      translator.TranslateDocumentUploadAsync(
+                  Arg.Any<Stream>(), Arg.Any<string>(),
+                  Arg.Any<string?>(), Arg.Any<string>(),
+                  Arg.Any<DocumentTranslateOptions?>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(handle));
+      translator.TranslateDocumentStatusAsync(handle, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(
+                  new DocumentStatus("doc-id", DocumentStatus.StatusCode.Error, null, null, "something went wrong")));
+
+      var progress = new Progress<DocumentStatus>(_ => { });
+
+      var ex = await Assert.ThrowsAsync<DeepLException>(
+            async () => await translator.TranslateDocument(input, "in.docx").To("de")
+                  .WithProgress(progress).SaveTo(output));
+      Assert.Contains("something went wrong", ex.Message);
+    }
+
+    [Fact]
+    public void WithProgress_NullProgress_Throws() {
+      var translator = Substitute.For<ITranslator>();
+      using var input = new MemoryStream();
+      var builder = translator.TranslateDocument(input, "in.docx").To("de");
+      Assert.Throws<ArgumentNullException>(() => { _ = builder.WithProgress(null!); });
+    }
+
+    [Fact]
+    public async Task DocumentRef_WaitUntilDoneAsync_WithProgress_ReportsTicks() {
+      var translator = Substitute.For<ITranslator>();
+      var handle = new DocumentHandle("doc-id", "doc-key");
+
+      var statusQueue = new Queue<DocumentStatus>(new[] {
+        new DocumentStatus("doc-id", DocumentStatus.StatusCode.Translating, 1, null, null),
+        new DocumentStatus("doc-id", DocumentStatus.StatusCode.Done, null, 42, null),
+      });
+      translator.TranslateDocumentStatusAsync(handle, Arg.Any<CancellationToken>())
+            .Returns(_ => statusQueue.Dequeue());
+
+      var reported = new List<DocumentStatus>();
+      var progress = new Progress<DocumentStatus>(reported.Add);
+
+      await translator.Document(handle).WaitUntilDoneAsync(progress);
+
+      for (var i = 0; i < 50 && reported.Count < 2; i++) {
+        await Task.Delay(10);
+      }
+
+      Assert.Equal(2, reported.Count);
+      Assert.Equal(DocumentStatus.StatusCode.Done, reported[reported.Count - 1].Status);
     }
 
     // ---------- Upload-only / split flow ----------
