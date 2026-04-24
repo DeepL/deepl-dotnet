@@ -237,6 +237,16 @@ namespace DeepL {
           string sourceLanguageCode,
           string targetLanguageCode,
           GlossaryEntries entries) {
+      if (string.IsNullOrWhiteSpace(sourceLanguageCode)) {
+        throw new ArgumentException(
+              $"Parameter {nameof(sourceLanguageCode)} must not be empty", nameof(sourceLanguageCode));
+      }
+
+      if (string.IsNullOrWhiteSpace(targetLanguageCode)) {
+        throw new ArgumentException(
+              $"Parameter {nameof(targetLanguageCode)} must not be empty", nameof(targetLanguageCode));
+      }
+
       if (entries == null) throw new ArgumentNullException(nameof(entries));
       EnsureNoCsv();
       _dictionaries.Add(
@@ -260,6 +270,16 @@ namespace DeepL {
           string sourceLanguageCode,
           string targetLanguageCode,
           Stream csvFile) {
+      if (string.IsNullOrWhiteSpace(sourceLanguageCode)) {
+        throw new ArgumentException(
+              $"Parameter {nameof(sourceLanguageCode)} must not be empty", nameof(sourceLanguageCode));
+      }
+
+      if (string.IsNullOrWhiteSpace(targetLanguageCode)) {
+        throw new ArgumentException(
+              $"Parameter {nameof(targetLanguageCode)} must not be empty", nameof(targetLanguageCode));
+      }
+
       if (csvFile == null) throw new ArgumentNullException(nameof(csvFile));
       if (_dictionaries.Count > 0) {
         throw new InvalidOperationException(

@@ -141,6 +141,13 @@ namespace DeepL {
     }
 
     /// <summary>Enables document minification for supported formats.</summary>
+    /// <remarks>
+    ///   Minification is only applied when translating from a <see cref="FileInfo" /> source to a
+    ///   <see cref="FileInfo" /> destination (<see cref="SaveTo(FileInfo)" />) without a progress
+    ///   callback. Any other path (stream input, stream output, or <see cref="WithProgress" />)
+    ///   will throw <see cref="InvalidOperationException" /> at execution time when minification
+    ///   is enabled.
+    /// </remarks>
     public DocumentTranslationBuilder WithMinification(bool enable = true) {
       _options.EnableDocumentMinification = enable;
       return this;
@@ -224,6 +231,18 @@ namespace DeepL {
     }
 
     private DocumentTranslationJob Start(FileInfo? outputFile, Stream? outputStream) {
+      if (_options.EnableDocumentMinification) {
+        // Minification is only honored by the FileInfo→FileInfo library overload. Fail fast on
+        // any other path so callers get a clear error instead of silently non-minified output.
+        bool fileToFile = _inputFileInfo != null && outputFile != null;
+        if (!fileToFile || _progress != null) {
+          throw new InvalidOperationException(
+                "Document minification (WithMinification) is only supported when translating " +
+                "from a FileInfo source to a FileInfo destination without a progress callback. " +
+                "Use TranslateDocument(FileInfo).SaveTo(FileInfo) without WithProgress().");
+        }
+      }
+
       var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(_cancellationToken);
       var task = RunAsync(outputFile, outputStream, linkedCts.Token);
       // Dispose the CTS when the job completes, regardless of outcome.
