@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>DeepL.Samples.FluentApi</RootNamespace>
+    <AssemblyName>DeepL.Samples.FluentApi</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\DeepL\DeepL.csproj" />
+  </ItemGroup>
+
+</Project>

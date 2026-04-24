@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="../DeepL/DeepL.csproj" />
+  <Project Path="DependencyInjection/DependencyInjection.csproj" />
+  <Project Path="FluentApi/FluentApi.csproj" />
+</Solution>
