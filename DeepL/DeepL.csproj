@@ -35,7 +35,6 @@
     <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="8.0.26"/>
     <PackageReference Include="System.Text.Json" Version="8.0.6"/>
     <PackageReference Include="System.Net.Http.Json" Version="8.0.1"/>
-    <PackageReference Include="System.Net.WebSockets.Client" Version="4.3.2" Condition="'$(TargetFramework)' == 'netstandard2.0'"/>
   </ItemGroup>
 
 

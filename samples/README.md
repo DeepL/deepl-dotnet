@@ -40,7 +40,7 @@ The sample creates temporary glossaries, style rules, and files, and cleans them
 
 ### 2. `DependencyInjection` — idiomatic DI wire-up
 
-Shows how to register `DeepLClient` into `Microsoft.Extensions.DependencyInjection` so consumers can inject the narrowest interface they need (`ITranslator`, `IWriter`, `IGlossaryManager`, `IStyleRuleManager`, `IVoiceManager`):
+Shows how to register `DeepLClient` into `Microsoft.Extensions.DependencyInjection` so consumers can inject the narrowest interface they need (`ITranslator`, `IWriter`, `IGlossaryManager`, `IStyleRuleManager`):
 
 - `AddDeepLClient(options => ...)` / `AddDeepLClient(IConfiguration)` — from the `DeepL.Extensions.DependencyInjection` companion package
 - Routes the underlying `HttpClient` through `IHttpClientFactory` so apps can layer on their own handlers / resilience / logging

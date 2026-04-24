@@ -34,7 +34,7 @@ namespace DeepL.Extensions.DependencyInjection {
     ///   Registers <see cref="DeepLClient" /> as a singleton, routed through <see cref="IHttpClientFactory" />.
     ///   Consumers can then inject the narrowest interface they need
     ///   (<see cref="ITranslator" />, <see cref="IWriter" />, <see cref="IGlossaryManager" />,
-    ///   <see cref="IStyleRuleManager" />, <see cref="IVoiceManager" />).
+    ///   <see cref="IStyleRuleManager" />).
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <param name="configure">Delegate to configure <see cref="DeepLOptions" />.</param>
@@ -112,7 +112,6 @@ namespace DeepL.Extensions.DependencyInjection {
       services.TryAddSingleton<IWriter>(sp => sp.GetRequiredService<DeepLClient>());
       services.TryAddSingleton<IGlossaryManager>(sp => sp.GetRequiredService<DeepLClient>());
       services.TryAddSingleton<IStyleRuleManager>(sp => sp.GetRequiredService<DeepLClient>());
-      services.TryAddSingleton<IVoiceManager>(sp => sp.GetRequiredService<DeepLClient>());
     }
   }
 }

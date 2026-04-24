@@ -61,7 +61,7 @@ app.MapPost("/translate", async (ITranslator translator, string text, string tar
 ## What the registration does
 
 - Registers `DeepLClient` as a **singleton** (the client is documented thread-safe).
-- Forwards `ITranslator`, `IWriter`, `IGlossaryManager`, `IStyleRuleManager`, `IVoiceManager` to the same singleton.
+- Forwards `ITranslator`, `IWriter`, `IGlossaryManager`, `IStyleRuleManager` to the same singleton.
 - Routes the underlying `HttpClient` through `IHttpClientFactory` with the named client `"DeepL"`, so you can layer on your own handlers:
 
 ```csharp

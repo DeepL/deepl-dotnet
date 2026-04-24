@@ -45,7 +45,6 @@ namespace DeepL.Extensions.DependencyInjection.Tests {
       Assert.NotNull(sp.GetService<IWriter>());
       Assert.NotNull(sp.GetService<IGlossaryManager>());
       Assert.NotNull(sp.GetService<IStyleRuleManager>());
-      Assert.NotNull(sp.GetService<IVoiceManager>());
     }
 
     [Fact]
@@ -57,13 +56,11 @@ namespace DeepL.Extensions.DependencyInjection.Tests {
       var writer = sp.GetRequiredService<IWriter>();
       var glossary = sp.GetRequiredService<IGlossaryManager>();
       var styleRule = sp.GetRequiredService<IStyleRuleManager>();
-      var voice = sp.GetRequiredService<IVoiceManager>();
 
       Assert.Same(client, translator);
       Assert.Same(client, writer);
       Assert.Same(client, glossary);
       Assert.Same(client, styleRule);
-      Assert.Same(client, voice);
     }
 
     [Fact]
