@@ -307,21 +307,43 @@ namespace DeepL {
       return Self;
     }
 
-    /// <summary>Sets the writing style. Mutually exclusive with <see cref="WithTone" />.</summary>
+    /// <summary>
+    ///   Sets the writing style. Mutually exclusive with <see cref="WithTone" />; throws
+    ///   <see cref="InvalidOperationException" /> if a tone has already been set on this builder.
+    /// </summary>
     public TSelf WithStyle(string writingStyle) {
-      Options.WritingStyle = writingStyle ?? throw new ArgumentNullException(nameof(writingStyle));
+      if (writingStyle == null) throw new ArgumentNullException(nameof(writingStyle));
+      if (Options.WritingTone != null)
+        throw new InvalidOperationException(
+              "Cannot set WritingStyle when WritingTone is already set. Only one of WritingStyle or WritingTone may be specified per request.");
+      Options.WritingStyle = writingStyle;
       return Self;
     }
 
-    /// <summary>Sets the writing tone. Mutually exclusive with <see cref="WithStyle" />.</summary>
+    /// <summary>
+    ///   Sets the writing tone. Mutually exclusive with <see cref="WithStyle" />; throws
+    ///   <see cref="InvalidOperationException" /> if a style has already been set on this builder.
+    /// </summary>
     public TSelf WithTone(string writingTone) {
-      Options.WritingTone = writingTone ?? throw new ArgumentNullException(nameof(writingTone));
+      if (writingTone == null) throw new ArgumentNullException(nameof(writingTone));
+      if (Options.WritingStyle != null)
+        throw new InvalidOperationException(
+              "Cannot set WritingTone when WritingStyle is already set. Only one of WritingStyle or WritingTone may be specified per request.");
+      Options.WritingTone = writingTone;
       return Self;
     }
 
-    /// <summary>Copies fields from the supplied options onto this builder.</summary>
+    /// <summary>
+    ///   Copies fields from the supplied options onto this builder. Throws
+    ///   <see cref="InvalidOperationException" /> if the options have both
+    ///   <see cref="TextRephraseOptions.WritingStyle" /> and
+    ///   <see cref="TextRephraseOptions.WritingTone" /> set simultaneously.
+    /// </summary>
     public TSelf Using(TextRephraseOptions options) {
       if (options == null) throw new ArgumentNullException(nameof(options));
+      if (options.WritingStyle != null && options.WritingTone != null)
+        throw new InvalidOperationException(
+              "Cannot copy options with both WritingStyle and WritingTone set. Only one of WritingStyle or WritingTone may be specified per request.");
       Options.WritingStyle = options.WritingStyle;
       Options.WritingTone = options.WritingTone;
       return Self;

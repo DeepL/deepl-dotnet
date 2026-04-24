@@ -345,5 +345,62 @@ namespace DeepLTests {
 
       Assert.Equal("academic", captured!.WritingStyle);
     }
+
+    [Fact]
+    public void Rephrase_WithTone_AfterWithStyle_ThrowsInvalidOperation() {
+      var writer = MakeWriter();
+      var builder = writer.Rephrase("text").WithStyle("academic");
+      Assert.Throws<InvalidOperationException>(() => { builder.WithTone("friendly"); });
+    }
+
+    [Fact]
+    public void Rephrase_WithStyle_AfterWithTone_ThrowsInvalidOperation() {
+      var writer = MakeWriter();
+      var builder = writer.Rephrase("text").WithTone("friendly");
+      Assert.Throws<InvalidOperationException>(() => { builder.WithStyle("academic"); });
+    }
+
+    [Fact]
+    public void Rephrase_UsingOptions_BothSet_ThrowsInvalidOperation() {
+      var writer = MakeWriter();
+      var opts = new TextRephraseOptions { WritingStyle = "academic", WritingTone = "friendly" };
+      Assert.Throws<InvalidOperationException>(() => { writer.Rephrase("text").Using(opts); });
+    }
+
+    [Fact]
+    public async Task Rephrase_UsingOptions_OnlyStyle_Propagates() {
+      var writer = MakeWriter();
+      TextRephraseOptions? captured = null;
+      writer.RephraseTextAsync(
+                  Arg.Any<IEnumerable<string>>(),
+                  Arg.Any<string?>(),
+                  Arg.Do<TextRephraseOptions?>(o => captured = o),
+                  Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(new[] { MakeWriteResult() }));
+
+      var opts = new TextRephraseOptions { WritingStyle = "business" };
+      await writer.Rephrase("text").Using(opts);
+
+      Assert.Equal("business", captured!.WritingStyle);
+      Assert.Null(captured.WritingTone);
+    }
+
+    [Fact]
+    public async Task Rephrase_UsingOptions_OnlyTone_Propagates() {
+      var writer = MakeWriter();
+      TextRephraseOptions? captured = null;
+      writer.RephraseTextAsync(
+                  Arg.Any<IEnumerable<string>>(),
+                  Arg.Any<string?>(),
+                  Arg.Do<TextRephraseOptions?>(o => captured = o),
+                  Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(new[] { MakeWriteResult() }));
+
+      var opts = new TextRephraseOptions { WritingTone = "casual" };
+      await writer.Rephrase("text").Using(opts);
+
+      Assert.Null(captured!.WritingStyle);
+      Assert.Equal("casual", captured.WritingTone);
+    }
   }
 }
