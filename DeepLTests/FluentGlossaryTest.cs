@@ -265,5 +265,35 @@ namespace DeepLTests {
       Assert.Throws<ArgumentException>(() => { _ = glossary.Dictionary("", "de"); });
       Assert.Throws<ArgumentException>(() => { _ = glossary.Dictionary("en", ""); });
     }
+
+    [Fact]
+    public void WithDictionary_EmptySourceLanguage_Throws() {
+      var manager = Substitute.For<IGlossaryManager>();
+      Assert.Throws<ArgumentException>(() => { _ = manager.CreateGlossary("g").WithDictionary("", "de", MakeEntries()); });
+      Assert.Throws<ArgumentException>(() => { _ = manager.CreateGlossary("g").WithDictionary("  ", "de", MakeEntries()); });
+    }
+
+    [Fact]
+    public void WithDictionary_EmptyTargetLanguage_Throws() {
+      var manager = Substitute.For<IGlossaryManager>();
+      Assert.Throws<ArgumentException>(() => { _ = manager.CreateGlossary("g").WithDictionary("en", "", MakeEntries()); });
+      Assert.Throws<ArgumentException>(() => { _ = manager.CreateGlossary("g").WithDictionary("en", "  ", MakeEntries()); });
+    }
+
+    [Fact]
+    public void FromCsv_EmptySourceLanguage_Throws() {
+      var manager = Substitute.For<IGlossaryManager>();
+      using var stream = new MemoryStream();
+      Assert.Throws<ArgumentException>(() => { _ = manager.CreateGlossary("g").FromCsv("", "de", stream); });
+      Assert.Throws<ArgumentException>(() => { _ = manager.CreateGlossary("g").FromCsv("  ", "de", stream); });
+    }
+
+    [Fact]
+    public void FromCsv_EmptyTargetLanguage_Throws() {
+      var manager = Substitute.For<IGlossaryManager>();
+      using var stream = new MemoryStream();
+      Assert.Throws<ArgumentException>(() => { _ = manager.CreateGlossary("g").FromCsv("en", "", stream); });
+      Assert.Throws<ArgumentException>(() => { _ = manager.CreateGlossary("g").FromCsv("en", "  ", stream); });
+    }
   }
 }

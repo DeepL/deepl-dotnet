@@ -125,7 +125,8 @@ namespace DeepLTests {
         Formality = Formality.More,
         GlossaryId = "glossary-id",
         OutputFormat = "docx",
-        EnableDocumentMinification = true,
+        // EnableDocumentMinification is intentionally omitted: it requires FileInfo→FileInfo and
+        // is verified separately in FileInput_SaveToFileInfo_CallsFileInfoOverload.
       };
 
       await translator.TranslateDocument(input, "in.docx").To("de").Using(prepared).SaveTo(output);
@@ -133,7 +134,6 @@ namespace DeepLTests {
       Assert.Equal(Formality.More, captured!.Formality);
       Assert.Equal("glossary-id", captured.GlossaryId);
       Assert.Equal("docx", captured.OutputFormat);
-      Assert.True(captured.EnableDocumentMinification);
     }
 
     [Fact]
@@ -429,6 +429,62 @@ namespace DeepLTests {
       ITranslator? translator = null;
       Assert.Throws<ArgumentNullException>(
             () => { _ = translator!.TranslateDocument(new MemoryStream(), "in.docx"); });
+    }
+
+    [Fact]
+    public void WithMinification_StreamInput_SaveToStream_Throws() {
+      var translator = Substitute.For<ITranslator>();
+      using var input = new MemoryStream();
+      using var output = new MemoryStream();
+      Assert.Throws<InvalidOperationException>(() => {
+        translator.TranslateDocument(input, "in.docx").To("de").WithMinification().SaveTo(output).GetAwaiter()
+                  .GetResult();
+      });
+    }
+
+    [Fact]
+    public void WithMinification_StreamInput_SaveToFileInfo_Throws() {
+      var translator = Substitute.For<ITranslator>();
+      using var input = new MemoryStream();
+      var output = new FileInfo(Path.GetTempFileName() + ".out");
+      Assert.Throws<InvalidOperationException>(() => {
+        translator.TranslateDocument(input, "in.docx").To("de").WithMinification().SaveTo(output).GetAwaiter()
+                  .GetResult();
+      });
+    }
+
+    [Fact]
+    public void WithMinification_FileInput_SaveToStream_Throws() {
+      var translator = Substitute.For<ITranslator>();
+      var input = new FileInfo(Path.GetTempFileName());
+      try {
+        File.WriteAllText(input.FullName, "content");
+        using var output = new MemoryStream();
+        Assert.Throws<InvalidOperationException>(() => {
+          translator.TranslateDocument(input).To("de").WithMinification().SaveTo(output).GetAwaiter().GetResult();
+        });
+      } finally {
+        input.Refresh();
+        if (input.Exists) input.Delete();
+      }
+    }
+
+    [Fact]
+    public void WithMinification_WithProgress_Throws() {
+      var translator = Substitute.For<ITranslator>();
+      var input = new FileInfo(Path.GetTempFileName());
+      try {
+        File.WriteAllText(input.FullName, "content");
+        var output = new FileInfo(Path.GetTempFileName() + ".out");
+        var progress = new Progress<DocumentStatus>(_ => { });
+        Assert.Throws<InvalidOperationException>(() => {
+          translator.TranslateDocument(input).To("de").WithMinification().WithProgress(progress).SaveTo(output)
+                    .GetAwaiter().GetResult();
+        });
+      } finally {
+        input.Refresh();
+        if (input.Exists) input.Delete();
+      }
     }
 
     // ---------- DocumentRef ----------
