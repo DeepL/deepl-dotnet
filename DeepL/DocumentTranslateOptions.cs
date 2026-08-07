@@ -2,6 +2,7 @@
 // Use of this source code is governed by an MIT
 // license that can be found in the LICENSE file.
 
+using System.Collections.Generic;
 using DeepL.Model;
 
 namespace DeepL {
@@ -25,13 +26,64 @@ namespace DeepL {
       GlossaryId = glossary.GlossaryId;
     }
 
+    /// <summary>
+    ///   Initializes a new <see cref="DocumentTranslateOptions" /> object including the given v2 glossaries. Multiple
+    ///   glossaries are applied in order, with the first matching term taking precedence.
+    /// </summary>
+    /// <param name="glossaries">Glossaries to use in translation (maximum of 5).</param>
+    public DocumentTranslateOptions(IEnumerable<GlossaryInfo> glossaries) : this() {
+      foreach (var glossary in glossaries) {
+        GlossaryIds.Add(glossary.GlossaryId);
+      }
+    }
+
+    /// <summary>
+    ///   Initializes a new <see cref="DocumentTranslateOptions" /> object including the given multilingual glossaries.
+    ///   Multiple glossaries are applied in order, with the first matching term taking precedence.
+    /// </summary>
+    /// <param name="glossaries">Glossaries to use in translation (maximum of 5).</param>
+    public DocumentTranslateOptions(IEnumerable<MultilingualGlossaryInfo> glossaries) : this() {
+      foreach (var glossary in glossaries) {
+        GlossaryIds.Add(glossary.GlossaryId);
+      }
+    }
+
+    /// <summary>Initializes a new <see cref="DocumentTranslateOptions" /> object including the given style rule.</summary>
+    /// <param name="styleRule">Style rule to use in translation.</param>
+    public DocumentTranslateOptions(StyleRuleInfo styleRule) : this() {
+      StyleId = styleRule.StyleId;
+    }
+
+    /// <summary>Initializes a new <see cref="DocumentTranslateOptions" /> object including the given translation memory.</summary>
+    /// <param name="translationMemory">Translation memory to use in translation.</param>
+    public DocumentTranslateOptions(TranslationMemoryInfo translationMemory) : this() {
+      TranslationMemoryId = translationMemory.TranslationMemoryId;
+    }
+
     /// <summary>Controls whether translations should lean toward formal or informal language.</summary>
     /// This option is only applicable for target languages that support the formality option.
     /// <seealso cref="TargetLanguage.SupportsFormality" />
     public Formality Formality { get; set; } = Formality.Default;
 
     /// <summary>Specifies the ID of a glossary to use with the translation.</summary>
+    /// <remarks>Cannot be used together with <see cref="GlossaryIds" />.</remarks>
     public string? GlossaryId { get; set; }
+
+    /// <summary>
+    ///   Specifies the IDs of multiple glossaries to use with the translation (maximum of 5). Glossaries are applied in
+    ///   order, with the first matching term taking precedence. Using this option requires the source language to be
+    ///   specified, and it cannot be combined with <see cref="GlossaryId" />.
+    /// </summary>
+    public List<string> GlossaryIds { get; } = new List<string>();
+
+    /// <summary>Specifies the ID of a style rule to use with the translation.</summary>
+    public string? StyleId { get; set; }
+
+    /// <summary>Specifies the ID of a translation memory to use with the translation.</summary>
+    public string? TranslationMemoryId { get; set; }
+
+    /// <summary>Specifies the minimum similarity threshold for translation memory matches (0-100).</summary>
+    public int? TranslationMemoryThreshold { get; set; }
 
     /// <summary> Controls whether to use Document Minification for translation, if available.</summary>
     public bool EnableDocumentMinification { get; set; }

@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using DeepL;
 using DeepL.Model;
@@ -196,6 +197,54 @@ namespace DeepLTests {
             new TextTranslateOptions(styleRule));
 
       Assert.NotNull(result);
+    }
+
+    [MockServerOnlyFact]
+    public async Task TestTranslateDocumentWithStyleId() {
+      // Note: this test may use the mock server that will not translate the text,
+      // therefore we do not check the translated result.
+      var translator = CreateTestTranslator();
+      var tempDir = TempDir();
+      var inputFilePath = Path.Combine(tempDir, "example_document.txt");
+      var inputFileInfo = new FileInfo(inputFilePath);
+      File.Delete(inputFilePath);
+      File.WriteAllText(inputFilePath, "Hallo, Welt!");
+      var outputFilePath = Path.Combine(tempDir, "output_document.txt");
+      var outputFileInfo = new FileInfo(outputFilePath);
+      File.Delete(outputFilePath);
+
+      await translator.TranslateDocumentAsync(
+            inputFileInfo,
+            outputFileInfo,
+            "de",
+            "en-US",
+            new DocumentTranslateOptions { StyleId = DefaultStyleId });
+
+      Assert.True(File.Exists(outputFilePath));
+    }
+
+    [MockServerOnlyFact]
+    public async Task TestTranslateDocumentWithStyleRuleInfo() {
+      var client = CreateTestClient();
+      var styleRules = await client.GetAllStyleRulesAsync();
+      var styleRule = styleRules[0];
+      var tempDir = TempDir();
+      var inputFilePath = Path.Combine(tempDir, "example_document.txt");
+      var inputFileInfo = new FileInfo(inputFilePath);
+      File.Delete(inputFilePath);
+      File.WriteAllText(inputFilePath, "Hallo, Welt!");
+      var outputFilePath = Path.Combine(tempDir, "output_document.txt");
+      var outputFileInfo = new FileInfo(outputFilePath);
+      File.Delete(outputFilePath);
+
+      await client.TranslateDocumentAsync(
+            inputFileInfo,
+            outputFileInfo,
+            "de",
+            "en-US",
+            new DocumentTranslateOptions(styleRule));
+
+      Assert.True(File.Exists(outputFilePath));
     }
   }
 }

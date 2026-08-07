@@ -133,6 +133,11 @@ foreach (var formality in new[] { Formality.Less, Formality.More }) {
   - `Formality.PreferMore`: more formality, if available for the specified target language, otherwise default.
 - `GlossaryId`: specifies a glossary to use with translation, as a string
   containing the glossary ID.
+- `GlossaryIds`: specifies multiple glossaries to use with translation (up to 5),
+  as a list of strings containing the glossary IDs. Glossaries are applied in
+  order, with the first matching term taking precedence. Using this option
+  requires the source language to be specified, and it cannot be combined with
+  `GlossaryId`.
 - `StyleId`: specifies a style rule to use with translation, as a string
   containing the ID of the style rule.
 - `TranslationMemoryId`: specifies a translation memory to use with translation,
@@ -294,6 +299,10 @@ application needs to execute these steps individually, you can instead use the f
 
 - `Formality`:  same as in [Text translation options](#text-translation-options).
 - `GlossaryId`:  same as in [Text translation options](#text-translation-options).
+- `GlossaryIds`:  same as in [Text translation options](#text-translation-options).
+- `StyleId`:  same as in [Text translation options](#text-translation-options).
+- `TranslationMemoryId`:  same as in [Text translation options](#text-translation-options).
+- `TranslationMemoryThreshold`:  same as in [Text translation options](#text-translation-options).
 - `EnableDocumentMinification`: A `bool` value. If set to `true`, the library will try to minify a document
   before translating it through the API, sending a smaller document if the file contains a lot of media. This is
   currently only supported for `pptx` and `docx` files. See also [Document minification](#document-minification).
@@ -570,6 +579,10 @@ Style rules allow you to customize your translations using a managed, shared lis
 of rules for style, formatting, and more. Multiple style rules can be stored with
 your account, each with a user-specified name and a uniquely-assigned ID.
 
+Style rules can be applied to both text and document translation by setting the
+`StyleId` property (or passing a `StyleRuleInfo` to the constructor) in
+`TextTranslateOptions` or `DocumentTranslateOptions`.
+
 #### Creating a style rule
 
 Use `CreateStyleRuleAsync()` to create a new style rule with a name and language
@@ -716,6 +729,23 @@ var result = await client.TranslateTextAsync(
     "DE",
     new TextTranslateOptions(tm) { TranslationMemoryThreshold = 80 });
 Console.WriteLine(result.Text);
+```
+
+Translation memories are also supported for document translation. Set the
+`TranslationMemoryId` property (and optionally `TranslationMemoryThreshold`), or
+construct `DocumentTranslateOptions` using a `TranslationMemoryInfo` object, in
+the same way as for text translation:
+
+```c#
+await client.TranslateDocumentAsync(
+    inFile,
+    outFile,
+    "EN",
+    "DE",
+    new DocumentTranslateOptions {
+      TranslationMemoryId = "YOUR_TM_ID",
+      TranslationMemoryThreshold = 80
+    });
 ```
 
 ### Check account usage

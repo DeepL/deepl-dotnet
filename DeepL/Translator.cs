@@ -637,7 +637,25 @@ namespace DeepL {
             sourceLanguageCode,
             targetLanguageCode,
             options?.Formality,
-            options?.GlossaryId);
+            options?.GlossaryId,
+            options?.StyleId,
+            options?.TranslationMemoryId,
+            options?.GlossaryIds);
+
+      if (options?.TranslationMemoryThreshold != null) {
+        if (options.TranslationMemoryId == null) {
+          throw new ArgumentException("TranslationMemoryThreshold requires TranslationMemoryId");
+        }
+
+        if (options.TranslationMemoryThreshold.Value < 0 || options.TranslationMemoryThreshold.Value > 100) {
+          throw new ArgumentOutOfRangeException(
+                nameof(options.TranslationMemoryThreshold),
+                options.TranslationMemoryThreshold.Value,
+                $"{nameof(options.TranslationMemoryThreshold)} must be between 0 and 100");
+        }
+
+        bodyParams.Add(("translation_memory_threshold", options.TranslationMemoryThreshold.Value.ToString()));
+      }
 
       if (options?.OutputFormat != null) {
         bodyParams.Add(("output_format", options?.OutputFormat!));
@@ -911,7 +929,8 @@ namespace DeepL {
             options?.Formality,
             options?.GlossaryId,
             options?.StyleId,
-            options?.TranslationMemoryId);
+            options?.TranslationMemoryId,
+            options?.GlossaryIds);
 
       // Always send show_billed_characters=1, remove when the API default is changed to true
       bodyParams.Add(("show_billed_characters", "1"));
@@ -999,6 +1018,11 @@ namespace DeepL {
     /// <param name="formality">Formality option for translation.</param>
     /// <param name="glossaryId">Optional ID of glossary to use for translation.</param>
     /// <param name="styleId">Optional ID of style rule to use for translation.</param>
+    /// <param name="translationMemoryId">Optional ID of translation memory to use for translation.</param>
+    /// <param name="glossaryIds">
+    ///   Optional list of glossary IDs to use for translation (maximum of 5). Cannot be combined with
+    ///   <paramref name="glossaryId" />.
+    /// </param>
     /// <returns>List of tuples containing the parameters to include in HTTP request.</returns>
     /// <exception cref="ArgumentException">If the specified languages or options are invalid.</exception>
     private static List<(string Key, string Value)> CreateCommonHttpParams(
@@ -1007,7 +1031,8 @@ namespace DeepL {
           Formality? formality,
           string? glossaryId,
           string? styleId = null,
-          string? translationMemoryId = null) {
+          string? translationMemoryId = null,
+          ICollection<string>? glossaryIds = null) {
       targetLanguageCode = LanguageCode.Standardize(targetLanguageCode);
       sourceLanguageCode = sourceLanguageCode == null ? null : LanguageCode.Standardize(sourceLanguageCode);
 
@@ -1018,12 +1043,30 @@ namespace DeepL {
         bodyParams.Add(("source_lang", sourceLanguageCode));
       }
 
+      var hasGlossaryIds = glossaryIds != null && glossaryIds.Count > 0;
+
+      if (glossaryId != null && hasGlossaryIds) {
+        throw new ArgumentException("GlossaryId and GlossaryIds cannot be used together");
+      }
+
       if (glossaryId != null) {
         if (sourceLanguageCode == null) {
           throw new ArgumentException($"{nameof(sourceLanguageCode)} is required if using a glossary");
         }
 
         bodyParams.Add(("glossary_id", glossaryId));
+      }
+
+      if (hasGlossaryIds) {
+        if (sourceLanguageCode == null) {
+          throw new ArgumentException($"{nameof(sourceLanguageCode)} is required if using a glossary");
+        }
+
+        if (glossaryIds!.Count > 5) {
+          throw new ArgumentException("GlossaryIds must not contain more than 5 glossary IDs");
+        }
+
+        bodyParams.Add(("glossary_ids", string.Join(",", glossaryIds)));
       }
 
       if (styleId != null) {

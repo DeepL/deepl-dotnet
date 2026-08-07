@@ -390,6 +390,147 @@ namespace DeepLTests {
       }
     }
 
+    [Fact]
+    public async Task TestGlossaryIdsTranslateTextSentence() {
+      var translator = CreateTestTranslator();
+      var glossaryCleanupArtist = new GlossaryCleanupUtility(
+            translator,
+            nameof(TestGlossaryIdsTranslateTextSentence) + "Artist");
+      var glossaryCleanupPrize = new GlossaryCleanupUtility(
+            translator,
+            nameof(TestGlossaryIdsTranslateTextSentence) + "Prize");
+      try {
+        var sourceLang = "EN";
+        var targetLang = "DE";
+        var inputText = "The artist was awarded a prize.";
+        var glossaryArtist = glossaryCleanupArtist.Capture(
+              await translator.CreateGlossaryAsync(
+                    glossaryCleanupArtist.GlossaryName,
+                    sourceLang,
+                    targetLang,
+                    new GlossaryEntries(new Dictionary<string, string> { { "artist", "Maler" } })));
+        var glossaryPrize = glossaryCleanupPrize.Capture(
+              await translator.CreateGlossaryAsync(
+                    glossaryCleanupPrize.GlossaryName,
+                    sourceLang,
+                    targetLang,
+                    new GlossaryEntries(new Dictionary<string, string> { { "prize", "Gewinn" } })));
+
+        var options = new TextTranslateOptions();
+        options.GlossaryIds.Add(glossaryArtist.GlossaryId);
+        options.GlossaryIds.Add(glossaryPrize.GlossaryId);
+        var result = await translator.TranslateTextAsync(inputText, sourceLang, targetLang, options);
+        if (!IsMockServer) {
+          Assert.Contains("Maler", result.Text);
+          Assert.Contains("Gewinn", result.Text);
+        }
+
+        // It is also possible to specify GlossaryInfo objects via the constructor
+        result = await translator.TranslateTextAsync(
+              inputText,
+              sourceLang,
+              targetLang,
+              new TextTranslateOptions(new[] { glossaryArtist, glossaryPrize }));
+        if (!IsMockServer) {
+          Assert.Contains("Maler", result.Text);
+          Assert.Contains("Gewinn", result.Text);
+        }
+      } finally {
+        await glossaryCleanupArtist.Cleanup();
+        await glossaryCleanupPrize.Cleanup();
+      }
+    }
+
+    [Fact]
+    public async Task TestGlossaryIdsTranslateDocument() {
+      var translator = CreateTestTranslator();
+      var sourceLang = "EN";
+      var targetLang = "DE";
+      var inputText = "artist\nprize";
+      var tempDir = TempDir();
+      var inputFilePath = Path.Combine(tempDir, "example_document.txt");
+      var inputFileInfo = new FileInfo(inputFilePath);
+      File.Delete(inputFilePath);
+      File.WriteAllText(inputFilePath, inputText);
+      var outputFilePath = Path.Combine(tempDir, "output_document.txt");
+      var outputFileInfo = new FileInfo(outputFilePath);
+      File.Delete(outputFilePath);
+
+      var glossaryCleanupArtist = new GlossaryCleanupUtility(
+            translator,
+            nameof(TestGlossaryIdsTranslateDocument) + "Artist");
+      var glossaryCleanupPrize = new GlossaryCleanupUtility(
+            translator,
+            nameof(TestGlossaryIdsTranslateDocument) + "Prize");
+      try {
+        var glossaryArtist = glossaryCleanupArtist.Capture(
+              await translator.CreateGlossaryAsync(
+                    glossaryCleanupArtist.GlossaryName,
+                    sourceLang,
+                    targetLang,
+                    new GlossaryEntries(new Dictionary<string, string> { { "artist", "Maler" } })));
+        var glossaryPrize = glossaryCleanupPrize.Capture(
+              await translator.CreateGlossaryAsync(
+                    glossaryCleanupPrize.GlossaryName,
+                    sourceLang,
+                    targetLang,
+                    new GlossaryEntries(new Dictionary<string, string> { { "prize", "Gewinn" } })));
+
+        var options = new DocumentTranslateOptions();
+        options.GlossaryIds.Add(glossaryArtist.GlossaryId);
+        options.GlossaryIds.Add(glossaryPrize.GlossaryId);
+        await translator.TranslateDocumentAsync(inputFileInfo, outputFileInfo, "EN", "DE", options);
+        Assert.Equal("Maler\nGewinn", File.ReadAllText(outputFilePath));
+      } finally {
+        await glossaryCleanupArtist.Cleanup();
+        await glossaryCleanupPrize.Cleanup();
+      }
+    }
+
+    [Fact]
+    public async Task TestGlossaryIdsTranslateTextInvalid() {
+      var translator = CreateTestTranslator();
+      var glossaryCleanupEnDe = new GlossaryCleanupUtility(
+            translator,
+            nameof(TestGlossaryIdsTranslateTextInvalid) + "EnDe");
+      var glossaryCleanupDeEn = new GlossaryCleanupUtility(
+            translator,
+            nameof(TestGlossaryIdsTranslateTextInvalid) + "DeEn");
+      try {
+        var glossaryEnDe = glossaryCleanupEnDe.Capture(
+              await translator.CreateGlossaryAsync(glossaryCleanupEnDe.GlossaryName, "EN", "DE", _testEntries));
+        var glossaryDeEn = glossaryCleanupDeEn.Capture(
+              await translator.CreateGlossaryAsync(glossaryCleanupDeEn.GlossaryName, "DE", "EN", _testEntries));
+
+        // GlossaryIds requires source language to be specified
+        var missingSourceOptions = new TextTranslateOptions();
+        missingSourceOptions.GlossaryIds.Add(glossaryEnDe.GlossaryId);
+        var exception = await Assert.ThrowsAsync<ArgumentException>(
+              () => translator.TranslateTextAsync("test", null, "DE", missingSourceOptions));
+        Assert.Contains("sourceLanguageCode is required", exception.Message);
+
+        // GlossaryId and GlossaryIds cannot be used together
+        var bothOptions = new TextTranslateOptions { GlossaryId = glossaryEnDe.GlossaryId };
+        bothOptions.GlossaryIds.Add(glossaryDeEn.GlossaryId);
+        exception = await Assert.ThrowsAsync<ArgumentException>(
+              () => translator.TranslateTextAsync("test", "EN", "DE", bothOptions));
+        Assert.Contains("cannot be used together", exception.Message);
+
+        // GlossaryIds must not contain more than 5 glossary IDs
+        var tooManyOptions = new TextTranslateOptions();
+        for (var i = 0; i < 6; i++) {
+          tooManyOptions.GlossaryIds.Add(glossaryEnDe.GlossaryId);
+        }
+
+        exception = await Assert.ThrowsAsync<ArgumentException>(
+              () => translator.TranslateTextAsync("test", "EN", "DE", tooManyOptions));
+        Assert.Contains("more than 5", exception.Message);
+      } finally {
+        await glossaryCleanupEnDe.Cleanup();
+        await glossaryCleanupDeEn.Cleanup();
+      }
+    }
+
     // Utility class for labelling test glossaries and deleting them at test completion
     private sealed class GlossaryCleanupUtility {
       private readonly Translator _translator;

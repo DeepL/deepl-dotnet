@@ -26,6 +26,28 @@ namespace DeepL {
       GlossaryId = glossary.GlossaryId;
     }
 
+    /// <summary>
+    ///   Initializes a new <see cref="TextTranslateOptions" /> object including the given v2 glossaries. Multiple
+    ///   glossaries are applied in order, with the first matching term taking precedence.
+    /// </summary>
+    /// <param name="glossaries">Glossaries to use in translation (maximum of 5).</param>
+    public TextTranslateOptions(IEnumerable<GlossaryInfo> glossaries) : this() {
+      foreach (var glossary in glossaries) {
+        GlossaryIds.Add(glossary.GlossaryId);
+      }
+    }
+
+    /// <summary>
+    ///   Initializes a new <see cref="TextTranslateOptions" /> object including the given multilingual glossaries.
+    ///   Multiple glossaries are applied in order, with the first matching term taking precedence.
+    /// </summary>
+    /// <param name="glossaries">Glossaries to use in translation (maximum of 5).</param>
+    public TextTranslateOptions(IEnumerable<MultilingualGlossaryInfo> glossaries) : this() {
+      foreach (var glossary in glossaries) {
+        GlossaryIds.Add(glossary.GlossaryId);
+      }
+    }
+
     /// <summary>Initializes a new <see cref="TextTranslateOptions" /> object including the given style rule.</summary>
     /// <param name="styleRule">Style rule to use in translation.</param>
     public TextTranslateOptions(StyleRuleInfo styleRule) : this() {
@@ -51,7 +73,15 @@ namespace DeepL {
     public Formality Formality { get; set; } = Formality.Default;
 
     /// <summary>Specifies the ID of a glossary to use with the translation.</summary>
+    /// <remarks>Cannot be used together with <see cref="GlossaryIds" />.</remarks>
     public string? GlossaryId { get; set; }
+
+    /// <summary>
+    ///   Specifies the IDs of multiple glossaries to use with the translation (maximum of 5). Glossaries are applied in
+    ///   order, with the first matching term taking precedence. Using this option requires the source language to be
+    ///   specified, and it cannot be combined with <see cref="GlossaryId" />.
+    /// </summary>
+    public List<string> GlossaryIds { get; } = new List<string>();
 
     /// <summary>Specifies the ID of a style rule to use with the translation.</summary>
     public string? StyleId { get; set; }

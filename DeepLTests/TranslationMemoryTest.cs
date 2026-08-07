@@ -3,6 +3,7 @@
 // license that can be found in the LICENSE file.
 
 using System;
+using System.IO;
 using System.Threading.Tasks;
 using DeepL;
 using DeepL.Model;
@@ -76,6 +77,94 @@ namespace DeepLTests {
                   new TextTranslateOptions {
                         TranslationMemoryId = DefaultTranslationMemoryId,
                         TranslationMemoryThreshold = 101
+                  }));
+    }
+
+    private static (FileInfo Input, FileInfo Output) CreateDocumentPaths() {
+      var tempDir = TempDir();
+      var inputFilePath = Path.Combine(tempDir, "example_document.txt");
+      File.Delete(inputFilePath);
+      File.WriteAllText(inputFilePath, "Hallo, Welt!");
+      var outputFilePath = Path.Combine(tempDir, "output_document.txt");
+      File.Delete(outputFilePath);
+      return (new FileInfo(inputFilePath), new FileInfo(outputFilePath));
+    }
+
+    [MockServerOnlyFact]
+    public async Task TestTranslateDocumentWithTranslationMemoryId() {
+      // Note: this test may use the mock server that will not translate the text,
+      // therefore we do not check the translated result.
+      var translator = CreateTestTranslator();
+      var (input, output) = CreateDocumentPaths();
+
+      await translator.TranslateDocumentAsync(
+            input,
+            output,
+            "de",
+            "en-US",
+            new DocumentTranslateOptions { TranslationMemoryId = DefaultTranslationMemoryId });
+
+      Assert.True(File.Exists(output.FullName));
+    }
+
+    [MockServerOnlyFact]
+    public async Task TestTranslateDocumentWithTranslationMemoryIdAndThreshold() {
+      // Note: this test may use the mock server that will not translate the text,
+      // therefore we do not check the translated result.
+      var translator = CreateTestTranslator();
+      var (input, output) = CreateDocumentPaths();
+
+      await translator.TranslateDocumentAsync(
+            input,
+            output,
+            "de",
+            "en-US",
+            new DocumentTranslateOptions {
+              TranslationMemoryId = DefaultTranslationMemoryId,
+              TranslationMemoryThreshold = 80
+            });
+
+      Assert.True(File.Exists(output.FullName));
+    }
+
+    [MockServerOnlyFact]
+    public async Task TestTranslateDocumentWithTranslationMemoryInfo() {
+      var client = CreateTestClient();
+      var translationMemories = await client.ListTranslationMemoriesAsync(0, 10);
+      var translationMemory = translationMemories[0];
+      var (input, output) = CreateDocumentPaths();
+
+      await client.TranslateDocumentAsync(
+            input,
+            output,
+            "de",
+            "en-US",
+            new DocumentTranslateOptions(translationMemory));
+
+      Assert.True(File.Exists(output.FullName));
+    }
+
+    [MockServerOnlyFact]
+    public async Task TestTranslateDocumentWithThresholdWithoutIdThrows() {
+      var translator = CreateTestTranslator();
+      var (input, _) = CreateDocumentPaths();
+      // Option validation is performed at upload time and throws the raw
+      // ArgumentException; the all-in-one TranslateDocumentAsync would wrap it
+      // in a DocumentTranslationException.
+      await Assert.ThrowsAsync<ArgumentException>(() =>
+            translator.TranslateDocumentUploadAsync(input, "de", "en-US",
+                  new DocumentTranslateOptions { TranslationMemoryThreshold = 80 }));
+    }
+
+    [MockServerOnlyFact]
+    public async Task TestTranslateDocumentWithInvalidThresholdThrows() {
+      var translator = CreateTestTranslator();
+      var (input, _) = CreateDocumentPaths();
+      await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+            translator.TranslateDocumentUploadAsync(input, "de", "en-US",
+                  new DocumentTranslateOptions {
+                    TranslationMemoryId = DefaultTranslationMemoryId,
+                    TranslationMemoryThreshold = 101
                   }));
     }
   }
