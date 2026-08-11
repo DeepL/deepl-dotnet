@@ -3,9 +3,9 @@
   <PropertyGroup>
     <Description>DeepL.net is the official DeepL .NET client library.</Description>
     <AssemblyTitle>DeepL.net</AssemblyTitle>
-    <Version>1.21.0</Version>
-    <PackageVersion>1.21.0</PackageVersion>
-    <FileVersion>1.21.0.0</FileVersion>
+    <Version>1.22.0</Version>
+    <PackageVersion>1.22.0</PackageVersion>
+    <FileVersion>1.22.0.0</FileVersion>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <TargetFrameworks>net5.0;netstandard2.0</TargetFrameworks>
     <LangVersion>8</LangVersion>
