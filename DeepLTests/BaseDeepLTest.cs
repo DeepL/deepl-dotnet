@@ -74,6 +74,23 @@ namespace DeepLTests {
       return new Translator(authKey, translatorOptions);
     }
 
+    protected static DeepLClient CreateTestClientWithMockSession(
+          string testName,
+          SessionOptions sessionOptions,
+          DeepLClientOptions? clientOptions = null,
+          bool randomAuthKey = false) {
+      if (!IsMockServer) {
+        return CreateTestClient();
+      }
+
+      var authKey = randomAuthKey ? Guid.NewGuid().ToString() : AuthKey;
+      var sessionHeaders = CreateSessionHeaders(testName, sessionOptions);
+      clientOptions = clientOptions ?? new DeepLClientOptions();
+      clientOptions.ServerUrl = ServerUrl;
+      clientOptions.Headers = sessionHeaders;
+      return new DeepLClient(authKey, clientOptions);
+    }
+
     protected static MockHttpMessageHandler getMockHandler(String responseMessage) {
       var response = new HttpResponseMessage(HttpStatusCode.OK);
       response.Content = new StringContent(responseMessage);
@@ -221,6 +238,11 @@ namespace DeepLTests {
               ((int)options.DocumentTranslateTime.Value.TotalMilliseconds).ToString();
       }
 
+      if (options.TranslationMemoryJobProcessingPolls != null) {
+        headers["mock-server-session-tm-job-processing-polls"] =
+              options.TranslationMemoryJobProcessingPolls.ToString();
+      }
+
       if (options.ExpectProxy != null) {
         headers["mock-server-session-expect-proxy"] = options.ExpectProxy.Value ? "1" : "0";
       }
@@ -284,6 +306,13 @@ namespace DeepLTests {
       public int? DocumentFailure;
       public TimeSpan? DocumentQueueTime;
       public TimeSpan? DocumentTranslateTime;
+
+      /// <summary>
+      ///   Number of polls a translation memory import or export job reports a non-terminal status for before
+      ///   completing: "awaiting_input" for an uploaded import, "processing" for an export.
+      /// </summary>
+      public int? TranslationMemoryJobProcessingPolls;
+
       public bool? ExpectProxy;
     }
 

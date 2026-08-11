@@ -2,6 +2,7 @@
 // Use of this source code is governed by an MIT
 // license that can be found in the LICENSE file.
 
+using System;
 using System.Text.Json.Serialization;
 
 namespace DeepL.Model {
@@ -14,12 +15,16 @@ namespace DeepL.Model {
           string name,
           string sourceLanguage,
           string[] targetLanguages,
-          int segmentCount) {
+          int segmentCount,
+          DateTime? creationTime = null,
+          DateTime? updatedTime = null) {
       TranslationMemoryId = translationMemoryId;
       Name = name;
       SourceLanguage = sourceLanguage;
       TargetLanguages = targetLanguages;
       SegmentCount = segmentCount;
+      CreationTime = creationTime;
+      UpdatedTime = updatedTime;
     }
 
     /// <summary>Unique ID assigned to the translation memory.</summary>
@@ -41,6 +46,14 @@ namespace DeepL.Model {
     /// <summary>Number of segments in the translation memory.</summary>
     [JsonPropertyName("segment_count")]
     public int SegmentCount { get; }
+
+    /// <summary>Time when the translation memory was created, if provided by the API.</summary>
+    [JsonPropertyName("creation_time")]
+    public DateTime? CreationTime { get; }
+
+    /// <summary>Time when the translation memory was last updated, if provided by the API.</summary>
+    [JsonPropertyName("updated_time")]
+    public DateTime? UpdatedTime { get; }
 
     /// <summary>Returns a string describing the translation memory.</summary>
     public override string ToString() => $"TranslationMemory \"{Name}\" ({TranslationMemoryId})";

@@ -6,6 +6,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
@@ -165,6 +168,347 @@ namespace DeepL {
             .ConfigureAwait(false);
       return translationMemoryList.TranslationMemories;
     }
+
+    /// <inheritdoc />
+    public async Task<TranslationMemoryInfo> GetTranslationMemoryAsync(
+          string translationMemoryId,
+          CancellationToken cancellationToken = default) {
+      CheckTranslationMemoryId(translationMemoryId);
+
+      using var responseMessage = await _client
+            .ApiGetAsync($"v3/translation_memories/{Uri.EscapeDataString(translationMemoryId)}", cancellationToken)
+            .ConfigureAwait(false);
+
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.TranslationMemory)
+            .ConfigureAwait(false);
+      return await JsonUtils.DeserializeAsync<TranslationMemoryInfo>(responseMessage).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<TranslationMemoryInfo> GetTranslationMemoryAsync(
+          TranslationMemoryInfo translationMemory,
+          CancellationToken cancellationToken = default) =>
+          await GetTranslationMemoryAsync(translationMemory.TranslationMemoryId, cancellationToken)
+                .ConfigureAwait(false);
+
+    /// <inheritdoc />
+    public async Task<TranslationMemorySegments> ListTranslationMemorySegmentsAsync(
+          string translationMemoryId,
+          int? pageSize = null,
+          string? pageCursor = null,
+          string? filterText = null,
+          bool? filterCaseSensitive = null,
+          CancellationToken cancellationToken = default) {
+      CheckTranslationMemoryId(translationMemoryId);
+
+      var queryParams = new List<(string Key, string Value)>();
+
+      if (pageSize != null) {
+        queryParams.Add(("page_size", pageSize.Value.ToString()));
+      }
+
+      if (pageCursor != null) {
+        queryParams.Add(("page_cursor", pageCursor));
+      }
+
+      if (filterText != null) {
+        queryParams.Add(("filter_text", filterText));
+      }
+
+      if (filterCaseSensitive != null) {
+        queryParams.Add(("filter_case_sensitive", filterCaseSensitive.Value.ToString().ToLower()));
+      }
+
+      using var responseMessage = await _client
+            .ApiGetAsync(
+                  $"v3/translation_memories/{Uri.EscapeDataString(translationMemoryId)}/segments",
+                  cancellationToken,
+                  queryParams.ToArray())
+            .ConfigureAwait(false);
+
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.TranslationMemory)
+            .ConfigureAwait(false);
+      return await JsonUtils.DeserializeAsync<TranslationMemorySegments>(responseMessage).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<TranslationMemorySegments> ListTranslationMemorySegmentsAsync(
+          TranslationMemoryInfo translationMemory,
+          int? pageSize = null,
+          string? pageCursor = null,
+          string? filterText = null,
+          bool? filterCaseSensitive = null,
+          CancellationToken cancellationToken = default) =>
+          await ListTranslationMemorySegmentsAsync(
+                      translationMemory.TranslationMemoryId,
+                      pageSize,
+                      pageCursor,
+                      filterText,
+                      filterCaseSensitive,
+                      cancellationToken)
+                .ConfigureAwait(false);
+
+    /// <inheritdoc />
+    public async Task DeleteTranslationMemoryAsync(
+          string translationMemoryId,
+          CancellationToken cancellationToken = default) {
+      CheckTranslationMemoryId(translationMemoryId);
+
+      using var responseMessage = await _client
+            .ApiDeleteAsync($"v3/translation_memories/{Uri.EscapeDataString(translationMemoryId)}", cancellationToken)
+            .ConfigureAwait(false);
+
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.TranslationMemory)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task DeleteTranslationMemoryAsync(
+          TranslationMemoryInfo translationMemory,
+          CancellationToken cancellationToken = default) =>
+          await DeleteTranslationMemoryAsync(translationMemory.TranslationMemoryId, cancellationToken)
+                .ConfigureAwait(false);
+
+    /// <inheritdoc />
+    public async Task<TranslationMemoryImport> CreateTranslationMemoryImportAsync(
+          string fileName,
+          long contentLength,
+          string? contentType = null,
+          string? displayName = null,
+          CancellationToken cancellationToken = default) {
+      if (string.IsNullOrWhiteSpace(fileName)) {
+        throw new ArgumentException($"Parameter {nameof(fileName)} must not be empty");
+      }
+
+      if (contentLength <= 0) {
+        throw new ArgumentException($"Parameter {nameof(contentLength)} must be greater than 0");
+      }
+
+      var sourceFile = new Dictionary<string, object> {
+        ["file_name"] = fileName,
+        ["content_length"] = contentLength
+      };
+      if (contentType != null) sourceFile["content_type"] = contentType;
+      var requestData = new Dictionary<string, object> { ["source_file"] = sourceFile };
+      if (displayName != null) {
+        requestData["parameters"] = new Dictionary<string, object> { ["display_name"] = displayName };
+      }
+
+      using var responseMessage = await _client
+            .ApiPostJsonAsync("v3/translation_memories/import", cancellationToken, requestData, SerializationOptions)
+            .ConfigureAwait(false);
+
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.TranslationMemory)
+            .ConfigureAwait(false);
+      return await JsonUtils.DeserializeAsync<TranslationMemoryImport>(responseMessage).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task UploadTranslationMemoryFileAsync(
+          TranslationMemoryImport translationMemoryImport,
+          Stream fileContent,
+          string contentType = "application/xml",
+          CancellationToken cancellationToken = default) =>
+          await UploadTranslationMemoryFileAsync(
+                      translationMemoryImport.UploadUrl,
+                      fileContent,
+                      contentType,
+                      cancellationToken)
+                .ConfigureAwait(false);
+
+    /// <inheritdoc />
+    public async Task UploadTranslationMemoryFileAsync(
+          string uploadUrl,
+          Stream fileContent,
+          string contentType = "application/xml",
+          CancellationToken cancellationToken = default) {
+      if (string.IsNullOrWhiteSpace(uploadUrl)) {
+        throw new ArgumentException($"Parameter {nameof(uploadUrl)} must not be empty");
+      }
+
+      // Buffer the file before sending it. Requests are retried on 429 and 5xx responses, and a
+      // StreamContent body would already be at the end of the stream on the second attempt,
+      // uploading nothing.
+      using var buffer = new MemoryStream();
+      await fileContent.CopyToAsync(buffer, 81920, cancellationToken).ConfigureAwait(false);
+
+      using var content = new ByteArrayContent(buffer.ToArray());
+      content.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+      using var responseMessage = await _client
+            .AssetCallAsync(HttpMethod.Put, uploadUrl, cancellationToken, content).ConfigureAwait(false);
+
+      await DeepLHttpClient.CheckAssetStatusCodeAsync(responseMessage, "uploading translation memory file")
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<TranslationMemoryExport> CreateTranslationMemoryExportAsync(
+          string translationMemoryId,
+          CancellationToken cancellationToken = default) {
+      CheckTranslationMemoryId(translationMemoryId);
+
+      using var responseMessage = await _client
+            .ApiPostAsync(
+                  $"v3/translation_memories/{Uri.EscapeDataString(translationMemoryId)}/export",
+                  cancellationToken)
+            .ConfigureAwait(false);
+
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.TranslationMemory)
+            .ConfigureAwait(false);
+      // 200 means the DeepL API reused a previously completed export, 202 that it started a new one.
+      var reusedExisting = responseMessage.StatusCode == HttpStatusCode.OK;
+      var exportResult = await JsonUtils.DeserializeAsync<TranslationMemoryExportResult>(responseMessage)
+            .ConfigureAwait(false);
+      return new TranslationMemoryExport(
+            exportResult.JobId,
+            GetParameter(exportResult.Parameters, "translation_memory_id"),
+            reusedExisting);
+    }
+
+    /// <inheritdoc />
+    public async Task<TranslationMemoryExport> CreateTranslationMemoryExportAsync(
+          TranslationMemoryInfo translationMemory,
+          CancellationToken cancellationToken = default) =>
+          await CreateTranslationMemoryExportAsync(translationMemory.TranslationMemoryId, cancellationToken)
+                .ConfigureAwait(false);
+
+    /// <inheritdoc />
+    public async Task<TranslationMemoryJob> GetTranslationMemoryJobAsync(
+          string jobId,
+          CancellationToken cancellationToken = default) {
+      if (string.IsNullOrWhiteSpace(jobId)) {
+        throw new ArgumentException($"Parameter {nameof(jobId)} must not be empty");
+      }
+
+      using var responseMessage = await _client
+            .ApiGetAsync($"v3/translation_memories/jobs/{Uri.EscapeDataString(jobId)}", cancellationToken)
+            .ConfigureAwait(false);
+
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.TranslationMemory)
+            .ConfigureAwait(false);
+      var jobResult = await JsonUtils.DeserializeAsync<TranslationMemoryJobResponse>(responseMessage)
+            .ConfigureAwait(false);
+      return CreateTranslationMemoryJob(jobResult);
+    }
+
+    /// <inheritdoc />
+    public async Task<TranslationMemoryJob> WaitUntilTranslationMemoryJobDoneAsync(
+          string jobId,
+          CancellationToken cancellationToken = default) {
+      var job = await GetTranslationMemoryJobAsync(jobId, cancellationToken).ConfigureAwait(false);
+      while (!job.Done) {
+        if (job.Result == null) {
+          throw new DeepLException("Translation memory job status contained no result");
+        }
+
+        await Task.Delay(TranslationMemoryJobPollInterval, cancellationToken).ConfigureAwait(false);
+        job = await GetTranslationMemoryJobAsync(jobId, cancellationToken).ConfigureAwait(false);
+      }
+
+      if (!job.Ok) {
+        throw new DeepLException(job.Result?.ErrorMessage ?? $"Translation memory job {job.Status}");
+      }
+
+      return job;
+    }
+
+    /// <inheritdoc />
+    public async Task DownloadTranslationMemoryExportAsync(
+          TranslationMemoryJob job,
+          Stream outputFile,
+          CancellationToken cancellationToken = default) {
+      var downloadUrl = job.Result?.DownloadUrl;
+      if (string.IsNullOrEmpty(downloadUrl)) {
+        throw new ArgumentException(
+              "Translation memory export job has no download URL; it may not have completed yet");
+      }
+
+      using var responseMessage = await _client
+            .AssetCallAsync(HttpMethod.Get, downloadUrl!, cancellationToken).ConfigureAwait(false);
+
+      await DeepLHttpClient.CheckAssetStatusCodeAsync(responseMessage, "downloading translation memory export")
+            .ConfigureAwait(false);
+      // The body can be large, so honour cancellation during the copy where the framework
+      // supports it; netstandard2.0 has no CancellationToken overload.
+#if NET5_0_OR_GREATER
+      await responseMessage.Content.CopyToAsync(outputFile, cancellationToken).ConfigureAwait(false);
+#else
+      await responseMessage.Content.CopyToAsync(outputFile).ConfigureAwait(false);
+#endif
+    }
+
+    /// <inheritdoc />
+    public async Task DownloadTranslationMemoryExportAsync(
+          TranslationMemoryJob job,
+          string outputFilePath,
+          CancellationToken cancellationToken = default) {
+      var outputFileInfo = new FileInfo(outputFilePath);
+      // CreateNew rather than Create: the catch below deletes the file to clean up a partial
+      // download, so truncating an existing one would let a failed export destroy the caller's
+      // data. Matches TranslateDocumentDownloadAsync.
+      using var outputFileStream = outputFileInfo.Open(FileMode.CreateNew, FileAccess.Write);
+      try {
+        await DownloadTranslationMemoryExportAsync(job, outputFileStream, cancellationToken).ConfigureAwait(false);
+      } catch {
+        try {
+          outputFileStream.Dispose();
+          outputFileInfo.Delete();
+        } catch {
+          // ignored
+        }
+
+        throw;
+      }
+    }
+
+    /// <inheritdoc />
+    public async Task<TranslationMemoryJob> ImportTranslationMemoryFromFilepathAsync(
+          string inputFilePath,
+          string? displayName = null,
+          CancellationToken cancellationToken = default) {
+      var inputFileInfo = new FileInfo(inputFilePath);
+      if (!inputFileInfo.Exists) {
+        throw new ArgumentException($"File does not exist: {inputFilePath}");
+      }
+
+      var created = await CreateTranslationMemoryImportAsync(
+                  inputFileInfo.Name,
+                  inputFileInfo.Length,
+                  displayName: displayName,
+                  cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
+
+      using (var inputFileStream = inputFileInfo.OpenRead()) {
+        await UploadTranslationMemoryFileAsync(created, inputFileStream, cancellationToken: cancellationToken)
+              .ConfigureAwait(false);
+      }
+
+      var job = await WaitUntilTranslationMemoryJobDoneAsync(created.JobId, cancellationToken).ConfigureAwait(false);
+      return job;
+    }
+
+    /// <inheritdoc />
+    public async Task<TranslationMemoryJob> ExportTranslationMemoryToFilepathAsync(
+          string translationMemoryId,
+          string outputFilePath,
+          CancellationToken cancellationToken = default) {
+      var created = await CreateTranslationMemoryExportAsync(translationMemoryId, cancellationToken)
+            .ConfigureAwait(false);
+      var job = await WaitUntilTranslationMemoryJobDoneAsync(created.JobId, cancellationToken).ConfigureAwait(false);
+      await DownloadTranslationMemoryExportAsync(job, outputFilePath, cancellationToken).ConfigureAwait(false);
+      return job;
+    }
+
+    /// <inheritdoc />
+    public async Task<TranslationMemoryJob> ExportTranslationMemoryToFilepathAsync(
+          TranslationMemoryInfo translationMemory,
+          string outputFilePath,
+          CancellationToken cancellationToken = default) =>
+          await ExportTranslationMemoryToFilepathAsync(
+                      translationMemory.TranslationMemoryId,
+                      outputFilePath,
+                      cancellationToken)
+                .ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<StyleRuleInfo> CreateStyleRuleAsync(
@@ -970,6 +1314,196 @@ namespace DeepL {
     private static readonly JsonSerializerOptions SerializationOptions = new JsonSerializerOptions {
       DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
+
+    /// <summary>Interval between polls of a translation memory job in <see cref="WaitUntilTranslationMemoryJobDoneAsync" />.</summary>
+    private static readonly TimeSpan TranslationMemoryJobPollInterval = TimeSpan.FromSeconds(5);
+
+    /// <summary>Checks the given translation memory ID is usable, otherwise throws an exception.</summary>
+    /// <param name="translationMemoryId">The translation memory ID to check.</param>
+    /// <exception cref="ArgumentException">If the translation memory ID is empty.</exception>
+    private static void CheckTranslationMemoryId(string translationMemoryId) {
+      if (string.IsNullOrWhiteSpace(translationMemoryId)) {
+        throw new ArgumentException($"Parameter {nameof(translationMemoryId)} must not be empty");
+      }
+    }
+
+    /// <summary>Returns the value of the given key in an optional JSON object, or <c>null</c> if it is absent.</summary>
+    /// <param name="parameters">Dictionary holding the JSON object fields, may be null.</param>
+    /// <param name="key">Name of the field to read.</param>
+    /// <returns>The value of the field, or <c>null</c> if it is absent.</returns>
+    private static string? GetParameter(Dictionary<string, string>? parameters, string key) =>
+          parameters != null && parameters.TryGetValue(key, out var value) ? value : null;
+
+    /// <summary>Creates a <see cref="TranslationMemoryJob" /> from the JSON-deserialized DeepL API response.</summary>
+    /// <param name="response">The deserialized job response.</param>
+    /// <returns>A <see cref="TranslationMemoryJob" /> object holding the flattened job status.</returns>
+    private static TranslationMemoryJob CreateTranslationMemoryJob(TranslationMemoryJobResponse response) {
+      var results = (response.Results ?? new TranslationMemoryJobResultResponse[0])
+            .Select(
+                  result => new TranslationMemoryJobResult(
+                        result.Status,
+                        GetParameter(result.StatusMetadata, "required_action"),
+                        result.DownloadUrl,
+                        result.ExpiresAt,
+                        GetParameter(result.Error, "message"),
+                        result.TranslationMemoryId,
+                        result.SkippedSegmentCount))
+            .ToArray();
+
+      return new TranslationMemoryJob(
+            response.JobId,
+            response.Operation,
+            results,
+            response.Product,
+            response.CreationTime,
+            response.UpdatedTime,
+            GetParameter(response.Parameters, "translation_memory_id"),
+            GetParameter(response.Parameters, "display_name"),
+            response.SourceFile?.ContentType,
+            response.SourceFile?.ContentLength);
+    }
+
+    /// <summary>Class used for JSON-deserialization of translation memory export creation results.</summary>
+    private readonly struct TranslationMemoryExportResult {
+      /// <summary>Initializes a new instance of <see cref="TranslationMemoryExportResult" />, used for JSON deserialization.</summary>
+      [JsonConstructor]
+      public TranslationMemoryExportResult(string jobId, Dictionary<string, string>? parameters) {
+        JobId = jobId;
+        Parameters = parameters;
+      }
+
+      /// <summary>Unique ID assigned to the export job.</summary>
+      [JsonPropertyName("job_id")]
+      public string JobId { get; }
+
+      /// <summary>Parameters of the export job, holding the translation memory ID.</summary>
+      [JsonPropertyName("parameters")]
+      public Dictionary<string, string>? Parameters { get; }
+    }
+
+    /// <summary>Class used for JSON-deserialization of the source file of a translation memory import job.</summary>
+    private readonly struct TranslationMemoryJobSourceFile {
+      /// <summary>Initializes a new instance of <see cref="TranslationMemoryJobSourceFile" />, used for JSON deserialization.</summary>
+      [JsonConstructor]
+      public TranslationMemoryJobSourceFile(string? contentType, long? contentLength) {
+        ContentType = contentType;
+        ContentLength = contentLength;
+      }
+
+      /// <summary>MIME type declared for the file.</summary>
+      [JsonPropertyName("content_type")]
+      public string? ContentType { get; }
+
+      /// <summary>Size in bytes declared for the file.</summary>
+      [JsonPropertyName("content_length")]
+      public long? ContentLength { get; }
+    }
+
+    /// <summary>Class used for JSON-deserialization of the results of a translation memory job.</summary>
+    private readonly struct TranslationMemoryJobResultResponse {
+      /// <summary>Initializes a new instance of <see cref="TranslationMemoryJobResultResponse" />, used for JSON deserialization.</summary>
+      [JsonConstructor]
+      public TranslationMemoryJobResultResponse(
+            TranslationMemoryJobStatus status,
+            Dictionary<string, string>? statusMetadata,
+            string? downloadUrl,
+            DateTime? expiresAt,
+            Dictionary<string, string>? error,
+            string? translationMemoryId,
+            int? skippedSegmentCount) {
+        Status = status;
+        StatusMetadata = statusMetadata;
+        DownloadUrl = downloadUrl;
+        ExpiresAt = expiresAt;
+        Error = error;
+        TranslationMemoryId = translationMemoryId;
+        SkippedSegmentCount = skippedSegmentCount;
+      }
+
+      /// <summary>Status of the job.</summary>
+      [JsonPropertyName("status")]
+      public TranslationMemoryJobStatus Status { get; }
+
+      /// <summary>Metadata describing the action the caller must take, if any.</summary>
+      [JsonPropertyName("status_metadata")]
+      public Dictionary<string, string>? StatusMetadata { get; }
+
+      /// <summary>Download URL of the exported TMX file, set once an export completes.</summary>
+      [JsonPropertyName("download_url")]
+      public string? DownloadUrl { get; }
+
+      /// <summary>Time after which the download URL is no longer valid.</summary>
+      [JsonPropertyName("expires_at")]
+      public DateTime? ExpiresAt { get; }
+
+      /// <summary>Error information, set when the job failed.</summary>
+      [JsonPropertyName("error")]
+      public Dictionary<string, string>? Error { get; }
+
+      /// <summary>ID of the translation memory created by a completed import.</summary>
+      [JsonPropertyName("translation_memory_id")]
+      public string? TranslationMemoryId { get; }
+
+      /// <summary>Number of segments an import skipped.</summary>
+      [JsonPropertyName("skipped_segment_count")]
+      public int? SkippedSegmentCount { get; }
+    }
+
+    /// <summary>Class used for JSON-deserialization of translation memory job status results.</summary>
+    private readonly struct TranslationMemoryJobResponse {
+      /// <summary>Initializes a new instance of <see cref="TranslationMemoryJobResponse" />, used for JSON deserialization.</summary>
+      [JsonConstructor]
+      public TranslationMemoryJobResponse(
+            string jobId,
+            string operation,
+            TranslationMemoryJobResultResponse[]? results,
+            string? product,
+            DateTime? creationTime,
+            DateTime? updatedTime,
+            Dictionary<string, string>? parameters,
+            TranslationMemoryJobSourceFile? sourceFile) {
+        JobId = jobId;
+        Operation = operation;
+        Results = results;
+        Product = product;
+        CreationTime = creationTime;
+        UpdatedTime = updatedTime;
+        Parameters = parameters;
+        SourceFile = sourceFile;
+      }
+
+      /// <summary>Unique ID assigned to the job.</summary>
+      [JsonPropertyName("job_id")]
+      public string JobId { get; }
+
+      /// <summary>Operation the job performs, either "import" or "export".</summary>
+      [JsonPropertyName("operation")]
+      public string Operation { get; }
+
+      /// <summary>Results of the job.</summary>
+      [JsonPropertyName("results")]
+      public TranslationMemoryJobResultResponse[]? Results { get; }
+
+      /// <summary>Product the job belongs to.</summary>
+      [JsonPropertyName("product")]
+      public string? Product { get; }
+
+      /// <summary>Time when the job was created.</summary>
+      [JsonPropertyName("creation_time")]
+      public DateTime? CreationTime { get; }
+
+      /// <summary>Time when the job was last updated.</summary>
+      [JsonPropertyName("updated_time")]
+      public DateTime? UpdatedTime { get; }
+
+      /// <summary>Parameters of the job, holding the translation memory ID or display name.</summary>
+      [JsonPropertyName("parameters")]
+      public Dictionary<string, string>? Parameters { get; }
+
+      /// <summary>Source file declared by an import job.</summary>
+      [JsonPropertyName("source_file")]
+      public TranslationMemoryJobSourceFile? SourceFile { get; }
+    }
 
     /// <summary>Class used for JSON-deserialization of translation memory list results.</summary>
     private readonly struct TranslationMemoryListResult {

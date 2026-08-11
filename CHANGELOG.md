@@ -14,6 +14,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for translation memories in document translation via the
   `TranslationMemoryId` and `TranslationMemoryThreshold` properties in
   `DocumentTranslateOptions`.
+- Added support for the translation memory management endpoints in the
+  `DeepLClient` class: `GetTranslationMemoryAsync()`,
+  `ListTranslationMemorySegmentsAsync()`, `DeleteTranslationMemoryAsync()`,
+  `CreateTranslationMemoryImportAsync()`, `UploadTranslationMemoryFileAsync()`,
+  `CreateTranslationMemoryExportAsync()`, `GetTranslationMemoryJobAsync()`,
+  `WaitUntilTranslationMemoryJobDoneAsync()`,
+  `DownloadTranslationMemoryExportAsync()`,
+  `ImportTranslationMemoryFromFilepathAsync()` and
+  `ExportTranslationMemoryToFilepathAsync()`, along with the
+  `TranslationMemorySegments`, `TranslationMemorySegment`,
+  `TranslationMemoryTargetSegment`, `TranslationMemoryImport`,
+  `TranslationMemoryExport`, `TranslationMemoryJob` and
+  `TranslationMemoryJobResult` model classes.
+  Please refer to the README for usage instructions.
+- Added the `CreationTime` and `UpdatedTime` properties to
+  `TranslationMemoryInfo`.
+
+### Changed
+- Requests to the pre-signed storage URLs used for translation memory import and export now
+  carry a separate, minimal header set rather than the DeepL API headers with `Authorization`
+  filtered out. Headers supplied via `DeepLClientOptions.Headers` are no longer sent to those
+  URLs either — only the `User-Agent` and the per-request `Content-Type`. Proxy settings are
+  unaffected.
 
 ### Fixed
 - Fixed incorrect example texts in test suite for several languages (Danish, Indonesian,

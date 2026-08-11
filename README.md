@@ -680,11 +680,10 @@ Translation memories store and reuse previously created translations, helping to
 ensure consistency across your translations and reduce the number of characters
 that need to be translated.
 
-#### Uploading and managing translation memories
-
-Currently translation memories must be uploaded and managed in the DeepL UI via
-https://www.deepl.com/translation-memory. Full CRUD functionality via the APIs will
-come shortly.
+Translation memories can be created, inspected and deleted with the methods
+below. Each method that takes a translation memory accepts either its ID as a
+string, or a `TranslationMemoryInfo` object as returned by
+`ListTranslationMemoriesAsync()`.
 
 #### Listing translation memories
 
@@ -696,6 +695,129 @@ var translationMemories = await client.ListTranslationMemoriesAsync();
 foreach (var tm in translationMemories) {
   Console.WriteLine($"{tm.Name} ({tm.TranslationMemoryId})");
 }
+```
+
+#### Retrieving a translation memory
+
+Use `GetTranslationMemoryAsync()` to retrieve a single translation memory:
+
+```c#
+var tm = await client.GetTranslationMemoryAsync("YOUR_TM_ID");
+Console.WriteLine($"{tm.Name}: {tm.SourceLanguage} -> {string.Join(", ", tm.TargetLanguages)}");
+Console.WriteLine($"{tm.SegmentCount} segments, last updated {tm.UpdatedTime}");
+```
+
+#### Listing the segments of a translation memory
+
+Use `ListTranslationMemorySegmentsAsync()` to read the segments stored in a
+translation memory. Pagination is cursor-based: omit `pageCursor` on the first
+call, then pass the `NextPageCursor` of the previous response to fetch the next
+page. A `null` next page cursor means the last page has been returned.
+
+You can also narrow the results with `filterText` (a substring of at least two
+characters, matched against both source and target text) and
+`filterCaseSensitive`. Note that `SegmentCount` is the total number of segments
+in the translation memory, and is not reduced by the filter.
+
+```c#
+string? pageCursor = null;
+do {
+  var page = await client.ListTranslationMemorySegmentsAsync(
+      "YOUR_TM_ID",
+      pageSize: 50,
+      pageCursor: pageCursor);
+  foreach (var segment in page.Segments) {
+    Console.WriteLine(segment.SourceText);
+    foreach (var target in segment.Targets) {
+      Console.WriteLine($"  {target.TargetLanguage}: {target.TargetText}");
+    }
+  }
+
+  pageCursor = page.NextPageCursor;
+} while (pageCursor != null);
+```
+
+#### Importing a translation memory
+
+Use `ImportTranslationMemoryFromFilepathAsync()` to create a new translation
+memory from a TMX file. It creates the import job, uploads the file, and waits
+for processing to finish. The returned job carries the ID of the new translation
+memory:
+
+```c#
+var job = await client.ImportTranslationMemoryFromFilepathAsync(
+    "legal.tmx",
+    displayName: "Legal");
+Console.WriteLine($"Imported translation memory: {job.Result!.TranslationMemoryId}");
+Console.WriteLine($"Skipped segments: {job.Result!.SkippedSegmentCount}");
+```
+
+If you need more control, the three steps are also available separately. Note
+that the upload URL is a pre-signed storage URL outside the DeepL API, so your
+authentication key is not sent to it:
+
+```c#
+var fileInfo = new FileInfo("legal.tmx");
+var created = await client.CreateTranslationMemoryImportAsync(
+    fileInfo.Name,
+    fileInfo.Length,
+    displayName: "Legal");
+
+using (var fileStream = fileInfo.OpenRead()) {
+  await client.UploadTranslationMemoryFileAsync(created, fileStream);
+}
+
+var job = await client.WaitUntilTranslationMemoryJobDoneAsync(created.JobId);
+```
+
+#### Exporting a translation memory
+
+Use `ExportTranslationMemoryToFilepathAsync()` to export a translation memory as
+a TMX file. It creates the export job, waits for it to finish, and writes the
+result to the given path:
+
+```c#
+await client.ExportTranslationMemoryToFilepathAsync("YOUR_TM_ID", "exported.tmx");
+```
+
+The individual steps are available as `CreateTranslationMemoryExportAsync()`,
+`WaitUntilTranslationMemoryJobDoneAsync()` and
+`DownloadTranslationMemoryExportAsync()`. If the DeepL API reuses a previously
+completed export instead of starting a new one, `ReusedExisting` is `true`:
+
+```c#
+var created = await client.CreateTranslationMemoryExportAsync("YOUR_TM_ID");
+Console.WriteLine($"Reused a previous export: {created.ReusedExisting}");
+
+var job = await client.WaitUntilTranslationMemoryJobDoneAsync(created.JobId);
+await client.DownloadTranslationMemoryExportAsync(job, "exported.tmx");
+```
+
+#### Checking import and export jobs
+
+Use `GetTranslationMemoryJobAsync()` to query the status of an import or export
+job without waiting for it, and `WaitUntilTranslationMemoryJobDoneAsync()` to
+poll it until it finishes. Note that an import job keeps reporting
+`AwaitingInput` for a while after its file has been uploaded, because the DeepL
+API detects the upload asynchronously; that status is polled through like any
+other non-terminal one. A job whose file is never uploaded does not finish on
+its own, so pass a `CancellationToken` carrying a timeout when that is a
+possibility:
+
+```c#
+var job = await client.GetTranslationMemoryJobAsync("YOUR_JOB_ID");
+Console.WriteLine($"{job.Operation} job is {job.Status}");
+if (job.Status == TranslationMemoryJobStatus.AwaitingInput) {
+  Console.WriteLine($"Required action: {job.Result!.RequiredAction}");
+}
+```
+
+#### Deleting a translation memory
+
+Use `DeleteTranslationMemoryAsync()` to delete a translation memory by ID:
+
+```c#
+await client.DeleteTranslationMemoryAsync("YOUR_TM_ID");
 ```
 
 #### Using a translation memory in translations

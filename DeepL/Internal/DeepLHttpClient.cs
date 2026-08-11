@@ -22,7 +22,8 @@ namespace DeepL.Internal {
   /// <summary>Identifies the type of resource being accessed, used for contextual error messages.</summary>
   internal enum ResourceType {
     Glossary,
-    StyleRule
+    StyleRule,
+    TranslationMemory
   }
 
   internal static class ResourceTypeExtensions {
@@ -30,6 +31,7 @@ namespace DeepL.Internal {
           resourceType switch {
             ResourceType.Glossary => "Glossary",
             ResourceType.StyleRule => "Style rule",
+            ResourceType.TranslationMemory => "Translation memory",
             _ => resourceType.ToString()
           };
   }
@@ -47,6 +49,14 @@ namespace DeepL.Internal {
 
     /// <summary>HTTP headers attached to every request.</summary>
     private readonly KeyValuePair<string, string?>[] _headers;
+
+    /// <summary>
+    ///   Headers for requests to pre-signed storage URLs, which are served by the Asset Store
+    ///   rather than the DeepL API. Built from scratch rather than by removing
+    ///   <c>Authorization</c> from <see cref="_headers" />, so neither the auth key nor any
+    ///   caller-configured header can reach a third-party host by mistake.
+    /// </summary>
+    private readonly KeyValuePair<string, string?>[] _storageHeaders;
 
     /// <summary><see cref="HttpClient" /> used for requests to DeepL API.</summary>
     private readonly HttpClient _httpClient;
@@ -83,6 +93,9 @@ namespace DeepL.Internal {
       }
 
       _headers = headers.ToArray();
+      _storageHeaders = _headers
+            .Where(header => string.Equals(header.Key, "User-Agent", StringComparison.OrdinalIgnoreCase))
+            .ToArray();
     }
 
     /// <summary>
@@ -415,16 +428,57 @@ namespace DeepL.Internal {
       return await ApiCallAsync(requestMessage, cancellationToken);
     }
 
+    /// <summary>Internal function to perform HTTP requests against storage URLs handed out by the DeepL API.</summary>
+    /// <param name="method">HTTP method to use for the request.</param>
+    /// <param name="url">Absolute storage URL, for example a translation memory upload or download URL.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <param name="content">Optional content to send in the request body.</param>
+    /// <returns><see cref="HttpResponseMessage" /> received from the storage server.</returns>
+    /// <remarks>
+    ///   These URLs are pre-signed and point outside the DeepL API, so the DeepL <c>Authorization</c> header is
+    ///   deliberately not sent.
+    /// </remarks>
+    /// <exception cref="ConnectionException">If any failure occurs while sending the request.</exception>
+    public async Task<HttpResponseMessage> AssetCallAsync(
+          HttpMethod method,
+          string url,
+          CancellationToken cancellationToken,
+          HttpContent? content = null) {
+      using var requestMessage = new HttpRequestMessage {
+        RequestUri = new Uri(url),
+        Method = method,
+        Content = content
+      };
+      return await ApiCallAsync(requestMessage, cancellationToken, _storageHeaders);
+    }
+
+    /// <summary>Checks the response HTTP status of a storage request is OK, otherwise throws an exception.</summary>
+    /// <param name="responseMessage"><see cref="HttpResponseMessage" /> received from the storage server.</param>
+    /// <param name="action">Description of the attempted action, included in the error message.</param>
+    /// <exception cref="DeepLException">If the request was not successful.</exception>
+    internal static async Task CheckAssetStatusCodeAsync(HttpResponseMessage responseMessage, string action) {
+      if (responseMessage.IsSuccessStatusCode) {
+        return;
+      }
+
+      var detail = await responseMessage.Content.ReadAsStringAsync().ConfigureAwait(false);
+      throw new DeepLException(
+            $"Error {action}, HTTP status: {(int)responseMessage.StatusCode}" +
+            (string.IsNullOrEmpty(detail) ? "" : $", detail: {detail}"));
+    }
+
     /// <summary>Sends given HTTP request, ensuring message uses HTTP 2.0 and includes configured HTTP headers.</summary>
     /// <param name="requestMessage"><see cref="HttpRequestMessage" /> to send to the DeepL API.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <param name="headers">Headers to attach; defaults to the configured DeepL API headers.</param>
     /// <returns><see cref="HttpResponseMessage" /> received from DeepL API.</returns>
     /// <exception cref="ConnectionException">If any failure occurs while sending the request.</exception>
     private async Task<HttpResponseMessage> ApiCallAsync(
           HttpRequestMessage requestMessage,
-          CancellationToken cancellationToken) {
+          CancellationToken cancellationToken,
+          KeyValuePair<string, string?>[]? headers = null) {
       try {
-        foreach (var header in _headers) {
+        foreach (var header in headers ?? _headers) {
           requestMessage.Headers.Add(header.Key, header.Value);
         }
 
