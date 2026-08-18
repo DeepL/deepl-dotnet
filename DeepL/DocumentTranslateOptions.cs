@@ -74,7 +74,7 @@ namespace DeepL {
     ///   order, with the first matching term taking precedence. Using this option requires the source language to be
     ///   specified, and it cannot be combined with <see cref="GlossaryId" />.
     /// </summary>
-    public List<string> GlossaryIds { get; } = new List<string>();
+    public List<string> GlossaryIds { get; set; } = new List<string>();
 
     /// <summary>Specifies the ID of a style rule to use with the translation.</summary>
     public string? StyleId { get; set; }

@@ -5,6 +5,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Text translation can now use a glossary without an explicit source language.
+  When `sourceLanguageCode` is `null`, DeepL detects the source language and
+  applies the glossary's dictionary for the detected language pair. Document
+  translation still requires a source language when a glossary is used.
+### Changed
+- `TextTranslateOptions.GlossaryIds` and `DocumentTranslateOptions.GlossaryIds`
+  are now settable, so they can be assigned in an object initializer instead of
+  only appended to.
 
 ## [1.22.0] - 2026-08-11
 ### Added

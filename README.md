@@ -560,8 +560,7 @@ Console.WriteLine(updatedGlossary.Name); // 'My new glossary name'
 
 You can use a stored glossary for text (or document) translation by setting the
 `TextTranslationOptions` (or `DocumentTranslationOptions`) `GlossaryId` property
-to the glossary ID. You must also specify the `source_lang` argument (it is
-required when using a glossary):
+to the glossary ID:
 
 ```c#
 var resultWithGlossary = await client.TranslateTextAsync(
@@ -571,6 +570,22 @@ var resultWithGlossary = await client.TranslateTextAsync(
     new TextTranslateOptions { GlossaryId = glossaryEnToDe.GlossaryId });
 // resultWithGlossary.Text == "Der Maler wurde mit einem Gewinn ausgezeichnet."
 // Without using a glossary: "Der Künstler wurde mit einem Preis ausgezeichnet."
+```
+
+For text translation you may pass `null` as the source language. DeepL detects
+the source language and applies the glossary's dictionary for the detected
+language pair. The request fails if the glossary has no dictionary for that
+pair, and detection is less reliable on very short text, so pass an explicit
+source language when the input may be only a few characters long. Document
+translation still requires an explicit source language when a glossary is used.
+
+```c#
+var resultWithDetection = await client.TranslateTextAsync(
+    "The artist was awarded a prize.",
+    null,
+    "DE",
+    new TextTranslateOptions { GlossaryId = glossaryEnToDe.GlossaryId });
+Console.WriteLine(resultWithDetection.DetectedSourceLanguageCode); // "en"
 ```
 
 ### Style Rules

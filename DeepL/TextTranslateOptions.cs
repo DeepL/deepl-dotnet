@@ -78,10 +78,14 @@ namespace DeepL {
 
     /// <summary>
     ///   Specifies the IDs of multiple glossaries to use with the translation (maximum of 5). Glossaries are applied in
-    ///   order, with the first matching term taking precedence. Using this option requires the source language to be
-    ///   specified, and it cannot be combined with <see cref="GlossaryId" />.
+    ///   order, with the first matching term taking precedence. Cannot be combined with
+    ///   <see cref="GlossaryId" />.
     /// </summary>
-    public List<string> GlossaryIds { get; } = new List<string>();
+    /// <remarks>
+    ///   If the source language is omitted, DeepL detects it and every listed glossary must contain a
+    ///   dictionary for the detected language pair.
+    /// </remarks>
+    public List<string> GlossaryIds { get; set; } = new List<string>();
 
     /// <summary>Specifies the ID of a style rule to use with the translation.</summary>
     public string? StyleId { get; set; }

@@ -372,14 +372,6 @@ namespace DeepLTests {
         var exception = await Assert.ThrowsAsync<ArgumentException>(
               () => translator.TranslateTextAsync(
                     "test",
-                    null,
-                    "DE",
-                    new TextTranslateOptions { GlossaryId = glossaryEnDe.GlossaryId }));
-        Assert.Contains("sourceLanguageCode is required", exception.Message);
-
-        exception = await Assert.ThrowsAsync<ArgumentException>(
-              () => translator.TranslateTextAsync(
-                    "test",
                     "DE",
                     "EN",
                     new TextTranslateOptions { GlossaryId = glossaryDeEn.GlossaryId }));

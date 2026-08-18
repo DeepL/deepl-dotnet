@@ -633,6 +633,11 @@ namespace DeepL {
           string targetLanguageCode,
           DocumentTranslateOptions? options = null,
           CancellationToken cancellationToken = default) {
+      // Document translation cannot detect the source language when a glossary is used.
+      if (sourceLanguageCode == null && (options?.GlossaryId != null || options?.GlossaryIds.Count > 0)) {
+        throw new ArgumentException($"{nameof(sourceLanguageCode)} is required if using a glossary");
+      }
+
       var bodyParams = CreateCommonHttpParams(
             sourceLanguageCode,
             targetLanguageCode,
@@ -1050,18 +1055,10 @@ namespace DeepL {
       }
 
       if (glossaryId != null) {
-        if (sourceLanguageCode == null) {
-          throw new ArgumentException($"{nameof(sourceLanguageCode)} is required if using a glossary");
-        }
-
         bodyParams.Add(("glossary_id", glossaryId));
       }
 
       if (hasGlossaryIds) {
-        if (sourceLanguageCode == null) {
-          throw new ArgumentException($"{nameof(sourceLanguageCode)} is required if using a glossary");
-        }
-
         if (glossaryIds!.Count > 5) {
           throw new ArgumentException("GlossaryIds must not contain more than 5 glossary IDs");
         }
