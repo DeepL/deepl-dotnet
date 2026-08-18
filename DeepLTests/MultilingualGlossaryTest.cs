@@ -651,18 +651,107 @@ namespace DeepLTests {
         var exception = await Assert.ThrowsAsync<ArgumentException>(
               () => client.TranslateTextAsync(
                     "test",
-                    null,
-                    "de",
-                    new TextTranslateOptions { GlossaryId = glossary.GlossaryId }));
-        Assert.Contains("sourceLanguageCode is required", exception.Message);
-
-        exception = await Assert.ThrowsAsync<ArgumentException>(
-              () => client.TranslateTextAsync(
-                    "test",
                     "de",
                     "en",
                     new TextTranslateOptions { GlossaryId = glossary.GlossaryId }));
         Assert.Contains("targetLanguageCode=\"en\" is deprecated", exception.Message);
+      } finally {
+        await glossaryCleanup.Cleanup();
+      }
+    }
+
+    [Fact]
+    public async Task TestGlossaryTranslateTextWithoutSourceLang() {
+      var client = CreateTestClient();
+      var glossaryCleanup = new GlossaryCleanupUtility(client, nameof(TestGlossaryTranslateTextWithoutSourceLang));
+      var glossaryName = glossaryCleanup.GlossaryName;
+      try {
+        var entries = new Dictionary<string, string> { { "artist", "Maler" }, { "prize", "Gewinn" } };
+        var glossaryDict = new MultilingualGlossaryDictionaryEntries("en", "de", new GlossaryEntries(entries));
+        var glossary = glossaryCleanup.Capture(
+              await client.CreateMultilingualGlossaryAsync(glossaryName, new[] { glossaryDict }));
+
+        // No source language: DeepL detects it and resolves the glossary's dictionary from the result.
+        var result = await client.TranslateTextAsync(
+              "The artist was awarded a prize.",
+              null,
+              "de",
+              new TextTranslateOptions { GlossaryId = glossary.GlossaryId });
+
+        if (!IsMockServer) {
+          Assert.Equal("en", result.DetectedSourceLanguageCode);
+          Assert.Contains("Maler", result.Text);
+          Assert.Contains("Gewinn", result.Text);
+        }
+      } finally {
+        await glossaryCleanup.Cleanup();
+      }
+    }
+
+    [Fact]
+    public async Task TestGlossaryIdsTranslateTextWithoutSourceLang() {
+      var client = CreateTestClient();
+      var glossaryCleanup = new GlossaryCleanupUtility(client, nameof(TestGlossaryIdsTranslateTextWithoutSourceLang));
+      var glossaryName = glossaryCleanup.GlossaryName;
+      try {
+        var entries = new Dictionary<string, string> { { "artist", "Maler" } };
+        var glossaryDict = new MultilingualGlossaryDictionaryEntries("en", "de", new GlossaryEntries(entries));
+        var glossary = glossaryCleanup.Capture(
+              await client.CreateMultilingualGlossaryAsync(glossaryName, new[] { glossaryDict }));
+
+        var options = new TextTranslateOptions { GlossaryIds = new List<string> { glossary.GlossaryId } };
+        var result = await client.TranslateTextAsync("The artist was awarded a prize.", null, "de", options);
+
+        if (!IsMockServer) {
+          Assert.Equal("en", result.DetectedSourceLanguageCode);
+          Assert.Contains("Maler", result.Text);
+        }
+      } finally {
+        await glossaryCleanup.Cleanup();
+      }
+    }
+
+    [Fact]
+    public async Task TestNullGlossaryIdsWithoutSourceLangIsNotAGlossaryRequest() {
+      var client = CreateTestClient();
+
+      // GlossaryIds is settable, so callers can assign null. That is not a glossary
+      // request, so the source-language requirement must not be triggered by it.
+      var options = new DocumentTranslateOptions { GlossaryIds = null! };
+      var exception = await Record.ExceptionAsync(
+            () => client.TranslateDocumentUploadAsync(
+                  new MemoryStream(Encoding.UTF8.GetBytes("The artist was awarded a prize.")),
+                  "test.txt",
+                  null,
+                  "de",
+                  options));
+
+      Assert.IsNotType<NullReferenceException>(exception);
+      Assert.IsNotType<ArgumentException>(exception);
+    }
+
+    [Fact]
+    public async Task TestGlossaryTranslateDocumentWithoutSourceLangThrows() {
+      var client = CreateTestClient();
+      var glossaryCleanup = new GlossaryCleanupUtility(
+            client,
+            nameof(TestGlossaryTranslateDocumentWithoutSourceLangThrows));
+      var glossaryName = glossaryCleanup.GlossaryName;
+      try {
+        var glossaryDict = new MultilingualGlossaryDictionaryEntries("en", "de", TestEntries);
+        var glossary = glossaryCleanup.Capture(
+              await client.CreateMultilingualGlossaryAsync(glossaryName, new[] { glossaryDict }));
+
+        // Document translation cannot detect the source language when a glossary is used.
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes("The artist was awarded a prize."));
+        var exception = await Assert.ThrowsAsync<ArgumentException>(
+              () => client.TranslateDocumentUploadAsync(
+                    stream,
+                    "test.txt",
+                    null,
+                    "de",
+                    new DocumentTranslateOptions { GlossaryId = glossary.GlossaryId }));
+        Assert.Contains("sourceLanguageCode is required", exception.Message);
       } finally {
         await glossaryCleanup.Cleanup();
       }

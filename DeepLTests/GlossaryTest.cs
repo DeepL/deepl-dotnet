@@ -372,14 +372,6 @@ namespace DeepLTests {
         var exception = await Assert.ThrowsAsync<ArgumentException>(
               () => translator.TranslateTextAsync(
                     "test",
-                    null,
-                    "DE",
-                    new TextTranslateOptions { GlossaryId = glossaryEnDe.GlossaryId }));
-        Assert.Contains("sourceLanguageCode is required", exception.Message);
-
-        exception = await Assert.ThrowsAsync<ArgumentException>(
-              () => translator.TranslateTextAsync(
-                    "test",
                     "DE",
                     "EN",
                     new TextTranslateOptions { GlossaryId = glossaryDeEn.GlossaryId }));
@@ -502,17 +494,10 @@ namespace DeepLTests {
         var glossaryDeEn = glossaryCleanupDeEn.Capture(
               await translator.CreateGlossaryAsync(glossaryCleanupDeEn.GlossaryName, "DE", "EN", _testEntries));
 
-        // GlossaryIds requires source language to be specified
-        var missingSourceOptions = new TextTranslateOptions();
-        missingSourceOptions.GlossaryIds.Add(glossaryEnDe.GlossaryId);
-        var exception = await Assert.ThrowsAsync<ArgumentException>(
-              () => translator.TranslateTextAsync("test", null, "DE", missingSourceOptions));
-        Assert.Contains("sourceLanguageCode is required", exception.Message);
-
         // GlossaryId and GlossaryIds cannot be used together
         var bothOptions = new TextTranslateOptions { GlossaryId = glossaryEnDe.GlossaryId };
         bothOptions.GlossaryIds.Add(glossaryDeEn.GlossaryId);
-        exception = await Assert.ThrowsAsync<ArgumentException>(
+        var exception = await Assert.ThrowsAsync<ArgumentException>(
               () => translator.TranslateTextAsync("test", "EN", "DE", bothOptions));
         Assert.Contains("cannot be used together", exception.Message);
 

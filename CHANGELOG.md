@@ -5,6 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed
+- In preparation for source language detection with glossaries, text
+  translation no longer rejects a glossary with no `sourceLanguageCode` before
+  sending the request. Whether the request succeeds is determined by the API.
+  Document translation still requires a source language with a glossary.
+- `TextTranslateOptions.GlossaryIds` and `DocumentTranslateOptions.GlossaryIds`
+  are now settable, so they can be assigned in an object initializer instead of
+  only appended to.
 
 ## [1.22.0] - 2026-08-11
 ### Added

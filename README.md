@@ -560,8 +560,8 @@ Console.WriteLine(updatedGlossary.Name); // 'My new glossary name'
 
 You can use a stored glossary for text (or document) translation by setting the
 `TextTranslationOptions` (or `DocumentTranslationOptions`) `GlossaryId` property
-to the glossary ID. You must also specify the `source_lang` argument (it is
-required when using a glossary):
+to the glossary ID. Set `source_lang` as well, so the glossary's language pair
+matches the request:
 
 ```c#
 var resultWithGlossary = await client.TranslateTextAsync(
@@ -572,6 +572,12 @@ var resultWithGlossary = await client.TranslateTextAsync(
 // resultWithGlossary.Text == "Der Maler wurde mit einem Gewinn ausgezeichnet."
 // Without using a glossary: "Der Künstler wurde mit einem Preis ausgezeichnet."
 ```
+
+For text translation the library no longer rejects a glossary with no source
+language before sending the request, in preparation for source language
+detection with glossaries. Whether such a request succeeds is determined by the
+API and by what your account has enabled. Document translation still requires a
+source language with a glossary.
 
 ### Style Rules
 
