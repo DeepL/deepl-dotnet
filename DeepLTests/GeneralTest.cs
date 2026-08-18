@@ -18,7 +18,7 @@ namespace DeepLTests {
     /// </summary>
     [Fact]
     public void TestVersion() {
-      Assert.Equal("1.22.0", Translator.Version());
+      Assert.Equal("1.22.1", Translator.Version());
 
       // Note the assembly version must remain unchanged for binary compatibility, excepting the major version.
       Assert.Equal("1.0.0.0", typeof(Translator).Assembly.GetName().Version?.ToString());
