@@ -49,28 +49,31 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        dotnet-version: [ '3.1.x', '5.0.x' ]
         configuration: [ Debug, Release ]
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-    - name: Setup .NET ${{ matrix.dotnet-version }}
+    - name: Setup .NET 8
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: ${{ matrix.dotnet-version }}
+        dotnet-version: '8.0.x'
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore DeepL.net.sln
     - name: Build ${{ matrix.configuration }}
-      run: dotnet build --no-restore --configuration ${{ matrix.configuration }}
+      run: dotnet build DeepL.net.sln --no-restore --configuration ${{ matrix.configuration }}
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: build-artifacts ${{ matrix.dotnet-version }}-${{ matrix.configuration }}
+        name: build-artifacts-${{ matrix.configuration }}
         path: |
           DeepL/bin/
           DeepL/obj/
           DeepLTests/bin/
           DeepLTests/obj/
+          DeepL.Extensions.DependencyInjection/bin/
+          DeepL.Extensions.DependencyInjection/obj/
+          DeepL.Extensions.DependencyInjection.Tests/bin/
+          DeepL.Extensions.DependencyInjection.Tests/obj/
 
 # Test and `nuget publish` stage are disabled for now. Code needs to be tested
 

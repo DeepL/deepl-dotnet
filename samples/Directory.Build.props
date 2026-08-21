@@ -1,0 +1,17 @@
+<Project>
+  <!--
+    Shared build settings for all sample projects under /samples.
+    Samples are intentionally out-of-tree from the library's main solution so they can
+    build against a locally-built DeepL.net (via ProjectReference) without impacting
+    the library's CI scope, NuGet pack, or signing.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>12</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <SignAssembly>false</SignAssembly>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+</Project>

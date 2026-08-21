@@ -2,6 +2,7 @@
 // Use of this source code is governed by an MIT
 // license that can be found in the LICENSE file.
 
+#if !NET5_0_OR_GREATER
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,9 +12,12 @@ using System.Net.Http.Headers;
 using System.Text;
 
 namespace DeepL.Internal {
-  /// <summary>Custom replacement for System.Net.Http.FormUrlEncodedContent to avoid size limitations.</summary>
-  /// There was a bugfix for .NET 5 (https://github.com/dotnet/corefx/pull/41686) that solved this issue.
-  /// This class avoids the problem by using WebUtility.UrlEncoded() instead of Uri.EscapeDataString().
+  /// <summary>
+  ///   Custom replacement for <see cref="FormUrlEncodedContent" /> on <c>netstandard2.0</c> (and older .NET Framework)
+  ///   to avoid the size limit in the pre-.NET 5 implementation.
+  ///   See https://github.com/dotnet/corefx/pull/41686 — the fix shipped in .NET 5, so this type is compiled out for
+  ///   modern targets and the built-in <see cref="FormUrlEncodedContent" /> is used directly.
+  /// </summary>
   public class LargeFormUrlEncodedContent : ByteArrayContent {
     private static readonly Encoding Utf8Encoding = Encoding.UTF8;
 
@@ -34,3 +38,4 @@ namespace DeepL.Internal {
     }
   }
 }
+#endif

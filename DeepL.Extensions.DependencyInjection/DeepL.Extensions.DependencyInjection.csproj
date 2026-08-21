@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>Microsoft.Extensions.DependencyInjection integration for DeepL.net. Adds AddDeepLClient() to register DeepLClient and its interfaces (ITranslator, IWriter, IGlossaryManager, IStyleRuleManager, IVoiceManager) with an IServiceCollection, routing the underlying HttpClient through IHttpClientFactory.</Description>
+    <AssemblyTitle>DeepL.Extensions.DependencyInjection</AssemblyTitle>
+    <Version>1.20.0</Version>
+    <PackageVersion>1.20.0</PackageVersion>
+    <FileVersion>1.20.0.0</FileVersion>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
+    <LangVersion>12</LangVersion>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors>nullable</WarningsAsErrors>
+    <RootNamespace>DeepL.Extensions.DependencyInjection</RootNamespace>
+    <Authors>DeepL SE</Authors>
+    <Company>DeepL SE</Company>
+    <AssemblyName>DeepL.Extensions.DependencyInjection</AssemblyName>
+    <PackageId>DeepL.Extensions.DependencyInjection</PackageId>
+    <PackageTags>deepl;translation;api;dependency-injection;di;aspnetcore</PackageTags>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageProjectUrl>https://www.deepl.com/pro-api</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/DeepLcom/deepl-dotnet</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageReleaseNotes>Release notes can be found at https://github.com/DeepLcom/deepl-dotnet/blob/main/CHANGELOG.md</PackageReleaseNotes>
+    <IsPackable>true</IsPackable>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\DeepL\sgKey.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DeepL\DeepL.csproj" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath=""/>
+    <None Include="..\icon.png" Pack="true" PackagePath=""/>
+  </ItemGroup>
+
+</Project>

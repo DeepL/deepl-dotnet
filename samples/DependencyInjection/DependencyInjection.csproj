@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>DeepL.Samples.DependencyInjection</RootNamespace>
+    <AssemblyName>DeepL.Samples.DependencyInjection</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\DeepL.Extensions.DependencyInjection\DeepL.Extensions.DependencyInjection.csproj" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+  </ItemGroup>
+
+</Project>

@@ -17,6 +17,9 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Http;
 using Polly;
 using Polly.Timeout;
+#if NET8_0_OR_GREATER
+using System.Net.Http.Json;
+#endif
 
 namespace DeepL.Internal {
   /// <summary>Identifies the type of resource being accessed, used for contextual error messages.</summary>
@@ -43,6 +46,40 @@ namespace DeepL.Internal {
 
     /// <summary>HTTP status code returned by DeepL API to indicate account translation quota has been exceeded.</summary>
     private const HttpStatusCode HttpStatusCodeQuotaExceeded = (HttpStatusCode)456;
+
+    /// <summary>PATCH HTTP verb (<see cref="HttpMethod.Patch" /> on net5+, fallback to string constructor on ns2.0).</summary>
+    private static readonly HttpMethod HttpMethodPatch =
+#if NET5_0_OR_GREATER
+          HttpMethod.Patch;
+#else
+          new HttpMethod("PATCH");
+#endif
+
+    /// <summary>
+    ///   Creates a JSON-serialized request body. Uses <see cref="JsonContent" /> on net8+ (streams directly,
+    ///   skips the intermediate string allocation); falls back to <see cref="StringContent" /> on ns2.0.
+    /// </summary>
+    private static HttpContent CreateJsonContent(object body, JsonSerializerOptions? jsonOptions) {
+#if NET8_0_OR_GREATER
+      return JsonContent.Create(body, body?.GetType() ?? typeof(object), options: jsonOptions);
+#else
+      var jsonBody = JsonSerializer.Serialize(body, jsonOptions);
+      return new StringContent(jsonBody, Encoding.UTF8, "application/json");
+#endif
+    }
+
+    /// <summary>
+    ///   Creates a form-URL-encoded request body. On net5+ uses the built-in <see cref="FormUrlEncodedContent" />
+    ///   (the size-limit bug that originally required <see cref="LargeFormUrlEncodedContent" /> was fixed in .NET 5).
+    /// </summary>
+    private static HttpContent CreateFormContent(IEnumerable<(string Key, string Value)> bodyParams) {
+      var pairs = bodyParams.Select(pair => new KeyValuePair<string, string>(pair.Key, pair.Value));
+#if NET5_0_OR_GREATER
+      return new FormUrlEncodedContent(pairs);
+#else
+      return new LargeFormUrlEncodedContent(pairs);
+#endif
+    }
 
     /// <summary><c>true</c> if <see cref="_httpClient" /> should be disposed, otherwise <c>false</c>.</summary>
     private readonly bool _disposeClient;
@@ -158,13 +195,33 @@ namespace DeepL.Internal {
           TimeSpan overallConnectionTimeout,
           int maximumNetworkRetries) {
       var handler = CreateHttpMessageHandlerWithRetryPolicy(
-            new HttpClientHandler(),
+            CreateInnerHandler(),
             perRetryConnectionTimeout,
             maximumNetworkRetries);
+      var httpClient = new HttpClient(handler) { Timeout = overallConnectionTimeout };
+#if NET8_0_OR_GREATER
+      // Prefer HTTP/2 (the DeepL API supports it) and allow upgrade to HTTP/3 where available.
+      // Gives proper request multiplexing for high-throughput batch translation.
+      httpClient.DefaultRequestVersion = System.Net.HttpVersion.Version20;
+      httpClient.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrHigher;
+#endif
       return new HttpClientAndDisposeFlag {
         DisposeClient = true,
-        HttpClient = new HttpClient(handler) { Timeout = overallConnectionTimeout }
+        HttpClient = httpClient
       };
+    }
+
+    private static HttpMessageHandler CreateInnerHandler() {
+#if NET8_0_OR_GREATER
+      // SocketsHttpHandler is the modern managed handler; PooledConnectionLifetime forces periodic
+      // socket recreation so DNS changes are picked up on long-lived HttpClient instances.
+      return new SocketsHttpHandler {
+        PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+        PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2),
+      };
+#else
+      return new HttpClientHandler();
+#endif
     }
 
     /// <summary>Checks the response HTTP status is OK, otherwise throws corresponding exception.</summary>
@@ -285,10 +342,7 @@ namespace DeepL.Internal {
       using var requestMessage = new HttpRequestMessage {
         RequestUri = new Uri(_serverUrl, relativeUri),
         Method = HttpMethod.Post,
-        Content = bodyParams != null
-                  ? new LargeFormUrlEncodedContent(
-                        bodyParams.Select(pair => new KeyValuePair<string, string>(pair.Key, pair.Value)))
-                  : null
+        Content = bodyParams != null ? CreateFormContent(bodyParams) : null
       };
       return await ApiCallAsync(requestMessage, cancellationToken);
     }
@@ -305,11 +359,10 @@ namespace DeepL.Internal {
           CancellationToken cancellationToken,
           object body,
           JsonSerializerOptions? jsonOptions = null) {
-      var jsonBody = JsonSerializer.Serialize(body, jsonOptions);
       using var requestMessage = new HttpRequestMessage {
         RequestUri = new Uri(_serverUrl, relativeUri),
         Method = HttpMethod.Post,
-        Content = new StringContent(jsonBody, Encoding.UTF8, "application/json")
+        Content = CreateJsonContent(body, jsonOptions)
       };
       return await ApiCallAsync(requestMessage, cancellationToken);
     }
@@ -327,10 +380,7 @@ namespace DeepL.Internal {
       using var requestMessage = new HttpRequestMessage {
         RequestUri = new Uri(_serverUrl, relativeUri),
         Method = HttpMethod.Put,
-        Content = bodyParams != null
-                  ? new LargeFormUrlEncodedContent(
-                        bodyParams.Select(pair => new KeyValuePair<string, string>(pair.Key, pair.Value)))
-                  : null
+        Content = bodyParams != null ? CreateFormContent(bodyParams) : null
       };
       return await ApiCallAsync(requestMessage, cancellationToken);
     }
@@ -347,11 +397,10 @@ namespace DeepL.Internal {
           CancellationToken cancellationToken,
           object body,
           JsonSerializerOptions? jsonOptions = null) {
-      var jsonBody = JsonSerializer.Serialize(body, jsonOptions);
       using var requestMessage = new HttpRequestMessage {
         RequestUri = new Uri(_serverUrl, relativeUri),
         Method = HttpMethod.Put,
-        Content = new StringContent(jsonBody, Encoding.UTF8, "application/json")
+        Content = CreateJsonContent(body, jsonOptions)
       };
       return await ApiCallAsync(requestMessage, cancellationToken);
     }
@@ -368,11 +417,8 @@ namespace DeepL.Internal {
           IEnumerable<(string Key, string Value)>? bodyParams = null) {
       using var requestMessage = new HttpRequestMessage {
         RequestUri = new Uri(_serverUrl, relativeUri),
-        Method = new HttpMethod("PATCH"),
-        Content = bodyParams != null
-                  ? new LargeFormUrlEncodedContent(
-                        bodyParams.Select(pair => new KeyValuePair<string, string>(pair.Key, pair.Value)))
-                  : null
+        Method = HttpMethodPatch,
+        Content = bodyParams != null ? CreateFormContent(bodyParams) : null
       };
       return await ApiCallAsync(requestMessage, cancellationToken);
     }
@@ -389,11 +435,10 @@ namespace DeepL.Internal {
           CancellationToken cancellationToken,
           object body,
           JsonSerializerOptions? jsonOptions = null) {
-      var jsonBody = JsonSerializer.Serialize(body, jsonOptions);
       using var requestMessage = new HttpRequestMessage {
         RequestUri = new Uri(_serverUrl, relativeUri),
-        Method = new HttpMethod("PATCH"),
-        Content = new StringContent(jsonBody, Encoding.UTF8, "application/json")
+        Method = HttpMethodPatch,
+        Content = CreateJsonContent(body, jsonOptions)
       };
       return await ApiCallAsync(requestMessage, cancellationToken);
     }
