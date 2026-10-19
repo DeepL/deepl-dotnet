@@ -502,6 +502,8 @@ namespace DeepL.Internal {
         throw;
       } catch (TaskCanceledException ex) {
         throw new ConnectionException($"Request timed out: {ex.Message}", ex);
+      } catch (TimeoutRejectedException ex) {
+        throw new ConnectionException($"Request timed out: {ex.Message}", ex);
       } catch (HttpRequestException ex) {
         throw new ConnectionException($"Request failed: {ex.Message}", ex);
       } catch (Exception ex) {

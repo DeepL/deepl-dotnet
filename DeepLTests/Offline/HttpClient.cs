@@ -90,8 +90,9 @@ namespace DeepLTests.Offline {
     [Fact]
     public async Task ThrowsConnectionExceptionWhenPerRetryTimeoutIsExceededWithoutRetries() {
       ExpectNoBody(HttpMethod.Get, "v2/usage").Respond(Slow());
-      await Assert.ThrowsAsync<ConnectionException>(
+      var exception = await Assert.ThrowsAsync<ConnectionException>(
             () => CreateClientWithRetries(0, TimeSpan.FromMilliseconds(200)).GetUsageAsync());
+      Assert.StartsWith("Request timed out", exception.Message);
     }
 
     [Fact]

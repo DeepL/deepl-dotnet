@@ -26,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   additional languages.
 
 ### Fixed
+- A request that exceeds `PerRetryConnectionTimeout` now throws a `ConnectionException` with a "Request timed out"
+  message, like the other timeouts, instead of "Unexpected request failure".
 - Fixed the doc comments of `LanguageCode.English` and `LanguageCode.Portuguese`, which claimed they may only be used as
   source languages.
 
