@@ -134,7 +134,7 @@ namespace DeepLTests.Offline {
     [InlineData(true)]
     [InlineData(false)]
     public void DisposesClientOfFactoryOnlyWhenAsked(bool disposeClient) {
-      var client = new TrackingHttpClient();
+      var client = new TrackingHttpClient(Http);
       var translator = new DeepL.Translator(
             AuthKey,
             new DeepL.TranslatorOptions {
@@ -158,6 +158,8 @@ namespace DeepLTests.Offline {
     }
 
     private sealed class TrackingHttpClient : System.Net.Http.HttpClient {
+      public TrackingHttpClient(HttpMessageHandler handler) : base(handler, false) { }
+
       public bool WasDisposed { get; private set; }
 
       protected override void Dispose(bool disposing) {
