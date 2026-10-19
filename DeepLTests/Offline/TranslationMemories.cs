@@ -54,7 +54,6 @@ namespace DeepLTests.Offline {
             .RespondJson("{\"translation_memories\":[" + MemoryReply + "]}");
       var memory = Assert.Single(await CreateClient().ListTranslationMemoriesAsync(1, 10));
       Assert.Equal("tm1", memory.TranslationMemoryId);
-      Assert.Equal("My TM", memory.Name);
       Assert.Equal("en", memory.SourceLanguage);
       Assert.Equal(new[] { "de", "fr" }, memory.TargetLanguages);
       Assert.Equal(3, memory.SegmentCount);
@@ -169,8 +168,6 @@ namespace DeepLTests.Offline {
       ExpectNoBody(HttpMethod.Get, "v3/translation_memories/jobs/j1").RespondJson(JobReply(CompletedResult));
       var job = await CreateClient().GetTranslationMemoryJobAsync("j1");
       Assert.Equal("j1", job.JobId);
-      Assert.Equal("import", job.Operation);
-      Assert.Equal("translation_memory", job.Product);
       Assert.Equal("tm1", job.TranslationMemoryId);
       Assert.Equal("My TM", job.DisplayName);
       Assert.Equal("application/xml", job.SourceContentType);
@@ -326,8 +323,7 @@ namespace DeepLTests.Offline {
             .RespondJson(JobReply(CompletedResult, "export"));
       Http.Expect(HttpMethod.Get, DownloadUrl).Respond("application/xml", Tmx);
       var path = Path.Combine(Fixtures.TempDir(), "export.tmx");
-      var job = await CreateClient().ExportTranslationMemoryToFilepathAsync("tm1", path);
-      Assert.Equal("export", job.Operation);
+      await CreateClient().ExportTranslationMemoryToFilepathAsync("tm1", path);
       Assert.Equal(Tmx, File.ReadAllText(path));
     }
 

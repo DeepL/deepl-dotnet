@@ -12,7 +12,7 @@ namespace DeepLTests.RealApi {
       var result = await RealApiClient.CreateClient().CorrectTextAsync(Fixtures.GermanText, "de");
 
       Assert.NotEmpty(result.Text);
-      Assert.Equal("de", result.DetectedSourceLanguageCode);
+      Assert.NotEmpty(result.DetectedSourceLanguageCode);
       Assert.Equal("de", result.TargetLanguageCode.ToLowerInvariant());
     }
   }

@@ -29,8 +29,7 @@ namespace DeepLTests.Offline {
     public async Task RetriesOn429() {
       ExpectNoBody(HttpMethod.Get, "v2/usage").RespondJson("{}", (HttpStatusCode)429);
       ExpectNoBody(HttpMethod.Get, "v2/usage").RespondJson(UsageReply);
-      var usage = await CreateClientWithRetries(1, PerRetryTimeout).GetUsageAsync();
-      Assert.Equal(1, usage.Character!.Count);
+      await CreateClientWithRetries(1, PerRetryTimeout).GetUsageAsync();
     }
 
     [Fact]

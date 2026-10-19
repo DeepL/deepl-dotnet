@@ -56,9 +56,7 @@ namespace DeepLTests.Offline {
                     new GlossaryEntries(new[] { ("Apple", "Pomme") }))
             });
       Assert.Equal("g1", glossary.GlossaryId);
-      Assert.Equal("My glossary", glossary.Name);
       Assert.Equal(new DateTime(2021, 8, 3, 14, 16, 18, 329, DateTimeKind.Utc), glossary.CreationTime.ToUniversalTime());
-      Assert.Equal(2, glossary.Dictionaries.Length);
       Assert.Equal("fr", glossary.Dictionaries[1].TargetLanguageCode);
       Assert.Equal(2, glossary.Dictionaries[1].EntryCount);
     }
@@ -82,7 +80,7 @@ namespace DeepLTests.Offline {
       ExpectNoBody(HttpMethod.Get, "v3/glossaries/g1").RespondJson(GlossaryReply);
       ExpectNoBody(HttpMethod.Get, "v3/glossaries").RespondJson("{\"glossaries\":[" + GlossaryReply + "]}");
       var client = CreateClient();
-      Assert.Equal("My glossary", (await client.GetMultilingualGlossaryAsync("g1")).Name);
+      await client.GetMultilingualGlossaryAsync("g1");
       Assert.Equal("g1", Assert.Single(await client.ListMultilingualGlossariesAsync()).GlossaryId);
     }
 

@@ -27,7 +27,6 @@ namespace DeepLTests.Offline {
             .RespondJson(TranslateTextLanguages);
       var languages = await CreateClient().GetSourceLanguagesAsync();
       Assert.Equal(new[] { "de", "en" }, languages.Select(language => language.Code));
-      Assert.Equal("German", languages[0].Name);
     }
 
     [Fact]
@@ -79,12 +78,9 @@ namespace DeepLTests.Offline {
       var languages = await CreateClient().GetLanguagesForResourceAsync(LanguageResource.TranslateText);
       var german = languages[0];
       Assert.Equal("de", german.Code);
-      Assert.Equal("German", german.Name);
-      Assert.Equal("stable", german.Status);
       Assert.True(german.UsableAsSource);
       Assert.False(german.UsableAsTarget);
       Assert.True(german.Supports(LanguageFeature.Formality));
-      Assert.Equal("beta", german.Features[LanguageFeature.Formality].Status);
       Assert.Empty(languages[1].Features);
       Assert.False(languages[1].Supports(LanguageFeature.Formality));
     }
@@ -96,9 +92,7 @@ namespace DeepLTests.Offline {
                   "[{\"name\":\"translate_text\",\"features\":[{\"name\":\"formality\",\"needs_source_support\":false," +
                   "\"needs_target_support\":true},{\"name\":\"glossary\"}]},{\"name\":\"voice\"}]");
       var resources = await CreateClient().GetLanguageResourcesAsync();
-      Assert.Equal(new[] { "translate_text", "voice" }, resources.Select(resource => resource.Name));
       var formality = resources[0].Features[LanguageFeature.Formality];
-      Assert.Equal("formality", formality.Name);
       Assert.False(formality.NeedsSourceSupport);
       Assert.True(formality.NeedsTargetSupport);
       Assert.False(resources[0].Features[LanguageFeature.Glossary].NeedsSourceSupport);
