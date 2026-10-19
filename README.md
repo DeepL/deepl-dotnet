@@ -1065,17 +1065,18 @@ We welcome Pull Requests, please read the [contributing guidelines](CONTRIBUTING
 
 ### Tests
 
-Execute the tests using `dotnet test`. The tests communicate with the DeepL API using the auth key defined by the
-`DEEPL_AUTH_KEY` environment variable.
+The tests are split into two groups in the `DeepLTests` project, selected by namespace:
 
-Be aware that the tests make DeepL API requests that contribute toward your API usage.
+- `dotnet test --filter "FullyQualifiedName~DeepLTests.Offline."` runs `DeepLTests/Offline`. These tests intercept all
+  HTTP traffic with [MockHttp][mockhttp], so they need no network and no authentication key. They check the requests
+  that the library sends for every option, and how it handles errors, retries and polling.
+- `dotnet test --filter "FullyQualifiedName~DeepLTests.RealApi."` runs `DeepLTests/RealApi`. These tests send one
+  request per API endpoint to the DeepL API, using the authentication key and server URL defined by the
+  `DEEPL_AUTH_KEY` and `DEEPL_SERVER_URL` environment variables. They create and delete glossaries, style rules and
+  translation memories named `sdktest-dotnet-...`.
 
-The test suite may instead be configured to communicate with the mock-server provided by
-[deepl-mock](https://www.github.com/DeepLcom/deepl-mock). Although most test cases work for either, some test cases work
-only with the DeepL API or the mock-server and will be otherwise skipped. The test cases that require the mock-server
-trigger server errors and test the client error-handling. To execute the tests using deepl-mock, run it in another
-terminal while executing the tests. Execute the tests using `dotnet test` with the `DEEPL_MOCK_SERVER_PORT` and
-`DEEPL_SERVER_URL` environment variables defined referring to the mock-server.
+`dotnet test` runs both groups. Be aware that the real-API tests make DeepL API requests that contribute toward your
+API usage.
 
 
 [api-docs-context-param]: https://www.deepl.com/docs-api/translating-text/?utm_source=github&utm_medium=github-dotnet-readme
@@ -1089,3 +1090,5 @@ terminal while executing the tests. Execute the tests using `dotnet test` with t
 [api-docs-xml-handling]: https://www.deepl.com/docs-api/handling-xml/?utm_source=github&utm_medium=github-dotnet-readme
 
 [issues]: https://www.github.com/DeepLcom/deepl-dotnet/issues
+
+[mockhttp]: https://github.com/richardszalay/mockhttp
