@@ -28,6 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - A request that exceeds `PerRetryConnectionTimeout` now throws a `ConnectionException` with a "Request timed out"
   message, like the other timeouts, instead of "Unexpected request failure".
+- Cancelling a request through the `CancellationToken` argument now always rethrows the cancellation exception. Before,
+  a plain `OperationCanceledException` raised by the HTTP handler was wrapped in a `ConnectionException`.
 - Fixed the doc comments of `LanguageCode.English` and `LanguageCode.Portuguese`, which claimed they may only be used as
   source languages.
 

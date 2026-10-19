@@ -498,7 +498,7 @@ namespace DeepL.Internal {
 
         return await _httpClient.SendAsync(requestMessage, cancellationToken).ConfigureAwait(false);
         // Distinguish cancellation due to user-provided token or request time-out
-      } catch (TaskCanceledException) when (cancellationToken.IsCancellationRequested) {
+      } catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) {
         throw;
       } catch (TaskCanceledException ex) {
         throw new ConnectionException($"Request timed out: {ex.Message}", ex);

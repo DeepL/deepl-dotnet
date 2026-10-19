@@ -7,6 +7,7 @@ using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using DeepL;
 using RichardSzalay.MockHttp;
@@ -105,6 +106,19 @@ namespace DeepLTests.Offline {
             });
       var exception = await Assert.ThrowsAsync<ConnectionException>(() => client.GetUsageAsync());
       Assert.StartsWith("Request timed out", exception.Message);
+    }
+
+    [Fact]
+    public async Task ThrowsOperationCanceledExceptionWhenCancelledByCallerAndHandlerThrowsPlainOne() {
+      using var cancellation = new CancellationTokenSource();
+      ExpectNoBody(HttpMethod.Get, "v2/usage")
+            .Respond(
+                  () => {
+                    cancellation.Cancel();
+                    throw new OperationCanceledException(cancellation.Token);
+                  });
+      await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => CreateClient().GetUsageAsync(cancellation.Token));
     }
 
     [Fact]
