@@ -18,6 +18,9 @@ using Microsoft.Extensions.Http;
 using Polly;
 using Polly.Timeout;
 
+// Lets the signed test assembly build clients on a fake inner handler.
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("DeepLTests, PublicKey=0024000004800000940000000602000000240000525341310004000001000100efa31804a684d88f767cd993a3984c13d81ae6c1a7ebac1d8b3ab34d874df688b9b7c2de8869bd649cef08edc02d9ec2214dcb0ea7559c7c8f7b5fbb01f71408f42e1a5bd831fc46a0db864ecc04476c6abbb73530a719247dbd17c592340ce1389b8b5bbc0bef9255bb0b96b9ed6e1721032be4b59398857de675ffb47eda96")]
+
 namespace DeepL.Internal {
   /// <summary>Identifies the type of resource being accessed, used for contextual error messages.</summary>
   internal enum ResourceType {
@@ -156,9 +159,20 @@ namespace DeepL.Internal {
     public static HttpClientAndDisposeFlag CreateDefaultHttpClient(
           TimeSpan perRetryConnectionTimeout,
           TimeSpan overallConnectionTimeout,
-          int maximumNetworkRetries) {
+          int maximumNetworkRetries) =>
+          CreateDefaultHttpClient(
+                perRetryConnectionTimeout,
+                overallConnectionTimeout,
+                maximumNetworkRetries,
+                new HttpClientHandler());
+
+    internal static HttpClientAndDisposeFlag CreateDefaultHttpClient(
+          TimeSpan perRetryConnectionTimeout,
+          TimeSpan overallConnectionTimeout,
+          int maximumNetworkRetries,
+          HttpMessageHandler innerHandler) {
       var handler = CreateHttpMessageHandlerWithRetryPolicy(
-            new HttpClientHandler(),
+            innerHandler,
             perRetryConnectionTimeout,
             maximumNetworkRetries);
       return new HttpClientAndDisposeFlag {
