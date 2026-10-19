@@ -7,7 +7,7 @@ using DeepL;
 using NSubstitute;
 using Xunit;
 
-namespace DeepLTests {
+namespace DeepLTests.Offline {
   internal class SystemUnderTest {
     private readonly ITranslator _translator;
 
