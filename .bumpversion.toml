@@ -16,4 +16,4 @@ commit = false
 filename = "DeepL/DeepL.csproj"
 
 [[tool.bumpversion.files]]
-filename = "DeepLTests/GeneralTest.cs"
+filename = "DeepLTests/Offline/TranslatorOptions.cs"
