@@ -110,55 +110,85 @@ package:
 
 # stage: test -------------------------
 
-.test_base:
+# Offline suite: no secrets and no network. Runs on every runtime.
+.test_offline_base:
   stage: test
-  extends: .test
   dependencies:
     - build
   parallel:
     matrix:
       - DOCKER_IMAGE: "mcr.microsoft.com/dotnet/sdk:5.0-alpine"
         FRAMEWORK: "net5.0"
-        CONFIGURATION: "Release"
+        CONFIGURATION:
+          - Debug
+          - Release
       - DOCKER_IMAGE: "mcr.microsoft.com/dotnet/sdk:3.1-alpine"
         FRAMEWORK: "netcoreapp3.1"
         CONFIGURATION:
           - Debug
           - Release
-        USE_MOCK_SERVER: "use mock server"
-      - DOCKER_IMAGE: "mcr.microsoft.com/dotnet/sdk:5.0-alpine"
-        FRAMEWORK: "net5.0"
-        CONFIGURATION:
-          - Debug
-          - Release
-        USE_MOCK_SERVER: "use mock server"
   image: ${DOCKER_IMAGE}
   script:
-    - >
-      if [[ ! -z "${USE_MOCK_SERVER}" ]]; then
-        echo "Using mock server"
-        export DEEPL_SERVER_URL=http://deepl-mock:3000
-        export DEEPL_MOCK_SERVER_PORT=3000
-        export DEEPL_PROXY_URL=http://deepl-mock:3001
-        export DEEPL_MOCK_PROXY_SERVER_PORT=3001
-      fi
     - dotnet test
       --configuration $CONFIGURATION
       --framework $FRAMEWORK
+      --filter "FullyQualifiedName~DeepLTests.Offline."
       --logger:"junit;LogFilePath=..\artifacts\{assembly}-test-result.xml;MethodFormat=Class;FailureBodyFormat=Verbose"
+      --collect:"XPlat Code Coverage"
+      -- "DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include=[DeepL.net]*"
   artifacts:
     reports:
       junit:
         - artifacts/*test-result.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: DeepLTests/TestResults/*/coverage.cobertura.xml
+    when: always
 
-test_scheduled:
-  extends: .test_base
+test_offline_scheduled:
+  extends: .test_offline_base
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
   retry: 2
 
-test_manual:
-  extends: .test_base
+test_offline_manual:
+  extends: .test_offline_base
+  rules:
+    - if: $CI_PIPELINE_SOURCE != "schedule"
+
+# Every endpoint once against the real API; no retry, as a retry repeats every request.
+.test_real_api_base:
+  stage: test
+  extends: .test
+  # Replaces the deepl-mock service of .test
+  services: []
+  dependencies:
+    - build
+  image: mcr.microsoft.com/dotnet/sdk:5.0-alpine
+  script:
+    - dotnet test
+      --configuration Release
+      --framework net5.0
+      --filter "FullyQualifiedName~DeepLTests.RealApi."
+      --logger:"junit;LogFilePath=..\artifacts\{assembly}-test-result.xml;MethodFormat=Class;FailureBodyFormat=Verbose"
+      --collect:"XPlat Code Coverage"
+      -- "DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include=[DeepL.net]*"
+  artifacts:
+    reports:
+      junit:
+        - artifacts/*test-result.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: DeepLTests/TestResults/*/coverage.cobertura.xml
+    when: always
+
+test_real_api_scheduled:
+  extends: .test_real_api_base
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+
+test_real_api_manual:
+  extends: .test_real_api_base
   rules:
     - if: $CI_PIPELINE_SOURCE != "schedule"
 
