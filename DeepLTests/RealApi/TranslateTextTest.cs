@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Xunit;
 
 namespace DeepLTests.RealApi {
-  public sealed class TranslateText {
+  public sealed class TranslateTextTest {
     [Fact]
     public async Task SendsPostV2TranslateAndParsesTheResult() {
       var result = await RealApiClient.CreateClient().TranslateTextAsync(Fixtures.EnglishText, null, "de");

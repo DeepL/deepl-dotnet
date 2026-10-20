@@ -12,7 +12,7 @@ using RichardSzalay.MockHttp;
 using Xunit;
 
 namespace DeepLTests.Offline {
-  public sealed class StyleRules : OfflineTest {
+  public sealed class StyleRulesTest : OfflineTest {
     private const string RuleReply =
           "{\"style_id\":\"s1\",\"name\":\"My rule\",\"creation_time\":\"2025-01-02T03:04:05Z\"," +
           "\"updated_time\":\"2025-01-03T03:04:05Z\",\"language\":\"en\",\"version\":3," +

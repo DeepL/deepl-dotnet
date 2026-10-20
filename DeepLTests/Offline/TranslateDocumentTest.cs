@@ -15,7 +15,7 @@ using RichardSzalay.MockHttp;
 using Xunit;
 
 namespace DeepLTests.Offline {
-  public sealed class TranslateDocument : OfflineTest {
+  public sealed class TranslateDocumentTest : OfflineTest {
     private const string HandleReply = "{\"document_id\":\"d1\",\"document_key\":\"k1\"}";
     private static readonly DocumentHandle Handle = new DocumentHandle("d1", "k1");
 

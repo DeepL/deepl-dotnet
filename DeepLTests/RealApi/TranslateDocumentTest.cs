@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Xunit;
 
 namespace DeepLTests.RealApi {
-  public sealed class TranslateDocument {
+  public sealed class TranslateDocumentTest {
     [Fact]
     public async Task UploadsPollsAndDownloadsATxtDocument() {
       var input = Fixtures.CreateTextDocument();

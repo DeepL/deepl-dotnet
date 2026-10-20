@@ -15,7 +15,7 @@ using RichardSzalay.MockHttp;
 using Xunit;
 
 namespace DeepLTests.Offline {
-  public sealed class TranslationMemories : OfflineTest {
+  public sealed class TranslationMemoriesTest : OfflineTest {
     private const string Tmx = "<tmx version=\"1.4\"><body/></tmx>";
     private const string UploadUrl = "https://storage.example.com/upload?sig=abc";
     private const string DownloadUrl = "https://storage.example.com/download?sig=def";

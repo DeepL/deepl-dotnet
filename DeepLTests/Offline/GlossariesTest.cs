@@ -14,7 +14,7 @@ using RichardSzalay.MockHttp;
 using Xunit;
 
 namespace DeepLTests.Offline {
-  public sealed class Glossaries : OfflineTest {
+  public sealed class GlossariesTest : OfflineTest {
     private const string GlossaryReply =
           "{\"glossary_id\":\"g1\",\"name\":\"My glossary\",\"ready\":true,\"source_lang\":\"en\",\"target_lang\":\"de\"," +
           "\"creation_time\":\"2021-08-03T14:16:18.329Z\",\"entry_count\":2}";

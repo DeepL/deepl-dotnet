@@ -11,7 +11,7 @@ using RichardSzalay.MockHttp;
 using Xunit;
 
 namespace DeepLTests.Offline {
-  public sealed class Errors : OfflineTest {
+  public sealed class ErrorsTest : OfflineTest {
     [Theory]
     [InlineData(400, typeof(DeepLException), "Bad request")]
     [InlineData(403, typeof(AuthorizationException), "Authorization failure, check AuthKey")]

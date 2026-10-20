@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Xunit;
 
 namespace DeepLTests.RealApi {
-  public sealed class Usage {
+  public sealed class UsageTest {
     [Fact]
     public async Task SendsGetV2UsageAndParsesTheUsage() {
       var usage = await RealApiClient.CreateClient().GetUsageAsync();

@@ -9,7 +9,7 @@ using DeepL.Model;
 using Xunit;
 
 namespace DeepLTests.RealApi {
-  public sealed class MultilingualGlossaries {
+  public sealed class MultilingualGlossariesTest {
     [Fact]
     public async Task SendsTheV3GlossaryRequestsCreateGetListEntriesRenameReplaceAndDelete() {
       var client = RealApiClient.CreateClient();

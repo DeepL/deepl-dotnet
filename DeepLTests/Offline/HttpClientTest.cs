@@ -15,7 +15,7 @@ using Xunit;
 
 namespace DeepLTests.Offline {
   /// <summary>Retries and timeouts of the default HTTP client. These tests wait for the real back-off delay.</summary>
-  public sealed class HttpClient : OfflineTest {
+  public sealed class HttpClientTest : OfflineTest {
     private const string UsageReply = "{\"character_count\":1,\"character_limit\":2}";
     private static readonly TimeSpan PerRetryTimeout = TimeSpan.FromSeconds(10);
 

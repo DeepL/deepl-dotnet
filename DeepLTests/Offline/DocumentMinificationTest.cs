@@ -12,7 +12,7 @@ using RichardSzalay.MockHttp;
 using Xunit;
 
 namespace DeepLTests.Offline {
-  public sealed class DocumentMinification : OfflineTest {
+  public sealed class DocumentMinificationTest : OfflineTest {
     private readonly string _tempDir = Fixtures.TempDir();
 
     [Theory]

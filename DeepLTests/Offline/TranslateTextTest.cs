@@ -14,7 +14,7 @@ using RichardSzalay.MockHttp;
 using Xunit;
 
 namespace DeepLTests.Offline {
-  public sealed class TranslateText : OfflineTest {
+  public sealed class TranslateTextTest : OfflineTest {
     private const string Reply =
           "{\"translations\":[{\"detected_source_language\":\"EN\",\"text\":\"Hallo\",\"billed_characters\":5," +
           "\"model_type_used\":\"quality_optimized\"}]}";

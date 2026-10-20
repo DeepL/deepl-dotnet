@@ -11,7 +11,7 @@ using RichardSzalay.MockHttp;
 using Xunit;
 
 namespace DeepLTests.Offline {
-  public sealed class RephraseText : OfflineTest {
+  public sealed class RephraseTextTest : OfflineTest {
     private const string Reply =
           "{\"improvements\":[{\"text\":\"better\",\"target_language\":\"EN-US\",\"detected_source_language\":\"EN\"}]}";
 

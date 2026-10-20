@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 using Xunit;
 
 namespace DeepLTests.RealApi {
-  public sealed class CorrectText {
+  public sealed class RephraseTextTest {
     [Fact]
-    public async Task SendsPostV2WriteCorrectAndParsesTheResult() {
-      var result = await RealApiClient.CreateClient().CorrectTextAsync(Fixtures.GermanText, "de");
+    public async Task SendsPostV2WriteRephraseAndParsesTheResult() {
+      var result = await RealApiClient.CreateClient().RephraseTextAsync(Fixtures.GermanText, "de");
 
       Assert.NotEmpty(result.Text);
       Assert.NotEmpty(result.DetectedSourceLanguageCode);

@@ -11,7 +11,7 @@ using DeepL.Model;
 using Xunit;
 
 namespace DeepLTests.RealApi {
-  public sealed class TranslationMemories {
+  public sealed class TranslationMemoriesTest {
     private const string ExampleTmx =
           "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
           "<tmx version=\"1.4\"><header creationtool=\"deepl-dotnet-tests\" creationtoolversion=\"1\"" +

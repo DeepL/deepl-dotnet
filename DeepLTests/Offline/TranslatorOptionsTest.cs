@@ -11,7 +11,7 @@ using RichardSzalay.MockHttp;
 using Xunit;
 
 namespace DeepLTests.Offline {
-  public sealed class TranslatorOptions : OfflineTest {
+  public sealed class TranslatorOptionsTest : OfflineTest {
     private const string UsageReply = "{\"character_count\":1,\"character_limit\":2}";
 
     private async Task<string> SendAndCaptureUserAgent(Action<DeepLClientOptions> configure) {

@@ -7,7 +7,7 @@ using DeepL.Model;
 using Xunit;
 
 namespace DeepLTests.RealApi {
-  public sealed class Languages {
+  public sealed class LanguagesTest {
     [Fact]
     public async Task SendsGetV3LanguagesAndParsesTheSourceLanguages() {
       var languages = await RealApiClient.CreateClient().GetSourceLanguagesAsync();

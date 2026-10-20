@@ -8,7 +8,7 @@ using DeepL;
 using Xunit;
 
 namespace DeepLTests.RealApi {
-  public sealed class Glossaries {
+  public sealed class GlossariesTest {
     [Fact]
     public async Task SendsTheV2GlossaryRequestsCreateGetListEntriesAndDelete() {
       var client = RealApiClient.CreateClient();

@@ -13,7 +13,7 @@ using RichardSzalay.MockHttp;
 using Xunit;
 
 namespace DeepLTests.Offline {
-  public sealed class Languages : OfflineTest {
+  public sealed class LanguagesTest : OfflineTest {
     private const string TranslateTextLanguages =
           "[{\"lang\":\"de\",\"name\":\"German\",\"usable_as_source\":true,\"usable_as_target\":true," +
           "\"features\":{\"formality\":{\"status\":\"stable\"}}}," +

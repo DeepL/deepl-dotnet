@@ -9,7 +9,7 @@ using DeepL.Model;
 using Xunit;
 
 namespace DeepLTests.RealApi {
-  public sealed class StyleRules {
+  public sealed class StyleRulesTest {
     [Fact]
     public async Task SendsTheStyleRuleRequestsCreateGetListRenameConfigureInstructionsAndDelete() {
       var client = RealApiClient.CreateClient();

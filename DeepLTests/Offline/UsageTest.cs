@@ -8,7 +8,7 @@ using RichardSzalay.MockHttp;
 using Xunit;
 
 namespace DeepLTests.Offline {
-  public sealed class Usage : OfflineTest {
+  public sealed class UsageTest : OfflineTest {
     [Fact]
     public async Task ParsesCharacterAndDocumentCounts() {
       ExpectNoBody(HttpMethod.Get, "v2/usage")
