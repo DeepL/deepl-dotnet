@@ -160,8 +160,6 @@ test_offline_manual:
 .test_real_api_base:
   stage: test
   extends: .test
-  # Replaces the deepl-mock service of .test
-  services: []
   dependencies:
     - build
   image: mcr.microsoft.com/dotnet/sdk:5.0-alpine
