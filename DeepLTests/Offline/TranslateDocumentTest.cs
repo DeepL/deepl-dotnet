@@ -8,6 +8,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using DeepL;
 using DeepL.Model;
@@ -218,6 +219,22 @@ namespace DeepLTests.Offline {
       await Assert.ThrowsAsync<IOException>(
             () => CreateClient().TranslateDocumentAsync(new FileInfo(input), new FileInfo(output), null, "DE"));
       Assert.Equal("keep", File.ReadAllText(output));
+    }
+
+    [Fact]
+    public async Task WrapsCancellationInDocumentTranslationException() {
+      using var cancellation = new CancellationTokenSource();
+      Expect(HttpMethod.Post, "v2/document")
+            .Respond(
+                  () => {
+                    cancellation.Cancel();
+                    throw new OperationCanceledException(cancellation.Token);
+                  });
+      using var output = new MemoryStream();
+      var exception = await Assert.ThrowsAsync<DocumentTranslationException>(
+            () => CreateClient()
+                  .TranslateDocumentAsync(Text("hello"), "a.txt", output, "EN", "DE", null, cancellation.Token));
+      Assert.IsAssignableFrom<OperationCanceledException>(exception.InnerException);
     }
 
     [Fact]
