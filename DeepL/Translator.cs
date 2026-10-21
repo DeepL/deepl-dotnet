@@ -79,8 +79,8 @@ namespace DeepL {
     ///   If cancellation was requested, or an error occurs while translating the document. If the document was uploaded
     ///   successfully, then the <see cref="DocumentTranslationException.DocumentHandle" /> contains the document ID and
     ///   key that may be used to retrieve the document.
-    ///   If cancellation was requested, the <see cref="DocumentTranslationException.InnerException" /> will be a
-    ///   <see cref="TaskCanceledException" />.
+    ///   If cancellation was requested, the <see cref="DocumentTranslationException.InnerException" /> will be an
+    ///   <see cref="OperationCanceledException" /> (usually a <see cref="TaskCanceledException" />).
     /// </exception>
     Task TranslateDocumentAsync(
           FileInfo inputFileInfo,
@@ -105,8 +105,8 @@ namespace DeepL {
     ///   If cancellation was requested, or an error occurs while translating the document. If the document was uploaded
     ///   successfully, then the <see cref="DocumentTranslationException.DocumentHandle" /> contains the document ID and
     ///   key that may be used to retrieve the document.
-    ///   If cancellation was requested, the <see cref="DocumentTranslationException.InnerException" /> will be a
-    ///   <see cref="TaskCanceledException" />.
+    ///   If cancellation was requested, the <see cref="DocumentTranslationException.InnerException" /> will be an
+    ///   <see cref="OperationCanceledException" /> (usually a <see cref="TaskCanceledException" />).
     /// </exception>
     Task TranslateDocumentAsync(
           Stream inputFile,

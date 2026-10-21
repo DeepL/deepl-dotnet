@@ -30,6 +30,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   message, like the other timeouts, instead of "Unexpected request failure".
 - Cancelling a request through the `CancellationToken` argument now always rethrows the cancellation exception. Before,
   a plain `OperationCanceledException` raised by the HTTP handler was wrapped in a `ConnectionException`.
+  Document translation still wraps it in a `DocumentTranslationException`, with the cancellation exception as
+  `InnerException`.
 - Fixed the doc comments of `LanguageCode.English` and `LanguageCode.Portuguese`, which claimed they may only be used as
   source languages.
 
