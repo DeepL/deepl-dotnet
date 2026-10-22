@@ -667,6 +667,11 @@ namespace DeepL {
         bodyParams.Add(("output_format", options?.OutputFormat!));
       }
 
+      if (options?.EnableWatermark != null) {
+        // The API ignores "1" for this parameter; it needs "true"/"false".
+        bodyParams.Add(("enable_watermark", options.EnableWatermark.Value ? "true" : "false"));
+      }
+
       AddExtraBodyParameters(bodyParams, options?.ExtraBodyParameters);
 
       using var responseMessage = await _client.ApiUploadAsync(

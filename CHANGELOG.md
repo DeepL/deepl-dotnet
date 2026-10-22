@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and features.
 - Added `DeepLClient.GetLanguageResourcesAsync()` to retrieve the DeepL API resources and their features, including
   whether each feature requires source and/or target language support (`GET /v3/languages/resources`).
+- Added `DocumentTranslateOptions.EnableWatermark` to request a "Translated by DeepL" watermark on translated
+  documents (`docx` and `pdf` output only).
 - Added `CorrectTextAsync()` method to the `DeepLClient` class for correcting
   grammar and spelling errors via the `v2/write/correct` endpoint.
 

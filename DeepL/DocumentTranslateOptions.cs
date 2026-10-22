@@ -93,5 +93,11 @@ namespace DeepL {
     ///   translated file will be in the same format as the input file.
     /// </summary>
     public string? OutputFormat { get; set; }
+
+    /// <summary>
+    ///   When <c>true</c>, adds a "Translated by DeepL" watermark to the translated document. Only supported for
+    ///   <c>docx</c> and <c>pdf</c> output; ignored by the API for other formats. If unset, the parameter is not sent.
+    /// </summary>
+    public bool? EnableWatermark { get; set; }
   }
 }

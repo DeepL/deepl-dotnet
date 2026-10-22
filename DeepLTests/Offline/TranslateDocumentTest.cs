@@ -69,6 +69,43 @@ namespace DeepLTests.Offline {
     public Task SendsOutputFormat() =>
           Upload(new DocumentTranslateOptions { OutputFormat = "pdf" }, ("output_format", null, "pdf"));
 
+    [Theory]
+    [InlineData(true, "true")]
+    [InlineData(false, "false")]
+    public Task SendsEnableWatermark(bool value, string expected) =>
+          Upload(new DocumentTranslateOptions { EnableWatermark = value }, ("enable_watermark", null, expected));
+
+    [Fact]
+    public Task OmitsEnableWatermarkWhenUnset() => Upload(new DocumentTranslateOptions());
+
+    [Fact]
+    public Task SendsEnableWatermarkWithOutputFormat() =>
+          Upload(
+                new DocumentTranslateOptions { OutputFormat = "pdf", EnableWatermark = true },
+                ("output_format", null, "pdf"),
+                ("enable_watermark", null, "true"));
+
+    [Fact]
+    public async Task TranslateDocumentSendsEnableWatermark() {
+      ExpectMultipart(
+                  "v2/document",
+                  ("target_lang", null, "de"),
+                  ("enable_watermark", null, "true"),
+                  ("file", "a.txt", "hello"))
+            .RespondJson(HandleReply);
+      ExpectForm(HttpMethod.Post, "v2/document/d1", ("document_key", "k1"))
+            .RespondJson("{\"document_id\":\"d1\",\"status\":\"done\"}");
+      ExpectForm(HttpMethod.Post, "v2/document/d1/result", ("document_key", "k1")).Respond("text/plain", "hallo");
+      using var output = new MemoryStream();
+      await CreateClient().TranslateDocumentAsync(
+            Text("hello"),
+            "a.txt",
+            output,
+            null,
+            "DE",
+            new DocumentTranslateOptions { EnableWatermark = true });
+    }
+
     [Fact]
     public Task SendsStyleId() =>
           Upload(new DocumentTranslateOptions { StyleId = "s1" }, ("style_id", null, "s1"));
