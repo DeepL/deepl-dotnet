@@ -903,6 +903,28 @@ if (usage.AnyLimitReached) {
 }
 ```
 
+For API Pro accounts, `Usage` also contains the following fields; they are `null` for other account types:
+
+- `ApiKeyCharacter`: the character usage of the API key used for the request. `Character` covers the whole account.
+- `SpeechToTextMinutes` and `SpeechToSpeechMinutes`: speech usage in minutes, as `Usage.Detail` like `Character`.
+- `StartTime` and `EndTime`: the start and end of the current billing period, as `DateTime`.
+- `Products`: the usage per product, as an array of `Usage.Product` with `ProductType` (for example `"translate"`,
+  `"write"`, `"speechToText"`, `"speechToSpeech"`), `BillingUnit` (`"characters"` or `"minutes"`),
+  `ApiKeyUnitCount` and `AccountUnitCount`.
+
+```c#
+var usage = await client.GetUsageAsync();
+Console.WriteLine($"Account: {usage.Character?.Count} of {usage.Character?.Limit} characters");
+if (usage.ApiKeyCharacter != null) {
+  Console.WriteLine($"This API key: {usage.ApiKeyCharacter.Count} of {usage.ApiKeyCharacter.Limit} characters");
+  Console.WriteLine($"Billing period: {usage.StartTime:u} to {usage.EndTime:u}");
+  foreach (var product in usage.Products ?? Array.Empty<Usage.Product>()) {
+    Console.WriteLine($"{product.ProductType}: {product.ApiKeyUnitCount} {product.BillingUnit} by this key, " +
+                      $"{product.AccountUnitCount} {product.BillingUnit} by the account");
+  }
+}
+```
+
 ### Listing available languages
 
 You can request the list of languages supported by DeepL for text and documents

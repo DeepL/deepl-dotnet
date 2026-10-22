@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Added the API Pro fields of `GET /v2/usage` to `Usage`: `ApiKeyCharacter` (the character usage of the API key,
+  as opposed to the account-wide `Character`), `SpeechToTextMinutes`, `SpeechToSpeechMinutes`, `StartTime`,
+  `EndTime` and `Products` (per-product usage as `Usage.Product`). They are `null` when the response does not
+  contain them, for example for non-Pro accounts.
 - Added `LanguageCode` constants for target language variants `GermanSwiss` (`de-CH`), `GermanGermany` (`de-DE`),
   `SpanishEuropean` (`es-ES`), `FrenchCanadian` (`fr-CA`) and `FrenchEuropean` (`fr-FR`).
 - Added `DeepLClient.GetLanguagesForResourceAsync()` to retrieve the languages supported by a DeepL API resource

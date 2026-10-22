@@ -2,6 +2,7 @@
 // Use of this source code is governed by an MIT
 // license that can be found in the LICENSE file.
 
+using System;
 using System.Text.Json.Serialization;
 
 namespace DeepL.Model {
@@ -27,6 +28,14 @@ namespace DeepL.Model {
       Character = DetailOrNull(fieldsStruct.CharacterCount, fieldsStruct.CharacterLimit);
       Document = DetailOrNull(fieldsStruct.DocumentCount, fieldsStruct.DocumentLimit);
       TeamDocument = DetailOrNull(fieldsStruct.TeamDocumentCount, fieldsStruct.TeamDocumentLimit);
+      ApiKeyCharacter = DetailOrNull(fieldsStruct.ApiKeyCharacterCount, fieldsStruct.ApiKeyCharacterLimit);
+      SpeechToTextMinutes =
+            DetailOrNull(fieldsStruct.SpeechToTextMinutesCount, fieldsStruct.SpeechToTextMinutesLimit);
+      SpeechToSpeechMinutes =
+            DetailOrNull(fieldsStruct.SpeechToSpeechMinutesCount, fieldsStruct.SpeechToSpeechMinutesLimit);
+      Products = fieldsStruct.Products;
+      StartTime = fieldsStruct.StartTime;
+      EndTime = fieldsStruct.EndTime;
     }
 
     /// <summary>The character usage if included for the account type, or null.</summary>
@@ -37,6 +46,27 @@ namespace DeepL.Model {
 
     /// <summary>The team document usage if included for the account type, or null.</summary>
     public Detail? TeamDocument { get; }
+
+    /// <summary>
+    ///   The character usage of the API key used for this request, as opposed to <see cref="Character" />, which covers
+    ///   the whole account. Only present for API Pro accounts, otherwise null.
+    /// </summary>
+    public Detail? ApiKeyCharacter { get; }
+
+    /// <summary>The speech-to-text usage in minutes. Only present for API Pro accounts, otherwise null.</summary>
+    public Detail? SpeechToTextMinutes { get; }
+
+    /// <summary>The speech-to-speech usage in minutes. Only present for API Pro accounts, otherwise null.</summary>
+    public Detail? SpeechToSpeechMinutes { get; }
+
+    /// <summary>The usage broken down per product. Only present for API Pro accounts, otherwise null.</summary>
+    public Product[]? Products { get; }
+
+    /// <summary>The start time of the current billing period. Only present for API Pro accounts, otherwise null.</summary>
+    public DateTime? StartTime { get; }
+
+    /// <summary>The end time of the current billing period. Only present for API Pro accounts, otherwise null.</summary>
+    public DateTime? EndTime { get; }
 
     /// <summary><c>true</c> if any of the usage types included for the account type have been reached.</summary>
     public bool AnyLimitReached => (Character?.LimitReached ?? false) || (Document?.LimitReached ?? false) ||
@@ -88,11 +118,73 @@ namespace DeepL.Model {
       public override string ToString() => $"{Count} of {Limit}";
     }
 
+    /// <summary>The usage of one product, for example text translation or speech-to-text.</summary>
+    public sealed class Product {
+      /// <summary>Initializes a new <see cref="Product" /> object.</summary>
+      /// <param name="productType">The product type, for example "translate" or "speechToText".</param>
+      /// <param name="billingUnit">The unit the product is billed in, for example "characters" or "minutes".</param>
+      /// <param name="apiKeyUnitCount">Units used for this product by the API key in the current billing period.</param>
+      /// <param name="accountUnitCount">Units used for this product by the account in the current billing period.</param>
+      [JsonConstructor]
+      public Product(string productType, string billingUnit, long apiKeyUnitCount, long accountUnitCount) {
+        (ProductType, BillingUnit, ApiKeyUnitCount, AccountUnitCount) =
+              (productType, billingUnit, apiKeyUnitCount, accountUnitCount);
+      }
+
+      /// <summary>
+      ///   The product type, for example "write", "translate", "speechToText" or "speechToSpeech". The API may add
+      ///   further values.
+      /// </summary>
+      public string ProductType { get; }
+
+      /// <summary>The unit this product is billed in, for example "characters" or "minutes".</summary>
+      public string BillingUnit { get; }
+
+      /// <summary>Units used for this product by the API key used for this request in the current billing period.</summary>
+      public long ApiKeyUnitCount { get; }
+
+      /// <summary>Units used for this product by the whole account in the current billing period.</summary>
+      public long AccountUnitCount { get; }
+
+      /// <summary>The product usage as a string.</summary>
+      /// <returns>A string containing the product type, its unit and the API key and account counts.</returns>
+      /// <remarks>
+      ///   This function is for diagnostic purposes only; the content of the returned string is exempt from backwards
+      ///   compatibility.
+      /// </remarks>
+      public override string ToString() =>
+            $"{ProductType}: {ApiKeyUnitCount} {BillingUnit} (API key), {AccountUnitCount} {BillingUnit} (account)";
+    }
+
     /// <summary>
     ///   Internal struct used for JSON deserialization of <see cref="Usage" />. You should only need to
     ///   instantiate this object in testing code.
     /// </summary>
     public readonly struct JsonFieldsStruct {
+      public JsonFieldsStruct(
+            long? characterCount,
+            long? characterLimit,
+            long? documentCount,
+            long? documentLimit,
+            long? teamDocumentCount,
+            long? teamDocumentLimit) : this(
+            characterCount,
+            characterLimit,
+            documentCount,
+            documentLimit,
+            teamDocumentCount,
+            teamDocumentLimit,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null) {
+      }
+
       [JsonConstructor]
       public JsonFieldsStruct(
             long? characterCount,
@@ -100,9 +192,23 @@ namespace DeepL.Model {
             long? documentCount,
             long? documentLimit,
             long? teamDocumentCount,
-            long? teamDocumentLimit) {
+            long? teamDocumentLimit,
+            long? apiKeyCharacterCount,
+            long? apiKeyCharacterLimit,
+            long? speechToTextMinutesCount,
+            long? speechToTextMinutesLimit,
+            long? speechToSpeechMinutesCount,
+            long? speechToSpeechMinutesLimit,
+            Product[]? products,
+            DateTime? startTime,
+            DateTime? endTime) {
         (CharacterCount, CharacterLimit, DocumentCount, DocumentLimit, TeamDocumentCount, TeamDocumentLimit) =
               (characterCount, characterLimit, documentCount, documentLimit, teamDocumentCount, teamDocumentLimit);
+        (ApiKeyCharacterCount, ApiKeyCharacterLimit) = (apiKeyCharacterCount, apiKeyCharacterLimit);
+        (SpeechToTextMinutesCount, SpeechToTextMinutesLimit) = (speechToTextMinutesCount, speechToTextMinutesLimit);
+        (SpeechToSpeechMinutesCount, SpeechToSpeechMinutesLimit) =
+              (speechToSpeechMinutesCount, speechToSpeechMinutesLimit);
+        (Products, StartTime, EndTime) = (products, startTime, endTime);
       }
 
       public long? CharacterCount { get; }
@@ -111,6 +217,15 @@ namespace DeepL.Model {
       public long? DocumentLimit { get; }
       public long? TeamDocumentCount { get; }
       public long? TeamDocumentLimit { get; }
+      public long? ApiKeyCharacterCount { get; }
+      public long? ApiKeyCharacterLimit { get; }
+      public long? SpeechToTextMinutesCount { get; }
+      public long? SpeechToTextMinutesLimit { get; }
+      public long? SpeechToSpeechMinutesCount { get; }
+      public long? SpeechToSpeechMinutesLimit { get; }
+      public Product[]? Products { get; }
+      public DateTime? StartTime { get; }
+      public DateTime? EndTime { get; }
     }
   }
 }
