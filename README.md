@@ -912,6 +912,9 @@ For API Pro accounts, `Usage` also contains the following fields; they are `null
   `"write"`, `"speechToText"`, `"speechToSpeech"`), `BillingUnit` (`"characters"` or `"minutes"`),
   `ApiKeyUnitCount` and `AccountUnitCount`.
 
+`AnyLimitReached` checks only `Character`, `Document` and `TeamDocument`. It does not consider these API Pro
+fields; check `LimitReached` on them directly, e.g. `usage.ApiKeyCharacter?.LimitReached`.
+
 ```c#
 var usage = await client.GetUsageAsync();
 Console.WriteLine($"Account: {usage.Character?.Count} of {usage.Character?.Limit} characters");

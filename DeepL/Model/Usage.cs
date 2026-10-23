@@ -3,6 +3,7 @@
 // license that can be found in the LICENSE file.
 
 using System;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace DeepL.Model {
@@ -68,7 +69,11 @@ namespace DeepL.Model {
     /// <summary>The end time of the current billing period. Only present for API Pro accounts, otherwise null.</summary>
     public DateTime? EndTime { get; }
 
-    /// <summary><c>true</c> if any of the usage types included for the account type have been reached.</summary>
+    /// <summary>
+    ///   <c>true</c> if the character, document or team document limit has been reached. The API Pro usage types
+    ///   (<see cref="ApiKeyCharacter" />, <see cref="SpeechToTextMinutes" />, <see cref="SpeechToSpeechMinutes" />)
+    ///   are not considered; check <see cref="Detail.LimitReached" /> on them directly.
+    /// </summary>
     public bool AnyLimitReached => (Character?.LimitReached ?? false) || (Document?.LimitReached ?? false) ||
                                    (TeamDocument?.LimitReached ?? false);
 
@@ -224,8 +229,35 @@ namespace DeepL.Model {
       public long? SpeechToSpeechMinutesCount { get; }
       public long? SpeechToSpeechMinutesLimit { get; }
       public Product[]? Products { get; }
+
+      [JsonConverter(typeof(LenientNullableDateTimeConverter))]
       public DateTime? StartTime { get; }
+
+      [JsonConverter(typeof(LenientNullableDateTimeConverter))]
       public DateTime? EndTime { get; }
+    }
+  }
+
+  /// <summary>
+  ///   Reads an optional ISO 8601 timestamp, returning null instead of throwing when the value is missing or has an
+  ///   unexpected format, so that one unexpected field does not fail the whole usage response.
+  /// </summary>
+  internal sealed class LenientNullableDateTimeConverter : JsonConverter<DateTime?> {
+    public override DateTime? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {
+      if (reader.TokenType == JsonTokenType.String && reader.TryGetDateTime(out var value)) {
+        return value;
+      }
+
+      reader.Skip();
+      return null;
+    }
+
+    public override void Write(Utf8JsonWriter writer, DateTime? value, JsonSerializerOptions options) {
+      if (value.HasValue) {
+        writer.WriteStringValue(value.Value);
+      } else {
+        writer.WriteNullValue();
+      }
     }
   }
 }

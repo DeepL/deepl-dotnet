@@ -117,6 +117,19 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
+    public async Task IgnoresAnUnparseableBillingPeriod() {
+      ExpectNoBody(HttpMethod.Get, "v2/usage")
+            .RespondJson(
+                  "{\"character_count\":20,\"character_limit\":500000," +
+                  "\"start_time\":\"not a timestamp\",\"end_time\":\"\"}");
+      var usage = await CreateClient().GetUsageAsync();
+
+      Assert.Equal(20, usage.Character!.Count);
+      Assert.Null(usage.StartTime);
+      Assert.Null(usage.EndTime);
+    }
+
+    [Fact]
     public void KeepsTheSixArgumentJsonFieldsStructConstructor() {
       var usage = new DeepL.Model.Usage(new DeepL.Model.Usage.JsonFieldsStruct(1, 2, null, null, null, null));
       Assert.Equal(1, usage.Character!.Count);
