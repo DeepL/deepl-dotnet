@@ -87,7 +87,8 @@ namespace DeepL {
   ///   Client for the DeepL API. To use the DeepL API, initialize an instance of this class using your DeepL
   ///   Authentication Key. All functions are thread-safe, aside from <see cref="DeepLClient.Dispose" />.
   /// </summary>
-  public sealed class DeepLClient : Translator, IWriter, IGlossaryManager, IStyleRuleManager, ITranslationMemoryManager {
+  public sealed class DeepLClient : Translator, IWriter, IGlossaryManager, IStyleRuleManager, ITranslationMemoryManager,
+        ISpokenTermsManager {
     /// <summary>Initializes a new instance of the <see cref="AuthorizationException" /> class.</summary>
     /// <param name="message">The message that describes the error.</param>
     public DeepLClient(string authKey, DeepLClientOptions? options = null) : base(authKey, options) { }
@@ -783,6 +784,160 @@ namespace DeepL {
 
       await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.StyleRule).ConfigureAwait(false);
     }
+
+    /// <inheritdoc />
+    public async Task<SpokenTerms> CreateSpokenTermsAsync(
+          string name,
+          IEnumerable<SpokenTermsEntries> termLists,
+          CancellationToken cancellationToken = default) {
+      var requestData = new Dictionary<string, object> {
+            ["name"] = name, ["term_lists"] = CreateSpokenTermsListsBody(termLists)
+      };
+      using var responseMessage = await _client
+            .ApiPostJsonAsync("v3/spoken-terms", cancellationToken, requestData, SerializationOptions)
+            .ConfigureAwait(false);
+
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.SpokenTerms).ConfigureAwait(false);
+      return await JsonUtils.DeserializeAsync<SpokenTerms>(responseMessage).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<SpokenTerms[]> ListSpokenTermsAsync(CancellationToken cancellationToken = default) {
+      using var responseMessage =
+            await _client.ApiGetAsync("v3/spoken-terms", cancellationToken).ConfigureAwait(false);
+
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.SpokenTerms).ConfigureAwait(false);
+      var result = await JsonUtils.DeserializeAsync<SpokenTermsListResult>(responseMessage).ConfigureAwait(false);
+      return result.SpokenTerms ?? new SpokenTerms[0];
+    }
+
+    /// <inheritdoc />
+    public async Task<SpokenTerms> GetSpokenTermsAsync(
+          string spokenTermsId,
+          CancellationToken cancellationToken = default) {
+      using var responseMessage = await _client
+            .ApiGetAsync(SpokenTermsPath(spokenTermsId), cancellationToken).ConfigureAwait(false);
+
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.SpokenTerms).ConfigureAwait(false);
+      return await JsonUtils.DeserializeAsync<SpokenTerms>(responseMessage).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<SpokenTerms> GetSpokenTermsAsync(
+          SpokenTerms spokenTerms,
+          CancellationToken cancellationToken = default) =>
+          await GetSpokenTermsAsync(spokenTerms.SpokenTermsId, cancellationToken).ConfigureAwait(false);
+
+    /// <inheritdoc />
+    public async Task<SpokenTerms> UpdateSpokenTermsAsync(
+          string spokenTermsId,
+          string? name = null,
+          IEnumerable<SpokenTermsEntries>? termLists = null,
+          CancellationToken cancellationToken = default) {
+      var path = SpokenTermsPath(spokenTermsId);
+      // With neither field set the body is {} and the API reports the error.
+      var requestData = new Dictionary<string, object>();
+      if (name != null) requestData["name"] = name;
+      if (termLists != null) requestData["term_lists"] = CreateSpokenTermsListsBody(termLists);
+      using var responseMessage = await _client
+            .ApiPatchJsonAsync(path, cancellationToken, requestData, SerializationOptions)
+            .ConfigureAwait(false);
+
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.SpokenTerms).ConfigureAwait(false);
+      return await JsonUtils.DeserializeAsync<SpokenTerms>(responseMessage).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<SpokenTerms> UpdateSpokenTermsAsync(
+          SpokenTerms spokenTerms,
+          string? name = null,
+          IEnumerable<SpokenTermsEntries>? termLists = null,
+          CancellationToken cancellationToken = default) =>
+          await UpdateSpokenTermsAsync(spokenTerms.SpokenTermsId, name, termLists, cancellationToken)
+                .ConfigureAwait(false);
+
+    /// <inheritdoc />
+    public async Task<SpokenTermsEntries> GetSpokenTermsEntriesAsync(
+          string spokenTermsId,
+          string lang,
+          CancellationToken cancellationToken = default) {
+      using var responseMessage = await _client
+            .ApiGetAsync(SpokenTermsPath(spokenTermsId) + "/entries", cancellationToken, new[] { ("lang", lang) })
+            .ConfigureAwait(false);
+
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.SpokenTerms).ConfigureAwait(false);
+      var result = await JsonUtils.DeserializeAsync<SpokenTermsEntriesResult>(responseMessage).ConfigureAwait(false);
+      return new SpokenTermsEntries(
+            result.Lang ?? lang,
+            (result.Entries ?? string.Empty).Split('\n').Where(entry => entry.Length > 0));
+    }
+
+    /// <inheritdoc />
+    public async Task<SpokenTermsEntries> GetSpokenTermsEntriesAsync(
+          SpokenTerms spokenTerms,
+          string lang,
+          CancellationToken cancellationToken = default) =>
+          await GetSpokenTermsEntriesAsync(spokenTerms.SpokenTermsId, lang, cancellationToken).ConfigureAwait(false);
+
+    /// <inheritdoc />
+    public async Task<SpokenTermsList> ReplaceSpokenTermsListAsync(
+          string spokenTermsId,
+          SpokenTermsEntries entries,
+          CancellationToken cancellationToken = default) {
+      using var responseMessage = await _client
+            .ApiPutJsonAsync(
+                  SpokenTermsPath(spokenTermsId) + "/term-lists",
+                  cancellationToken,
+                  CreateSpokenTermsListBody(entries),
+                  SerializationOptions)
+            .ConfigureAwait(false);
+
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.SpokenTerms).ConfigureAwait(false);
+      return await JsonUtils.DeserializeAsync<SpokenTermsList>(responseMessage).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<SpokenTermsList> ReplaceSpokenTermsListAsync(
+          SpokenTerms spokenTerms,
+          SpokenTermsEntries entries,
+          CancellationToken cancellationToken = default) =>
+          await ReplaceSpokenTermsListAsync(spokenTerms.SpokenTermsId, entries, cancellationToken)
+                .ConfigureAwait(false);
+
+    /// <inheritdoc />
+    public async Task DeleteSpokenTermsAsync(
+          string spokenTermsId,
+          CancellationToken cancellationToken = default) {
+      using var responseMessage = await _client
+            .ApiDeleteAsync(SpokenTermsPath(spokenTermsId), cancellationToken).ConfigureAwait(false);
+
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.SpokenTerms).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task DeleteSpokenTermsAsync(
+          SpokenTerms spokenTerms,
+          CancellationToken cancellationToken = default) =>
+          await DeleteSpokenTermsAsync(spokenTerms.SpokenTermsId, cancellationToken).ConfigureAwait(false);
+
+    /// <inheritdoc />
+    public async Task DeleteSpokenTermsListAsync(
+          string spokenTermsId,
+          string lang,
+          CancellationToken cancellationToken = default) {
+      using var responseMessage = await _client
+            .ApiDeleteAsync(SpokenTermsPath(spokenTermsId) + "/term-lists", cancellationToken, new[] { ("lang", lang) })
+            .ConfigureAwait(false);
+
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.SpokenTerms).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task DeleteSpokenTermsListAsync(
+          SpokenTerms spokenTerms,
+          string lang,
+          CancellationToken cancellationToken = default) =>
+          await DeleteSpokenTermsListAsync(spokenTerms.SpokenTermsId, lang, cancellationToken).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<MultilingualGlossaryInfo> CreateMultilingualGlossaryAsync(
@@ -1520,6 +1675,58 @@ namespace DeepL {
       };
 
       return bodyParams;
+    }
+
+    /// <summary>Returns the API path of the given Spoken Terms collection.</summary>
+    /// <param name="spokenTermsId">ID of the Spoken Terms collection.</param>
+    /// <returns>The relative path of the collection.</returns>
+    /// <exception cref="ArgumentException">If the ID is empty.</exception>
+    private static string SpokenTermsPath(string spokenTermsId) {
+      if (string.IsNullOrWhiteSpace(spokenTermsId)) {
+        throw new ArgumentException($"Parameter {nameof(spokenTermsId)} must not be empty");
+      }
+
+      return $"v3/spoken-terms/{Uri.EscapeDataString(spokenTermsId)}";
+    }
+
+    /// <summary>Returns the JSON body of one term list; the API takes the terms as one newline-separated string.</summary>
+    /// <param name="entries">The language and terms of the term list.</param>
+    /// <returns>Dictionary to serialize as the JSON body.</returns>
+    private static Dictionary<string, string> CreateSpokenTermsListBody(SpokenTermsEntries entries) =>
+          new Dictionary<string, string> { ["lang"] = entries.Lang, ["entries"] = string.Join("\n", entries.Entries) };
+
+    /// <summary>Returns the JSON <c>term_lists</c> array for the given term lists.</summary>
+    /// <param name="termLists">The language and terms of each term list.</param>
+    /// <returns>List to serialize as the JSON <c>term_lists</c> array.</returns>
+    private static List<Dictionary<string, string>> CreateSpokenTermsListsBody(
+          IEnumerable<SpokenTermsEntries> termLists) =>
+          termLists.Select(CreateSpokenTermsListBody).ToList();
+
+    /// <summary>Class used for JSON-deserialization of the Spoken Terms list result.</summary>
+    private readonly struct SpokenTermsListResult {
+      /// <summary>Initializes a new instance of <see cref="SpokenTermsListResult" />, used for JSON deserialization.</summary>
+      [JsonConstructor]
+      public SpokenTermsListResult(SpokenTerms[]? spokenTerms) {
+        SpokenTerms = spokenTerms;
+      }
+
+      /// <summary>Array of <see cref="DeepL.Model.SpokenTerms" /> objects.</summary>
+      public SpokenTerms[]? SpokenTerms { get; }
+    }
+
+    /// <summary>Class used for JSON-deserialization of Spoken Terms entries.</summary>
+    private readonly struct SpokenTermsEntriesResult {
+      /// <summary>Initializes a new instance of <see cref="SpokenTermsEntriesResult" />, used for JSON deserialization.</summary>
+      [JsonConstructor]
+      public SpokenTermsEntriesResult(string? lang, string? entries) {
+        (Lang, Entries) = (lang, entries);
+      }
+
+      /// <summary>Language code of the term list.</summary>
+      public string? Lang { get; }
+
+      /// <summary>The terms as one newline-separated string.</summary>
+      public string? Entries { get; }
     }
 
     /// <summary>JSON serializer options for JSON-encoded request bodies.</summary>

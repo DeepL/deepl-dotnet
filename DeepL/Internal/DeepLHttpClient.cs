@@ -26,7 +26,8 @@ namespace DeepL.Internal {
   internal enum ResourceType {
     Glossary,
     StyleRule,
-    TranslationMemory
+    TranslationMemory,
+    SpokenTerms
   }
 
   internal static class ResourceTypeExtensions {
@@ -35,6 +36,7 @@ namespace DeepL.Internal {
             ResourceType.Glossary => "Glossary",
             ResourceType.StyleRule => "Style rule",
             ResourceType.TranslationMemory => "Translation memory",
+            ResourceType.SpokenTerms => "Spoken terms",
             _ => resourceType.ToString()
           };
   }

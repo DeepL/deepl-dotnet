@@ -593,6 +593,80 @@ detection with glossaries. Whether such a request succeeds is determined by the
 API and by what your account has enabled. Document translation still requires a
 source language with a glossary.
 
+### Spoken terms
+
+Spoken Terms collections improve speech recognition in the Voice API: they make
+sure that specific words and phrases, such as product names or technical terms,
+are transcribed correctly. A collection holds one term list per language
+(ISO 639-1 code, e.g. `en`); each term list is a list of strings. Every method
+that takes a collection accepts either its ID or a `SpokenTerms` object.
+
+The terms are validated by the API, not by the library: see the
+[Spoken Terms requirements](https://developers.deepl.com/docs/customize/spoken-terms-requirements)
+for the limits.
+
+#### Creating a Spoken Terms collection
+
+```c#
+var spokenTerms = await client.CreateSpokenTermsAsync(
+    "Product names",
+    new[] { new SpokenTermsEntries("en", new[] { "DeepL", "webhook" }) });
+Console.WriteLine($"Created {spokenTerms.Name} ({spokenTerms.SpokenTermsId})");
+foreach (var termList in spokenTerms.TermLists) {
+  Console.WriteLine($"{termList.Lang}: {termList.EntryCount} terms");
+}
+```
+
+#### Getting and listing Spoken Terms collections
+
+`GetSpokenTermsAsync()` and `ListSpokenTermsAsync()` return the collections'
+details, but not their terms.
+
+```c#
+var fetched = await client.GetSpokenTermsAsync("YOUR_SPOKEN_TERMS_ID");
+foreach (var collection in await client.ListSpokenTermsAsync()) {
+  Console.WriteLine($"{collection.Name} ({collection.SpokenTermsId}), created {collection.CreationTime}");
+}
+```
+
+#### Reading the terms of a language
+
+```c#
+var entries = await client.GetSpokenTermsEntriesAsync(spokenTerms, "en");
+Console.WriteLine(string.Join(", ", entries.Entries));
+```
+
+#### Updating a Spoken Terms collection
+
+`UpdateSpokenTermsAsync()` renames the collection and/or **merges** the given
+terms into the existing term list of each language. Arguments left `null` are
+not changed.
+
+```c#
+var updated = await client.UpdateSpokenTermsAsync(
+    spokenTerms,
+    name: "Product names v2",
+    termLists: new[] { new SpokenTermsEntries("en", new[] { "authentication" }) });
+```
+
+#### Replacing or deleting the term list of a language
+
+`ReplaceSpokenTermsListAsync()` **replaces** the term list of one language, or
+adds it if the collection has no list for that language yet.
+`DeleteSpokenTermsListAsync()` removes the term list of one language.
+
+```c#
+var termList = await client.ReplaceSpokenTermsListAsync(
+    spokenTerms, new SpokenTermsEntries("de", new[] { "Schnittstelle" }));
+await client.DeleteSpokenTermsListAsync(spokenTerms, "de");
+```
+
+#### Deleting a Spoken Terms collection
+
+```c#
+await client.DeleteSpokenTermsAsync(spokenTerms);
+```
+
 ### Style Rules
 
 Style rules allow you to customize your translations using a managed, shared list

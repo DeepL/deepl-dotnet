@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Added `ISpokenTermsManager`, implemented by `DeepLClient`, to manage Spoken Terms collections (`/v3/spoken-terms`):
+  `CreateSpokenTermsAsync()`, `ListSpokenTermsAsync()`, `GetSpokenTermsAsync()`, `UpdateSpokenTermsAsync()`,
+  `GetSpokenTermsEntriesAsync()`, `ReplaceSpokenTermsListAsync()`, `DeleteSpokenTermsAsync()` and
+  `DeleteSpokenTermsListAsync()`, with the models `SpokenTerms`, `SpokenTermsList` and `SpokenTermsEntries`.
 - Added the API Pro fields of `GET /v2/usage` to `Usage`: `ApiKeyCharacter` (the character usage of the API key,
   as opposed to the account-wide `Character`), `SpeechToTextMinutes`, `SpeechToSpeechMinutes`, `StartTime`,
   `EndTime` and `Products` (per-product usage as `Usage.Product`). They are `null` when the response does not
