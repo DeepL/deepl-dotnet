@@ -18,12 +18,12 @@ namespace DeepLTests.RealApi {
     /// <summary>Time limit for waiting on a job that takes a minute or more.</summary>
     internal static readonly TimeSpan JobTimeout = TimeSpan.FromMinutes(3);
 
-    /// <summary>A new glossary can be briefly invisible, so retry while the API reports it as not found.</summary>
+    /// <summary>A new resource can be briefly invisible, so retry while the API reports it as not found.</summary>
     internal static async Task<T> RetryWhileNotFound<T>(Func<Task<T>> action) {
       for (var attempt = 0;; attempt++) {
         try {
           return await action();
-        } catch (GlossaryNotFoundException) when (attempt < 9) {
+        } catch (NotFoundException) when (attempt < 9) {
           await Task.Delay(TimeSpan.FromSeconds(1));
         }
       }

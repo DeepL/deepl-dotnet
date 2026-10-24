@@ -9,7 +9,7 @@ using DeepL.Model;
 using Xunit;
 
 namespace DeepLTests.RealApi {
-  public sealed class SpokenTermsTest : IClassFixture<SpokenTermsJanitor> {
+  public sealed class SpokenTermsTest {
     [Fact]
     public async Task SendsTheSpokenTermsRequestsCreateGetListUpdateReadReplaceAndDelete() {
       var client = RealApiClient.CreateClient();
@@ -23,7 +23,7 @@ namespace DeepLTests.RealApi {
         var createdList = Assert.Single(created.TermLists);
         Assert.Equal(("en", 2L), (createdList.Lang, createdList.EntryCount));
 
-        var fetched = await client.GetSpokenTermsAsync(created.SpokenTermsId);
+        var fetched = await RealApiHelpers.RetryWhileNotFound(() => client.GetSpokenTermsAsync(created.SpokenTermsId));
         Assert.Equal(name, fetched.Name);
         Assert.Contains(await client.ListSpokenTermsAsync(), item => item.SpokenTermsId == created.SpokenTermsId);
 
@@ -42,7 +42,11 @@ namespace DeepLTests.RealApi {
         await client.DeleteSpokenTermsListAsync(created, "de");
         Assert.Equal("en", Assert.Single((await client.GetSpokenTermsAsync(created)).TermLists).Lang);
       } finally {
-        await client.DeleteSpokenTermsAsync(created.SpokenTermsId);
+        try {
+          await client.DeleteSpokenTermsAsync(created.SpokenTermsId);
+        } catch (NotFoundException) {
+          // Already gone: teardown only has to make sure it does not leak.
+        }
       }
 
       await Assert.ThrowsAsync<NotFoundException>(() => client.GetSpokenTermsAsync(created.SpokenTermsId));
