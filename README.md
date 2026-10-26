@@ -771,6 +771,75 @@ Use `DeleteStyleRuleAsync()` to delete a style rule by ID.
 await client.DeleteStyleRuleAsync("YOUR_STYLE_ID");
 ```
 
+### Style profiles
+
+A style profile is a named set of glossaries, style rule lists and translation
+memories, with an optional description and industry. Every method that takes a
+style profile accepts either its ID or a `StyleProfile` object; an empty ID
+throws an `ArgumentException` without sending a request.
+
+The optional fields are set with `StyleProfileOptions`. A property left `null`
+is not sent. An empty string and an empty list are sent as given: on update, `""`
+clears the description or industry, and an empty list unlinks all components of
+that kind.
+
+#### Creating a style profile
+
+Only the name is required. If any of the component IDs cannot be used, the API
+rejects the request and no style profile is created.
+
+```c#
+var profile = await client.CreateStyleProfileAsync("Legal, German");
+
+var linked = await client.CreateStyleProfileAsync(
+    "Legal, German (linked)",
+    new StyleProfileOptions {
+      Description = "Contract wording for the German market.",
+      Industry = "Legal",
+      GlossaryIds = new[] { "YOUR_GLOSSARY_ID", "YOUR_OTHER_GLOSSARY_ID" },
+      StyleRuleIds = new[] { "YOUR_STYLE_ID" },
+      TranslationMemoryIds = new[] { "YOUR_TRANSLATION_MEMORY_ID" },
+      GlossaryPriorityOrderEnabled = true // the first glossary wins when two define the same term
+    });
+Console.WriteLine($"Created {linked.Name} ({linked.StyleProfileId})");
+```
+
+#### Getting and listing style profiles
+
+`ListStyleProfilesAsync()` accepts the optional parameters `page` (0-indexed)
+and `pageSize` (the API reduces values above 100 to 100).
+
+```c#
+var fetched = await client.GetStyleProfileAsync("YOUR_STYLE_PROFILE_ID");
+Console.WriteLine($"{fetched.Name}: {string.Join(", ", fetched.StyleRuleIds)}");
+
+foreach (var p in await client.ListStyleProfilesAsync(page: 0, pageSize: 100)) {
+  Console.WriteLine($"{p.Name} ({p.StyleProfileId}), updated {p.UpdatedTime}");
+}
+```
+
+#### Updating a style profile
+
+`UpdateStyleProfileAsync()` changes only the fields you set. A component list
+replaces the linked list of that kind in full.
+
+```c#
+var updated = await client.UpdateStyleProfileAsync(
+    profile,
+    name: "Legal, German v2",
+    options: new StyleProfileOptions {
+      Industry = "Legal",
+      Description = "",              // clears the description
+      StyleRuleIds = new string[0]   // unlinks all style rule lists
+    });
+```
+
+#### Deleting a style profile
+
+```c#
+await client.DeleteStyleProfileAsync(profile);
+```
+
 ### Translation Memories
 
 Translation memories store and reuse previously created translations, helping to

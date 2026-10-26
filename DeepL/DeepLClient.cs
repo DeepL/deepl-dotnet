@@ -87,8 +87,8 @@ namespace DeepL {
   ///   Client for the DeepL API. To use the DeepL API, initialize an instance of this class using your DeepL
   ///   Authentication Key. All functions are thread-safe, aside from <see cref="DeepLClient.Dispose" />.
   /// </summary>
-  public sealed class DeepLClient : Translator, IWriter, IGlossaryManager, IStyleRuleManager, ITranslationMemoryManager,
-        ISpokenTermsManager {
+  public sealed class DeepLClient : Translator, IWriter, IGlossaryManager, IStyleRuleManager, IStyleProfileManager,
+        ITranslationMemoryManager, ISpokenTermsManager {
     /// <summary>Initializes a new instance of the <see cref="AuthorizationException" /> class.</summary>
     /// <param name="message">The message that describes the error.</param>
     public DeepLClient(string authKey, DeepLClientOptions? options = null) : base(authKey, options) { }
@@ -784,6 +784,98 @@ namespace DeepL {
 
       await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.StyleRule).ConfigureAwait(false);
     }
+
+    /// <inheritdoc />
+    public async Task<StyleProfile[]> ListStyleProfilesAsync(
+          int? page = null,
+          int? pageSize = null,
+          CancellationToken cancellationToken = default) {
+      var queryParams = new List<(string Key, string Value)>();
+      if (page != null) queryParams.Add(("page", page.Value.ToString()));
+      if (pageSize != null) queryParams.Add(("page_size", pageSize.Value.ToString()));
+
+      using var responseMessage = await _client
+            .ApiGetAsync("v3/style_profiles", cancellationToken, queryParams.ToArray()).ConfigureAwait(false);
+
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.StyleProfile).ConfigureAwait(false);
+      var result = await JsonUtils.DeserializeAsync<StyleProfileListResult>(responseMessage).ConfigureAwait(false);
+      return result.StyleProfiles ?? new StyleProfile[0];
+    }
+
+    /// <inheritdoc />
+    public async Task<StyleProfile> CreateStyleProfileAsync(
+          string name,
+          StyleProfileOptions? options = null,
+          CancellationToken cancellationToken = default) {
+      using var responseMessage = await _client
+            .ApiPostJsonAsync(
+                  "v3/style_profiles",
+                  cancellationToken,
+                  CreateStyleProfileBody(name, options),
+                  SerializationOptions)
+            .ConfigureAwait(false);
+
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.StyleProfile).ConfigureAwait(false);
+      return await JsonUtils.DeserializeAsync<StyleProfile>(responseMessage).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<StyleProfile> GetStyleProfileAsync(
+          string styleProfileId,
+          CancellationToken cancellationToken = default) {
+      using var responseMessage = await _client
+            .ApiGetAsync(StyleProfilePath(styleProfileId), cancellationToken).ConfigureAwait(false);
+
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.StyleProfile).ConfigureAwait(false);
+      return await JsonUtils.DeserializeAsync<StyleProfile>(responseMessage).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<StyleProfile> GetStyleProfileAsync(
+          StyleProfile styleProfile,
+          CancellationToken cancellationToken = default) =>
+          await GetStyleProfileAsync(styleProfile.StyleProfileId, cancellationToken).ConfigureAwait(false);
+
+    /// <inheritdoc />
+    public async Task<StyleProfile> UpdateStyleProfileAsync(
+          string styleProfileId,
+          string? name = null,
+          StyleProfileOptions? options = null,
+          CancellationToken cancellationToken = default) {
+      var path = StyleProfilePath(styleProfileId);
+      // With nothing set the body is {}; the API returns the style profile unchanged.
+      using var responseMessage = await _client
+            .ApiPatchJsonAsync(path, cancellationToken, CreateStyleProfileBody(name, options), SerializationOptions)
+            .ConfigureAwait(false);
+
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.StyleProfile).ConfigureAwait(false);
+      return await JsonUtils.DeserializeAsync<StyleProfile>(responseMessage).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<StyleProfile> UpdateStyleProfileAsync(
+          StyleProfile styleProfile,
+          string? name = null,
+          StyleProfileOptions? options = null,
+          CancellationToken cancellationToken = default) =>
+          await UpdateStyleProfileAsync(styleProfile.StyleProfileId, name, options, cancellationToken)
+                .ConfigureAwait(false);
+
+    /// <inheritdoc />
+    public async Task DeleteStyleProfileAsync(
+          string styleProfileId,
+          CancellationToken cancellationToken = default) {
+      using var responseMessage = await _client
+            .ApiDeleteAsync(StyleProfilePath(styleProfileId), cancellationToken).ConfigureAwait(false);
+
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.StyleProfile).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task DeleteStyleProfileAsync(
+          StyleProfile styleProfile,
+          CancellationToken cancellationToken = default) =>
+          await DeleteStyleProfileAsync(styleProfile.StyleProfileId, cancellationToken).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<SpokenTerms> CreateSpokenTermsAsync(
@@ -1675,6 +1767,50 @@ namespace DeepL {
       };
 
       return bodyParams;
+    }
+
+    /// <summary>Returns the API path of the given style profile.</summary>
+    /// <param name="styleProfileId">ID of the style profile.</param>
+    /// <returns>The relative path of the style profile.</returns>
+    /// <exception cref="ArgumentException">If the ID is empty.</exception>
+    private static string StyleProfilePath(string styleProfileId) {
+      if (string.IsNullOrWhiteSpace(styleProfileId)) {
+        throw new ArgumentException($"Parameter {nameof(styleProfileId)} must not be empty");
+      }
+
+      return $"v3/style_profiles/{Uri.EscapeDataString(styleProfileId)}";
+    }
+
+    /// <summary>Returns the JSON body of a style profile create or update request, containing only the set fields.</summary>
+    /// <param name="name">Name of the style profile, or <c>null</c> to leave it out.</param>
+    /// <param name="options">Optional fields of the style profile.</param>
+    /// <returns>Dictionary to serialize as the JSON body.</returns>
+    private static Dictionary<string, object> CreateStyleProfileBody(string? name, StyleProfileOptions? options) {
+      var body = new Dictionary<string, object>();
+      if (name != null) body["name"] = name;
+      if (options == null) return body;
+      if (options.Description != null) body["description"] = options.Description;
+      if (options.Industry != null) body["industry"] = options.Industry;
+      if (options.GlossaryIds != null) body["glossary_ids"] = options.GlossaryIds.ToArray();
+      if (options.StyleRuleIds != null) body["style_rule_ids"] = options.StyleRuleIds.ToArray();
+      if (options.TranslationMemoryIds != null) body["translation_memory_ids"] = options.TranslationMemoryIds.ToArray();
+      if (options.GlossaryPriorityOrderEnabled != null) {
+        body["glossary_priority_order_enabled"] = options.GlossaryPriorityOrderEnabled.Value;
+      }
+
+      return body;
+    }
+
+    /// <summary>Class used for JSON-deserialization of the style profile list result.</summary>
+    private readonly struct StyleProfileListResult {
+      /// <summary>Initializes a new instance of <see cref="StyleProfileListResult" />, used for JSON deserialization.</summary>
+      [JsonConstructor]
+      public StyleProfileListResult(StyleProfile[]? styleProfiles) {
+        StyleProfiles = styleProfiles;
+      }
+
+      /// <summary>Array of <see cref="StyleProfile" /> objects.</summary>
+      public StyleProfile[]? StyleProfiles { get; }
     }
 
     /// <summary>Returns the API path of the given Spoken Terms collection.</summary>

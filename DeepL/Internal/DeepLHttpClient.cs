@@ -29,7 +29,8 @@ namespace DeepL.Internal {
     Glossary,
     StyleRule,
     TranslationMemory,
-    SpokenTerms
+    SpokenTerms,
+    StyleProfile
   }
 
   internal static class ResourceTypeExtensions {
@@ -39,6 +40,7 @@ namespace DeepL.Internal {
             ResourceType.StyleRule => "Style rule",
             ResourceType.TranslationMemory => "Translation memory",
             ResourceType.SpokenTerms => "Spoken terms",
+            ResourceType.StyleProfile => "Style profile",
             _ => resourceType.ToString()
           };
   }

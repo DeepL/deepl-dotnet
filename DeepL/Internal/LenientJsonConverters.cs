@@ -174,4 +174,37 @@ namespace DeepL.Internal {
     public override void Write(Utf8JsonWriter writer, T[] value, JsonSerializerOptions options) =>
           JsonSerializer.Serialize(writer, value, options);
   }
+
+  /// <summary>
+  ///   Reads an array of strings, skipping entries that are not strings and returning an empty array when the value is
+  ///   not an array, so that one unexpected entry does not fail the whole response.
+  /// </summary>
+  internal sealed class LenientStringArrayConverter : JsonConverter<string[]> {
+    public override string[] Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {
+      var result = new List<string>();
+      if (reader.TokenType != JsonTokenType.StartArray) {
+        reader.Skip();
+        return result.ToArray();
+      }
+
+      while (reader.Read() && reader.TokenType != JsonTokenType.EndArray) {
+        if (reader.TokenType == JsonTokenType.String) {
+          result.Add(reader.GetString()!);
+        } else {
+          reader.Skip();
+        }
+      }
+
+      return result.ToArray();
+    }
+
+    public override void Write(Utf8JsonWriter writer, string[] value, JsonSerializerOptions options) {
+      writer.WriteStartArray();
+      foreach (var item in value) {
+        writer.WriteStringValue(item);
+      }
+
+      writer.WriteEndArray();
+    }
+  }
 }

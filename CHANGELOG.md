@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Added `IStyleProfileManager`, implemented by `DeepLClient`, to manage style profiles (`/v3/style_profiles`):
+  `ListStyleProfilesAsync()`, `CreateStyleProfileAsync()`, `GetStyleProfileAsync()`, `UpdateStyleProfileAsync()` and
+  `DeleteStyleProfileAsync()`, with the model `StyleProfile` and the options class `StyleProfileOptions`. Options left
+  `null` are not sent; an empty string clears the description or industry and an empty list unlinks all components
+  of that kind.
 - Added `ISpokenTermsManager`, implemented by `DeepLClient`, to manage Spoken Terms collections (`/v3/spoken-terms`):
   `CreateSpokenTermsAsync()`, `ListSpokenTermsAsync()`, `GetSpokenTermsAsync()`, `UpdateSpokenTermsAsync()`,
   `GetSpokenTermsEntriesAsync()`, `ReplaceSpokenTermsListAsync()`, `DeleteSpokenTermsAsync()` and
