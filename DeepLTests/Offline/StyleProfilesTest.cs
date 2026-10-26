@@ -180,6 +180,16 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
+    public async Task SkipsNonObjectEntriesInTheList() {
+      ExpectNoBody(HttpMethod.Get, "v3/style_profiles")
+            .RespondJson("{\"style_profiles\":[" + MinimalReply + ",null,42,\"x\"],\"total_count\":4}");
+
+      var profile = Assert.Single(await CreateClient().ListStyleProfilesAsync());
+
+      Assert.Equal(("sp1", "Minimal"), (profile.StyleProfileId, profile.Name));
+    }
+
+    [Fact]
     public async Task ThrowsNotFoundExceptionNamingTheStyleProfileWhenStatusIs404() {
       ExpectNoBody(HttpMethod.Get, "v3/style_profiles/sp1")
             .RespondJson("{\"message\":\"Style profile not found\"}", HttpStatusCode.NotFound);

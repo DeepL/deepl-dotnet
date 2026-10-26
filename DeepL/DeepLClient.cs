@@ -1809,7 +1809,8 @@ namespace DeepL {
         StyleProfiles = styleProfiles;
       }
 
-      /// <summary>Array of <see cref="StyleProfile" /> objects.</summary>
+      /// <summary>Array of <see cref="StyleProfile" /> objects; entries that are not objects are skipped.</summary>
+      [JsonConverter(typeof(LenientArrayConverter<StyleProfile>))]
       public StyleProfile[]? StyleProfiles { get; }
     }
 
