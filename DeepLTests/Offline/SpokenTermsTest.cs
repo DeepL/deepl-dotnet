@@ -25,6 +25,8 @@ namespace DeepLTests.Offline {
       ExpectNoBody(HttpMethod.Get, "v3/spoken-terms/st1/entries")
             .WithExactQueryString("lang=en")
             .RespondJson("{\"lang\":\"en\",\"entries\":\"a\\nb\\n\"}");
+      ExpectJson(HttpMethod.Put, "v3/spoken-terms/st1/term-lists", "{\"lang\":\"en\",\"entries\":\"webhook\\nDeepL\"}")
+            .RespondJson("{\"lang\":\"en\",\"entry_count\":2}");
       var client = CreateClient();
 
       var spokenTerms = await client.CreateSpokenTermsAsync("Terms", new[] { new SpokenTermsEntries("en", new[] { "a", "b" }) });
@@ -32,6 +34,7 @@ namespace DeepLTests.Offline {
 
       Assert.Equal("en", entries.Lang);
       Assert.Equal(new[] { "a", "b" }, entries.Entries);
+      await client.ReplaceSpokenTermsListAsync(spokenTerms, new SpokenTermsEntries("en", new[] { "webhook\n", " DeepL" }));
     }
 
     [Fact]

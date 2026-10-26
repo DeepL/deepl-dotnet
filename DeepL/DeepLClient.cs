@@ -1694,12 +1694,13 @@ namespace DeepL {
     /// <returns>Dictionary to serialize as the JSON body.</returns>
     /// <exception cref="ArgumentException">If any term is invalid.</exception>
     private static Dictionary<string, string> CreateSpokenTermsListBody(SpokenTermsEntries entries) {
-      // A newline inside a term would silently split it into several terms on the wire.
-      foreach (var term in entries.Entries) {
+      // Trimmed like glossary terms; a newline inside a term would silently split it into several terms on the wire.
+      var terms = entries.Entries.Select(term => term.Trim()).ToArray();
+      foreach (var term in terms) {
         GlossaryEntries.ValidateGlossaryTerm(term);
       }
 
-      return new Dictionary<string, string> { ["lang"] = entries.Lang, ["entries"] = string.Join("\n", entries.Entries) };
+      return new Dictionary<string, string> { ["lang"] = entries.Lang, ["entries"] = string.Join("\n", terms) };
     }
 
     /// <summary>Returns the JSON <c>term_lists</c> array for the given term lists.</summary>
