@@ -601,9 +601,11 @@ are transcribed correctly. A collection holds one term list per language
 (ISO 639-1 code, e.g. `en`); each term list is a list of strings. Every method
 that takes a collection accepts either its ID or a `SpokenTerms` object.
 
-The terms are validated by the API, not by the library: see the
-[Spoken Terms requirements](https://developers.deepl.com/docs/customize/spoken-terms-requirements)
-for the limits.
+Before sending, the library checks each term like a glossary term
+(`GlossaryEntries.ValidateGlossaryTerm()`): a term that is blank, or contains a
+control character or newline other than leading or trailing whitespace, throws
+an `ArgumentException` and no request is sent. Size limits and the remaining rules are checked by the API: see the
+[Spoken Terms requirements](https://developers.deepl.com/docs/customize/spoken-terms-requirements).
 
 #### Creating a Spoken Terms collection
 

@@ -1692,8 +1692,15 @@ namespace DeepL {
     /// <summary>Returns the JSON body of one term list; the API takes the terms as one newline-separated string.</summary>
     /// <param name="entries">The language and terms of the term list.</param>
     /// <returns>Dictionary to serialize as the JSON body.</returns>
-    private static Dictionary<string, string> CreateSpokenTermsListBody(SpokenTermsEntries entries) =>
-          new Dictionary<string, string> { ["lang"] = entries.Lang, ["entries"] = string.Join("\n", entries.Entries) };
+    /// <exception cref="ArgumentException">If any term is invalid.</exception>
+    private static Dictionary<string, string> CreateSpokenTermsListBody(SpokenTermsEntries entries) {
+      // A newline inside a term would silently split it into several terms on the wire.
+      foreach (var term in entries.Entries) {
+        GlossaryEntries.ValidateGlossaryTerm(term);
+      }
+
+      return new Dictionary<string, string> { ["lang"] = entries.Lang, ["entries"] = string.Join("\n", entries.Entries) };
+    }
 
     /// <summary>Returns the JSON <c>term_lists</c> array for the given term lists.</summary>
     /// <param name="termLists">The language and terms of each term list.</param>
