@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
@@ -444,26 +443,7 @@ namespace DeepL {
       var serverUrl = new Uri(
             options.ServerUrl ?? (AuthKeyIsFreeAccount(authKey) ? DeepLServerUrlFree : DeepLServerUrl));
 
-      var headers = new Dictionary<string, string?>(options.Headers, StringComparer.OrdinalIgnoreCase);
-
-      if (!headers.ContainsKey("User-Agent")) {
-        headers.Add("User-Agent", ConstructUserAgentString(options.sendPlatformInfo, options.appInfo));
-      }
-
-      if (!headers.ContainsKey("Authorization")) {
-        headers.Add("Authorization", $"DeepL-Auth-Key {authKey}");
-      }
-
-      var clientFactory = options.ClientFactory ?? (() =>
-            DeepLHttpClient.CreateDefaultHttpClient(
-                  options.PerRetryConnectionTimeout,
-                  options.OverallConnectionTimeout,
-                  options.MaximumNetworkRetries));
-
-      _client = new DeepLHttpClient(
-            serverUrl,
-            clientFactory,
-            headers);
+      _client = DeepLHttpClient.Create(authKey, serverUrl, options);
     }
 
     /// <summary>Releases the unmanaged resources and disposes of the managed resources used by the <see cref="Translator" />.</summary>
@@ -903,34 +883,6 @@ namespace DeepL {
                               language.Features?.ContainsKey("formality") ?? false)
                         : (TValue)(object)new SourceLanguage(language.Lang, language.Name))
             .ToArray();
-    }
-
-    /// <summary>
-    ///   Builds the user-agent string we want to send to the API with every request. This string contains
-    ///   basic information about the client environment, such as the deepl client library version, operating
-    ///   system and language runtime version.
-    /// </summary>
-    /// <param name="sendPlatformInfo">
-    ///   <c>true</c> to send platform information with every API request (default),
-    ///   <c>false</c> to only send the library version.
-    /// </param>
-    /// <param name="AppInfo">
-    ///   Name and version of the application using this library. Ignored if null.
-    /// </param>
-    /// <returns>Enumerable of tuples containing the parameters to include in HTTP request.</returns>
-    private String ConstructUserAgentString(bool sendPlatformInfo = true, AppInfo? appInfo = null) {
-      var platformInfoString = $"deepl-dotnet/{Version()}";
-      if (sendPlatformInfo) {
-        var osDescription = RuntimeInformation.OSDescription;
-        var clrVersion = Environment.Version.ToString();
-        platformInfoString += $" ({osDescription}) dotnet-clr/{clrVersion}";
-      }
-
-      if (appInfo != null) {
-        platformInfoString += $" {appInfo?.AppName}/{appInfo?.AppVersion}";
-      }
-
-      return platformInfoString;
     }
 
     /// <summary>

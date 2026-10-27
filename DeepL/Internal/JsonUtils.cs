@@ -43,6 +43,17 @@ namespace DeepL.Internal {
              throw new DeepLException("Failed to deserialize JSON in received response");
     }
 
+    /// <summary>Deserializes a JSON element into <typeparamref name="TValue" />, wrapping malformed content.</summary>
+    /// <exception cref="DeepLException">If the JSON data could not be deserialized correctly.</exception>
+    internal static TValue Deserialize<TValue>(JsonElement element) {
+      try {
+        return JsonSerializer.Deserialize<TValue>(element.GetRawText(), JsonSerializerOptions) ??
+               throw new DeepLException("Failed to deserialize JSON in received response");
+      } catch (JsonException exception) {
+        throw new DeepLException("Failed to deserialize JSON in received response", exception);
+      }
+    }
+
     /// <summary>JSON-field naming policy for lower-snake-case for example: "lower_snake_case".</summary>
     private sealed class LowerSnakeCaseNamingPolicy : JsonNamingPolicy {
       static LowerSnakeCaseNamingPolicy() {

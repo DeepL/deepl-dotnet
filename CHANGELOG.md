@@ -15,6 +15,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   as opposed to the account-wide `Character`), `SpeechToTextMinutes`, `SpeechToSpeechMinutes`, `StartTime`,
   `EndTime` and `Products` (per-product usage as `Usage.Product`). They are `null` when the response does not
   contain them, for example for non-Pro accounts.
+- Added the `DeepLAdminClient` class for the Admin API. It must be created with an admin API key and supports managing
+  developer keys (`CreateDeveloperKeyAsync()`, `GetDeveloperKeysAsync()`, `DeactivateDeveloperKeyAsync()`,
+  `RenameDeveloperKeyAsync()`, `SetDeveloperKeyUsageLimitsAsync()`) and retrieving usage analytics
+  (`GetUsageAnalyticsAsync()`, `GetCustomTagUsageAnalyticsAsync()`). `SetDeveloperKeyUsageLimitsAsync()` takes a
+  `DeveloperKeyUsageLimitsUpdate` and changes only the limits assigned in it.
+  `DeepLAdminClient` implements the new `IAdminManager` interface.
+  Results use the new types `DeveloperKey`, `DeveloperKeyUsageLimits`, `AdminUsageReport`, `AdminUsageBreakdown`
+  (including `SpeechToSpeechMinutes`), `KeyUsage`, `CustomTagUsageReport`, `CustomTagUsage` and
+  `CustomTagUsageBreakdown`, and requests the enums `AdminUsageGroupBy` and `CustomTagUsageAggregateBy`.
+  Unexpected values in Admin API responses are skipped or replaced by defaults instead of failing the call;
+  a response that is not a JSON object or array as expected, or a developer key response without `key_id`, throws a
+  `DeepLException`. The SDK passes labels and limit values to the API unchanged.
+  The analytics methods accept `DateTime` values, sent as their UTC date (`Local` values are converted to UTC,
+  `Unspecified` values are treated as UTC), or `"yyyy-MM-dd"` strings.
+  `DeepLAdminClientOptions` and `TranslatorOptions` now share the connection settings of the new `BaseClientOptions`
+  base class.
 - Added `LanguageCode` constants for target language variants `GermanSwiss` (`de-CH`), `GermanGermany` (`de-DE`),
   `SpanishEuropean` (`es-ES`), `FrenchCanadian` (`fr-CA`) and `FrenchEuropean` (`fr-FR`).
 - Added `DeepLClient.GetLanguagesForResourceAsync()` to retrieve the languages supported by a DeepL API resource

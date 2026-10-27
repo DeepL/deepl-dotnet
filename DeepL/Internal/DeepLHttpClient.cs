@@ -9,6 +9,8 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -48,6 +50,12 @@ namespace DeepL.Internal {
 
     /// <summary>HTTP status code returned by DeepL API to indicate account translation quota has been exceeded.</summary>
     private const HttpStatusCode HttpStatusCodeQuotaExceeded = (HttpStatusCode)456;
+
+    /// <summary>
+    ///   Polly operation key marking requests that are unsafe to repeat: they are retried only after failures showing
+    ///   that the server did not process them.
+    /// </summary>
+    private const string RetryOnlyUnprocessedOperationKey = "DeepL.RetryOnlyUnprocessed";
 
     /// <summary><c>true</c> if <see cref="_httpClient" /> should be disposed, otherwise <c>false</c>.</summary>
     private readonly bool _disposeClient;
@@ -149,8 +157,34 @@ namespace DeepL.Internal {
                   responseMessage => responseMessage.StatusCode == HttpStatusCodeTooManyRequests ||
                                      responseMessage.StatusCode >= HttpStatusCode.InternalServerError)
             .WaitAndRetryAsync(maximumNetworkRetries, getSleepDuration);
-      var policy = Policy.WrapAsync(waitAndRetry, timeout);
-      return new PolicyHttpMessageHandler(policy) { InnerHandler = innerHandler };
+      IAsyncPolicy<HttpResponseMessage> policy = Policy.WrapAsync(waitAndRetry, timeout);
+      var waitAndRetryUnprocessed = Policy.Handle<HttpRequestException>(IsNameResolutionFailure)
+            .OrResult<HttpResponseMessage>(
+                  responseMessage => responseMessage.StatusCode == HttpStatusCodeTooManyRequests)
+            .WaitAndRetryAsync(maximumNetworkRetries, getSleepDuration);
+      IAsyncPolicy<HttpResponseMessage> unprocessedPolicy = Policy.WrapAsync(waitAndRetryUnprocessed, timeout);
+      return new PolicyHttpMessageHandler(
+            request => request.GetPolicyExecutionContext()?.OperationKey == RetryOnlyUnprocessedOperationKey
+                  ? unprocessedPolicy
+                  : policy) { InnerHandler = innerHandler };
+    }
+
+    /// <summary>
+    ///   Whether the request failed because the server name could not be resolved, so it was never sent.
+    /// </summary>
+    private static bool IsNameResolutionFailure(HttpRequestException exception) {
+      for (Exception? inner = exception; inner != null; inner = inner.InnerException) {
+        switch (inner) {
+          case SocketException socketException
+                when socketException.SocketErrorCode == SocketError.HostNotFound ||
+                     socketException.SocketErrorCode == SocketError.TryAgain ||
+                     socketException.SocketErrorCode == SocketError.NoData:
+          case WebException webException when webException.Status == WebExceptionStatus.NameResolutionFailure:
+            return true;
+        }
+      }
+
+      return false;
     }
 
     /// <summary>Creates a default HttpClient with exponential-backoff policy for retrying failed requests.</summary>
@@ -181,6 +215,63 @@ namespace DeepL.Internal {
         DisposeClient = true,
         HttpClient = new HttpClient(handler) { Timeout = overallConnectionTimeout }
       };
+    }
+
+    /// <summary>
+    ///   Creates a <see cref="DeepLHttpClient" /> configured from the given client options: the HTTP client from
+    ///   <see cref="BaseClientOptions.ClientFactory" /> or a default client with retries, and the configured headers plus
+    ///   User-Agent and Authorization headers unless the configured headers already contain them.
+    /// </summary>
+    /// <param name="authKey">Authentication key sent in the Authorization header.</param>
+    /// <param name="serverUrl">Base server URL to apply to all relative URLs in requests.</param>
+    /// <param name="options">Client options.</param>
+    /// <returns>Newly initialized <see cref="DeepLHttpClient" /> object.</returns>
+    internal static DeepLHttpClient Create(string authKey, Uri serverUrl, BaseClientOptions options) {
+      var headers = new Dictionary<string, string?>(options.Headers, StringComparer.OrdinalIgnoreCase);
+
+      if (!headers.ContainsKey("User-Agent")) {
+        headers.Add("User-Agent", ConstructUserAgentString(options.sendPlatformInfo, options.appInfo));
+      }
+
+      if (!headers.ContainsKey("Authorization")) {
+        headers.Add("Authorization", $"DeepL-Auth-Key {authKey}");
+      }
+
+      var clientFactory = options.ClientFactory ?? (() =>
+            CreateDefaultHttpClient(
+                  options.PerRetryConnectionTimeout,
+                  options.OverallConnectionTimeout,
+                  options.MaximumNetworkRetries));
+
+      return new DeepLHttpClient(serverUrl, clientFactory, headers);
+    }
+
+    /// <summary>
+    ///   Builds the user-agent string we want to send to the API with every request. This string contains
+    ///   basic information about the client environment, such as the deepl client library version, operating
+    ///   system and language runtime version.
+    /// </summary>
+    /// <param name="sendPlatformInfo">
+    ///   <c>true</c> to send platform information with every API request (default),
+    ///   <c>false</c> to only send the library version.
+    /// </param>
+    /// <param name="appInfo">
+    ///   Name and version of the application using this library. Ignored if null.
+    /// </param>
+    /// <returns>The user-agent string.</returns>
+    private static string ConstructUserAgentString(bool sendPlatformInfo, AppInfo? appInfo) {
+      var platformInfoString = $"deepl-dotnet/{Translator.Version()}";
+      if (sendPlatformInfo) {
+        var osDescription = RuntimeInformation.OSDescription;
+        var clrVersion = Environment.Version.ToString();
+        platformInfoString += $" ({osDescription}) dotnet-clr/{clrVersion}";
+      }
+
+      if (appInfo != null) {
+        platformInfoString += $" {appInfo?.AppName}/{appInfo?.AppVersion}";
+      }
+
+      return platformInfoString;
     }
 
     /// <summary>Checks the response HTTP status is OK, otherwise throws corresponding exception.</summary>
@@ -314,19 +405,28 @@ namespace DeepL.Internal {
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <param name="body">Object to serialize as JSON for the request body.</param>
     /// <param name="jsonOptions">Optional JSON serializer options.</param>
+    /// <param name="retryOnlyUnprocessed">
+    ///   <c>true</c> for requests that are unsafe to repeat: they are retried only after HTTP 429 or a name resolution
+    ///   failure, not after server errors or timeouts.
+    /// </param>
     /// <returns><see cref="HttpResponseMessage" /> received from DeepL API.</returns>
     /// <exception cref="ConnectionException">If any failure occurs while sending the request.</exception>
     public async Task<HttpResponseMessage> ApiPostJsonAsync(
           string relativeUri,
           CancellationToken cancellationToken,
           object body,
-          JsonSerializerOptions? jsonOptions = null) {
+          JsonSerializerOptions? jsonOptions = null,
+          bool retryOnlyUnprocessed = false) {
       var jsonBody = JsonSerializer.Serialize(body, jsonOptions);
       using var requestMessage = new HttpRequestMessage {
         RequestUri = new Uri(_serverUrl, relativeUri),
         Method = HttpMethod.Post,
         Content = new StringContent(jsonBody, Encoding.UTF8, "application/json")
       };
+      if (retryOnlyUnprocessed) {
+        requestMessage.SetPolicyExecutionContext(new Context(RetryOnlyUnprocessedOperationKey));
+      }
+
       return await ApiCallAsync(requestMessage, cancellationToken);
     }
 

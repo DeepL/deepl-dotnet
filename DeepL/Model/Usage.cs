@@ -5,6 +5,7 @@
 using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using DeepL.Internal;
 
 namespace DeepL.Model {
   /// <summary>
@@ -235,29 +236,6 @@ namespace DeepL.Model {
 
       [JsonConverter(typeof(LenientNullableDateTimeConverter))]
       public DateTime? EndTime { get; }
-    }
-  }
-
-  /// <summary>
-  ///   Reads an optional ISO 8601 timestamp, returning null instead of throwing when the value is missing or has an
-  ///   unexpected format, so that one unexpected field does not fail the whole usage response.
-  /// </summary>
-  internal sealed class LenientNullableDateTimeConverter : JsonConverter<DateTime?> {
-    public override DateTime? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {
-      if (reader.TokenType == JsonTokenType.String && reader.TryGetDateTime(out var value)) {
-        return value;
-      }
-
-      reader.Skip();
-      return null;
-    }
-
-    public override void Write(Utf8JsonWriter writer, DateTime? value, JsonSerializerOptions options) {
-      if (value.HasValue) {
-        writer.WriteStringValue(value.Value);
-      } else {
-        writer.WriteNullValue();
-      }
     }
   }
 }

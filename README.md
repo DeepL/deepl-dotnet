@@ -1089,6 +1089,112 @@ foreach (var resource in resources) {
 }
 ```
 
+### Admin API
+
+The Admin API lets you manage the developer keys of your organization and
+retrieve usage analytics. It requires an admin API key, which you can create in
+the "Admin API Keys" tab of your DeepL account. Admin keys cannot be used for
+translation; developer keys cannot access the Admin API.
+
+Create a `DeepLAdminClient` with your admin key. It uses the
+`https://api.deepl.com` server by default. `DeepLAdminClientOptions` offers the
+same connection settings as `DeepLClientOptions`, for example `ServerUrl`,
+`Headers`, `ClientFactory` and `appInfo`.
+
+```c#
+using DeepL; // this imports the DeepL namespace. Use the code below in your main program.
+
+var adminClient = new DeepLAdminClient("YOUR_ADMIN_KEY");
+```
+
+#### Managing developer keys
+
+```c#
+var key = await adminClient.CreateDeveloperKeyAsync("Staging Team Key");
+Console.WriteLine($"Created {key.Label} ({key.KeyId})");
+
+foreach (var developerKey in await adminClient.GetDeveloperKeysAsync()) {
+  Console.WriteLine($"{developerKey.Label}: deactivated={developerKey.IsDeactivated}");
+}
+
+key = await adminClient.RenameDeveloperKeyAsync(key, "Production Team Key");
+
+// Limits the key to 500000 characters and removes its speech-to-text limit.
+// The speech-to-speech limit keeps its current value.
+key = await adminClient.SetDeveloperKeyUsageLimitsAsync(
+      key,
+      new DeveloperKeyUsageLimitsUpdate { Characters = 500000, SpeechToTextMilliseconds = null });
+
+// Deactivation is permanent.
+await adminClient.DeactivateDeveloperKeyAsync(key);
+```
+
+`DeactivateDeveloperKeyAsync()`, `RenameDeveloperKeyAsync()` and
+`SetDeveloperKeyUsageLimitsAsync()` accept either a key ID or a `DeveloperKey`
+object. All functions that change a key return the updated `DeveloperKey`.
+
+`SetDeveloperKeyUsageLimitsAsync()` changes only the limits you assign in the
+`DeveloperKeyUsageLimitsUpdate`: `Characters`, `SpeechToTextMilliseconds` and
+`SpeechToSpeechMilliseconds`. Limits you do not assign keep their current value,
+`null` removes a limit and `0` blocks that usage.
+
+To avoid duplicate keys, `CreateDeveloperKeyAsync()` is retried only when the
+API cannot have processed the request: after HTTP 429 or a failure to resolve
+the server name. Server errors, timeouts and broken connections are not
+retried. If it throws, check `GetDeveloperKeysAsync()` before trying again.
+
+#### Retrieving usage analytics
+
+`GetUsageAnalyticsAsync()` returns an `AdminUsageReport`.
+
+**Dates.** Usage is counted per UTC calendar day, and both the start and the
+end day are included. Pass `"yyyy-MM-dd"` strings or `DateTime` values. For a
+`DateTime` the SDK sends the UTC date of that moment: `Local` values are
+converted to UTC and `Unspecified` values are treated as UTC, so local midnight
+on 2026-10-20 in UTC+2 is sent as `2026-10-19`. The end date must be after the
+start date, so a report covers at least two days, and at most 366 days after
+it. The API rejects other ranges, which throws a `DeepLException`.
+The same rules apply to `GetCustomTagUsageAnalyticsAsync()`.
+
+Use
+`groupBy` to break the usage down by key (`AdminUsageGroupBy.Key`, see
+`KeyUsages`) or by key and day (`AdminUsageGroupBy.KeyAndDay`, see
+`KeyAndDayUsages`, whose `KeyUsage` entries also contain the `UsageDate`).
+`report.GroupBy` is the raw grouping string returned by the API (`key` or
+`keyAndDay` at the time of writing). The usage breakdowns contain the
+characters per product, `SpeechToTextMinutes` and `SpeechToSpeechMinutes`.
+
+```c#
+var report = await adminClient.GetUsageAnalyticsAsync(
+      "2026-06-01",
+      "2026-07-01",
+      AdminUsageGroupBy.Key);
+Console.WriteLine($"Total characters: {report.TotalUsage?.TotalCharacters}");
+foreach (var keyUsage in report.KeyUsages) {
+  Console.WriteLine($"{keyUsage.ApiKeyLabel}: {keyUsage.Usage.TotalCharacters}");
+}
+```
+
+`GetCustomTagUsageAnalyticsAsync()` returns a `CustomTagUsageReport` with the
+usage per custom tag. Use `aggregateBy` to choose between the whole period
+(`CustomTagUsageAggregateBy.Period`, the default) and per-day usage
+(`CustomTagUsageAggregateBy.Day`). The results are paginated: pass the
+`NextPage` value of a report as `page` to get the next page.
+
+```c#
+int? page = null;
+do {
+  var report = await adminClient.GetCustomTagUsageAnalyticsAsync(
+        new DateTime(2026, 6, 1),
+        new DateTime(2026, 7, 1),
+        page: page);
+  foreach (var tagUsage in report.Usage) {
+    Console.WriteLine($"{tagUsage.CustomTag}: {tagUsage.Breakdown.TotalCharacters}");
+  }
+  page = report.NextPage;
+} while (page != null);
+```
+
 ### Exceptions
 
 All library functions may raise `DeepLException` or one of its subclasses. If
@@ -1178,7 +1284,8 @@ The tests are split into two groups in the `DeepLTests` project, selected by nam
 - `dotnet test --filter "FullyQualifiedName~DeepLTests.RealApi."` runs `DeepLTests/RealApi`. These tests send one
   request per API endpoint to the DeepL API, using the authentication key and server URL defined by the
   `DEEPL_AUTH_KEY` and `DEEPL_SERVER_URL` environment variables. They create and delete glossaries, style rules and
-  translation memories named `sdktest-dotnet-...`.
+  translation memories named `sdktest-dotnet-...`. The `DeepLAdminClient` tests use the admin key in
+  `DEEPL_ADMIN_KEY` instead; they create a developer key named `sdktest-dotnet-...`, rename it, set its limits and deactivate it.
 
 `dotnet test` runs both groups. Be aware that the real-API tests make DeepL API requests that contribute toward your
 API usage.
