@@ -59,6 +59,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `GET /v2/glossary-language-pairs` endpoints. No public API changes, but the returned language lists may include
   additional languages.
 
+### Deprecated
+- Deprecated the language code constants of the `LanguageCode` class (for example `LanguageCode.German`) with
+  `[Obsolete]`; they will be removed in the next major version. Pass the language code as a string, for example
+  `"de"`, and use `GetSourceLanguagesAsync()` and `GetTargetLanguagesAsync()` to retrieve the supported languages.
+  `LanguageCode.RemoveRegionalVariant()` is not deprecated.
+
 ### Fixed
 - A request that exceeds `PerRetryConnectionTimeout` now throws a `ConnectionException` with a "Request timed out"
   message, like the other timeouts, instead of "Unexpected request failure".

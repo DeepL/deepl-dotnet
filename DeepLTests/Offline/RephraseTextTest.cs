@@ -19,7 +19,7 @@ namespace DeepLTests.Offline {
     public async Task SendsTargetLanguageAndText() {
       ExpectForm(HttpMethod.Post, "v2/write/rephrase", ("target_lang", "en-US"), ("text", "good"))
             .RespondJson(Reply);
-      await CreateClient().RephraseTextAsync("good", LanguageCode.EnglishAmerican);
+      await CreateClient().RephraseTextAsync("good", "en-US");
     }
 
     [Fact]
@@ -40,7 +40,7 @@ namespace DeepLTests.Offline {
             .RespondJson(Reply);
       await CreateClient().RephraseTextAsync(
             "good",
-            LanguageCode.English,
+            "en",
             new TextRephraseOptions { WritingStyle = "business", WritingTone = "friendly" });
     }
 
@@ -51,7 +51,7 @@ namespace DeepLTests.Offline {
             .RespondJson(
                   "{\"improvements\":[{\"text\":\"x\",\"target_language\":\"EN-US\",\"detected_source_language\":\"EN\"}," +
                   "{\"text\":\"y\",\"target_language\":\"EN-US\",\"detected_source_language\":\"DE\"}]}");
-      await CreateClient().RephraseTextAsync(new[] { "a", "b" }, LanguageCode.EnglishAmerican);
+      await CreateClient().RephraseTextAsync(new[] { "a", "b" }, "en-US");
     }
 
     [Fact]

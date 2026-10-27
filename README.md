@@ -63,8 +63,9 @@ To translate text, call `TranslateTextAsync()`. The first argument is a string c
 
 The second and third arguments are case-insensitive language codes for the source and target language respectively,
 for example `"DE"`, `"FR"`.
-The `LanguageCode` static class defines constants for the currently supported languages, for example
-`LanguageCode.German`, `LanguageCode.French`.
+Language codes are plain strings; use the languages API (`GetSourceLanguagesAsync()` and
+`GetTargetLanguagesAsync()`) to retrieve the currently supported languages. The constants in the `LanguageCode` static
+class are deprecated and will be removed in the next major version.
 A target language without a regional variant translates to its default variant, for example `"EN"` to `"EN-US"` and
 `"PT"` to `"PT-PT"`; specify the variant, for example `"EN-GB"` or `"PT-BR"`, to choose explicitly.
 To auto-detect the input text language, specify `null` as the source language.
@@ -83,8 +84,8 @@ The `TextResult` contains:
 // Translate text into a target language, in this case, French:
 var translatedText = await client.TranslateTextAsync(
       "Hello, world!",
-      LanguageCode.English,
-      LanguageCode.French);
+      "EN",
+      "FR");
 Console.WriteLine(translatedText); // "Bonjour, le monde !"
 // Note: printing or converting the result to a string uses the output text.
 
@@ -104,7 +105,7 @@ foreach (var formality in new[] { Formality.Less, Formality.More }) {
         await client.TranslateTextAsync(
               "How are you?",
               null,
-              LanguageCode.German,
+              "DE",
               new TextTranslateOptions { Formality = formality }));
 }
 // Will print: "Wie geht es dir?" "Wie geht es Ihnen?"
@@ -853,10 +854,10 @@ of the profile through one ID.
 
 ```c#
 var result = await client.TranslateTextAsync(
-    "The artist is here.", null, LanguageCode.German, new TextTranslateOptions(profile));
+    "The artist is here.", null, "DE", new TextTranslateOptions(profile));
 
 await client.TranslateDocumentAsync(
-    new FileInfo("input.txt"), new FileInfo("output.txt"), null, LanguageCode.German,
+    new FileInfo("input.txt"), new FileInfo("output.txt"), null, "DE",
     new DocumentTranslateOptions { StyleProfileId = "YOUR_STYLE_PROFILE_ID" });
 ```
 
