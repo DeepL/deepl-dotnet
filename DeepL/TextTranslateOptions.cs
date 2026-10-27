@@ -54,6 +54,12 @@ namespace DeepL {
       StyleId = styleRule.StyleId;
     }
 
+    /// <summary>Initializes a new <see cref="TextTranslateOptions" /> object including the given style profile.</summary>
+    /// <param name="styleProfile">Style profile to use in translation.</param>
+    public TextTranslateOptions(StyleProfile styleProfile) : this() {
+      StyleProfileId = styleProfile.StyleProfileId;
+    }
+
     /// <summary>Initializes a new <see cref="TextTranslateOptions" /> object including the given translation memory.</summary>
     /// <param name="translationMemory">Translation memory to use in translation.</param>
     public TextTranslateOptions(TranslationMemoryInfo translationMemory) : this() {
@@ -89,6 +95,13 @@ namespace DeepL {
 
     /// <summary>Specifies the ID of a style rule to use with the translation.</summary>
     public string? StyleId { get; set; }
+
+    /// <summary>
+    ///   Specifies the ID of a style profile to use with the translation. The style profile applies its glossaries,
+    ///   style rules and translation memories through one ID.
+    /// </summary>
+    /// <remarks>The API rejects combining it with glossaries, style rules, translation memories or custom instructions.</remarks>
+    public string? StyleProfileId { get; set; }
 
     /// <summary>Specifies the ID of a translation memory to use with the translation.</summary>
     public string? TranslationMemoryId { get; set; }

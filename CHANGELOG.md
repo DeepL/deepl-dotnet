@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Added `StyleProfileId` to `TextTranslateOptions` and `DocumentTranslateOptions`, and constructors taking a
+  `StyleProfile`, to translate text and documents with a style profile (sent as `style_profile_id`).
 - Added `IStyleProfileManager`, implemented by `DeepLClient`, to manage style profiles (`/v3/style_profiles`):
   `ListStyleProfilesAsync()`, `CreateStyleProfileAsync()`, `GetStyleProfileAsync()`, `UpdateStyleProfileAsync()` and
   `DeleteStyleProfileAsync()`, with the model `StyleProfile` and the options class `StyleProfileOptions`. Options left

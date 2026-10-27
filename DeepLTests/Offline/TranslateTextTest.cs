@@ -150,6 +150,17 @@ namespace DeepLTests.Offline {
       return Translate(new TextTranslateOptions(styleRule), ("style_id", "s1"));
     }
 
+    // Translate() passes no source language: a style profile must not require one.
+    [Fact]
+    public Task SendsStyleProfileId() =>
+          Translate(new TextTranslateOptions { StyleProfileId = "sp1" }, ("style_profile_id", "sp1"));
+
+    [Fact]
+    public Task SendsStyleProfileIdOfStyleProfile() {
+      var styleProfile = new StyleProfile("sp1", "n", null, null, null, null, null, false, null, null);
+      return Translate(new TextTranslateOptions(styleProfile), ("style_profile_id", "sp1"));
+    }
+
     [Fact]
     public Task SendsTranslationMemoryIdAndThreshold() =>
           Translate(

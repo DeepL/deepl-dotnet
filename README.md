@@ -142,6 +142,14 @@ foreach (var formality in new[] { Formality.Less, Formality.More }) {
   `GlossaryId`.
 - `StyleId`: specifies a style rule to use with translation, as a string
   containing the ID of the style rule.
+- `StyleProfileId`: specifies a style profile to use with translation, as a
+  string containing the ID of the style profile (or pass a `StyleProfile` to the
+  constructor). The profile applies its glossaries, style rule lists and
+  translation memories; a component that does not fit the language pair is left
+  out. The source language is not required. It cannot be combined with
+  `GlossaryId`, `GlossaryIds`, `StyleId`, `TranslationMemoryId`,
+  `TranslationMemoryThreshold` or `CustomInstructions`; the API rejects such a
+  request.
 - `TranslationMemoryId`: specifies a translation memory to use with translation,
   as a string containing the translation memory ID.
 - `TranslationMemoryThreshold`: specifies the minimum matching percentage
@@ -312,6 +320,9 @@ application needs to execute these steps individually, you can instead use the f
 - `GlossaryId`:  same as in [Text translation options](#text-translation-options).
 - `GlossaryIds`:  same as in [Text translation options](#text-translation-options).
 - `StyleId`:  same as in [Text translation options](#text-translation-options).
+- `StyleProfileId`:  same as in [Text translation options](#text-translation-options), except that
+  `CustomInstructions` does not exist for documents. An unknown style profile is not rejected at upload: the
+  translation fails with a `DocumentTranslationException` whose message contains `Style profile not found.`.
 - `TranslationMemoryId`:  same as in [Text translation options](#text-translation-options).
 - `TranslationMemoryThreshold`:  same as in [Text translation options](#text-translation-options).
 - `EnableDocumentMinification`: A `bool` value. If set to `true`, the library will try to minify a document
@@ -774,8 +785,8 @@ await client.DeleteStyleRuleAsync("YOUR_STYLE_ID");
 ### Style profiles
 
 A style profile is a named set of glossaries, style rule lists and translation
-memories, with an optional description and industry. Every method that takes a
-style profile accepts either its ID or a `StyleProfile` object; an empty ID
+memories, with an optional description and industry. Every style profile
+management method accepts either its ID or a `StyleProfile` object; an empty ID
 throws an `ArgumentException` without sending a request.
 
 The optional fields are set with `StyleProfileOptions`. A property left `null`
@@ -832,6 +843,21 @@ var updated = await client.UpdateStyleProfileAsync(
       Description = "",              // clears the description
       StyleRuleIds = new string[0]   // unlinks all style rule lists
     });
+```
+
+#### Translating with a style profile
+
+Set `StyleProfileId` in `TextTranslateOptions` or `DocumentTranslateOptions`, or
+pass the `StyleProfile` to their constructor, to translate with all components
+of the profile through one ID.
+
+```c#
+var result = await client.TranslateTextAsync(
+    "The artist is here.", null, LanguageCode.German, new TextTranslateOptions(profile));
+
+await client.TranslateDocumentAsync(
+    new FileInfo("input.txt"), new FileInfo("output.txt"), null, LanguageCode.German,
+    new DocumentTranslateOptions { StyleProfileId = "YOUR_STYLE_PROFILE_ID" });
 ```
 
 #### Deleting a style profile

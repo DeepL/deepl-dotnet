@@ -626,7 +626,8 @@ namespace DeepL {
             options?.GlossaryId,
             options?.StyleId,
             options?.TranslationMemoryId,
-            options?.GlossaryIds);
+            options?.GlossaryIds,
+            options?.StyleProfileId);
 
       if (options?.TranslationMemoryThreshold != null) {
         if (options.TranslationMemoryId == null) {
@@ -908,7 +909,8 @@ namespace DeepL {
             options?.GlossaryId,
             options?.StyleId,
             options?.TranslationMemoryId,
-            options?.GlossaryIds);
+            options?.GlossaryIds,
+            options?.StyleProfileId);
 
       // Always send show_billed_characters=1, remove when the API default is changed to true
       bodyParams.Add(("show_billed_characters", "1"));
@@ -1001,6 +1003,7 @@ namespace DeepL {
     ///   Optional list of glossary IDs to use for translation (maximum of 5). Cannot be combined with
     ///   <paramref name="glossaryId" />.
     /// </param>
+    /// <param name="styleProfileId">Optional ID of style profile to use for translation.</param>
     /// <returns>List of tuples containing the parameters to include in HTTP request.</returns>
     /// <exception cref="ArgumentException">If the specified languages or options are invalid.</exception>
     private static List<(string Key, string Value)> CreateCommonHttpParams(
@@ -1010,7 +1013,8 @@ namespace DeepL {
           string? glossaryId,
           string? styleId = null,
           string? translationMemoryId = null,
-          ICollection<string>? glossaryIds = null) {
+          ICollection<string>? glossaryIds = null,
+          string? styleProfileId = null) {
       targetLanguageCode = LanguageCode.Standardize(targetLanguageCode);
       sourceLanguageCode = sourceLanguageCode == null ? null : LanguageCode.Standardize(sourceLanguageCode);
 
@@ -1041,6 +1045,10 @@ namespace DeepL {
 
       if (styleId != null) {
         bodyParams.Add(("style_id", styleId));
+      }
+
+      if (styleProfileId != null) {
+        bodyParams.Add(("style_profile_id", styleProfileId));
       }
 
       if (translationMemoryId != null) {

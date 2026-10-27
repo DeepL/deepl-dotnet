@@ -110,6 +110,17 @@ namespace DeepLTests.Offline {
     public Task SendsStyleId() =>
           Upload(new DocumentTranslateOptions { StyleId = "s1" }, ("style_id", null, "s1"));
 
+    // Upload() passes no source language: the glossary source-language check must not fire for a style profile.
+    [Fact]
+    public Task SendsStyleProfileId() =>
+          Upload(new DocumentTranslateOptions { StyleProfileId = "sp1" }, ("style_profile_id", null, "sp1"));
+
+    [Fact]
+    public Task SendsStyleProfileIdOfStyleProfile() {
+      var styleProfile = new StyleProfile("sp1", "n", null, null, null, null, null, false, null, null);
+      return Upload(new DocumentTranslateOptions(styleProfile), ("style_profile_id", null, "sp1"));
+    }
+
     [Fact]
     public Task SendsTranslationMemoryIdAndThreshold() =>
           Upload(
