@@ -2,6 +2,7 @@
 // Use of this source code is governed by an MIT
 // license that can be found in the LICENSE file.
 
+using System;
 using System.Collections.Generic;
 using DeepL.Model;
 
@@ -99,6 +100,7 @@ namespace DeepL {
     public int? TranslationMemoryThreshold { get; set; }
 
     /// <summary> Controls whether to use Document Minification for translation, if available.</summary>
+    [Obsolete("Document minification is deprecated and will be removed in the next major version. The DeepL API accepts larger documents; see the usage limits.")]
     public bool EnableDocumentMinification { get; set; }
 
     /// <summary>

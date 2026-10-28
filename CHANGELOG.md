@@ -64,6 +64,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `[Obsolete]`; they will be removed in the next major version. Pass the language code as a string, for example
   `"de"`, and use `GetSourceLanguagesAsync()` and `GetTargetLanguagesAsync()` to retrieve the supported languages.
   `LanguageCode.RemoveRegionalVariant()` is not deprecated.
+- Deprecated document minification with `[Obsolete]`: `DocumentTranslateOptions.EnableDocumentMinification`,
+  `DocumentMinifier`, `IDocumentMinifier`, `DocumentMinificationException` and `DocumentDeminificationException`.
+  They keep working and will be removed in the next major version. The DeepL API accepts larger documents than when
+  minification was added; see the [usage limits](https://developers.deepl.com/docs/resources/usage-limits).
 
 ### Fixed
 - A request that exceeds `PerRetryConnectionTimeout` now throws a `ConnectionException` with a "Request timed out"

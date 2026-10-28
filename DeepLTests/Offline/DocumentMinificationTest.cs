@@ -11,6 +11,8 @@ using DeepL;
 using RichardSzalay.MockHttp;
 using Xunit;
 
+// Tests the obsolete document minification, which stays supported until the next major.
+#pragma warning disable CS0618
 namespace DeepLTests.Offline {
   public sealed class DocumentMinificationTest : OfflineTest {
     private readonly string _tempDir = Fixtures.TempDir();
@@ -130,3 +132,4 @@ namespace DeepLTests.Offline {
     }
   }
 }
+#pragma warning restore CS0618

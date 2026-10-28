@@ -108,6 +108,7 @@ namespace DeepL {
   ///   Exception thrown if an error occurs during the minification phase of document minification.
   ///   See <see cref="DocumentMinifier.MinifyDocument"/>
   /// </summary>
+  [Obsolete("Document minification is deprecated and will be removed in the next major version. The DeepL API accepts larger documents; see the usage limits.")]
   public sealed class DocumentMinificationException : DeepLException {
     /// <summary>Initializes a new instance of the <see cref="DocumentMinificationException" /> class.</summary>
     /// <param name="message">The message that describes the error.</param>
@@ -121,6 +122,7 @@ namespace DeepL {
   ///   Exception thrown if an error occurs during the minification phase of document deminification.
   ///   See <see cref="DocumentMinifier.DeminifyDocument"/>
   /// </summary>
+  [Obsolete("Document minification is deprecated and will be removed in the next major version. The DeepL API accepts larger documents; see the usage limits.")]
   public sealed class DocumentDeminificationException : DeepLException {
     /// <summary>Initializes a new instance of the <see cref="DocumentDeminificationException" /> class.</summary>
     /// <param name="message">The message that describes the error.</param>

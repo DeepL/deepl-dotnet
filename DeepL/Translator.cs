@@ -523,10 +523,12 @@ namespace DeepL {
           string targetLanguageCode,
           DocumentTranslateOptions? options = null,
           CancellationToken cancellationToken = default) {
+#pragma warning disable CS0618 // Document minification is obsolete but still supported until the next major
       var willMinify = (options?.EnableDocumentMinification ?? false) &&
                        DocumentMinifier.CanMinifyFile(inputFileInfo.Name);
       var fileToUpload = inputFileInfo;
       var minifier = new DocumentMinifier();
+#pragma warning restore CS0618
       if (willMinify) {
         minifier.MinifyDocument(inputFileInfo.FullName, true);
         fileToUpload = new FileInfo(minifier.GetMinifiedDocFile(inputFileInfo.FullName));

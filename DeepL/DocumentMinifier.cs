@@ -8,6 +8,7 @@ using System.Linq;
 using System.Threading;
 
 namespace DeepL {
+  [Obsolete("Document minification is deprecated and will be removed in the next major version. The DeepL API accepts larger documents; see the usage limits.")]
   public interface IDocumentMinifier {
     /// <summary>
     ///   Minifies a given document using the given <c>tempDir</c>, by extracting it as a ZIP file and
@@ -51,6 +52,7 @@ namespace DeepL {
   ///   Class that implements document minification: Stripping supported files like pptx and docx
   ///   of their media (images, videos, etc) before uploading them to the DeepL API to be translated.
   ///   This allows users to translate files that would usually hit the size limit for files.
+  ///   Obsolete: will be removed in the next major version, as the DeepL API now accepts larger documents.
   ///   Please note the following:
   ///   <list type="number">
   ///     <item>
@@ -123,6 +125,7 @@ namespace DeepL {
   ///       }
   ///   </code>
   /// </summary>
+  [Obsolete("Document minification is deprecated and will be removed in the next major version. The DeepL API accepts larger documents; see the usage limits.")]
   public class DocumentMinifier : IDocumentMinifier {
     /// <summary>Which input document types are supported for minification.</summary>
     private static readonly string[] SupportedDocumentTypes = { ".pptx", ".docx" };

@@ -326,12 +326,13 @@ application needs to execute these steps individually, you can instead use the f
   translation fails with a `DocumentTranslationException` whose message contains `Style profile not found.`.
 - `TranslationMemoryId`:  same as in [Text translation options](#text-translation-options).
 - `TranslationMemoryThreshold`:  same as in [Text translation options](#text-translation-options).
-- `EnableDocumentMinification`: A `bool` value. If set to `true`, the library will try to minify a document
+- `EnableDocumentMinification` (obsolete): A `bool` value. If set to `true`, the library will try to minify a document
   before translating it through the API, sending a smaller document if the file contains a lot of media. This is
   currently only supported for `pptx` and `docx` files. See also [Document minification](#document-minification).
   Note that this only works in the high-level `TranslateDocumentDownloadAsync` method, not
   `TranslateDocumentUploadAsync`. However, the behavior can be emulated by creating a new `DocumentMinifier`
-  object and calling the minifier's methods in between.
+  object and calling the minifier's methods in between. This option and `DocumentMinifier` are obsolete and will
+  be removed in the next major version.
 - `OutputFormat`: using the parameter during document upload, you can select alternative output formats. See
   the [API documentation][api-docs-outputformat-param] for more information and example usage.
 - `EnableWatermark`: A `bool?` value. If set to `true`, the API adds a "Translated by DeepL" watermark to the
@@ -343,9 +344,13 @@ application needs to execute these steps individually, you can instead use the f
 
 #### Document minification
 
+> **Obsolete:** The `EnableDocumentMinification` option, `DocumentMinifier`, `IDocumentMinifier`,
+> `DocumentMinificationException` and `DocumentDeminificationException` are marked `[Obsolete]` and will be removed
+> in the next major version. Using them produces compiler warning CS0618; they keep working until then.
+
 In some contexts, one can end up with large document files (e.g. PowerPoint presentations
-or Word files with many contributors, especially in a larger organization). However, the
-DeepL API enforces a limit of 30 MB for most of these files (see Usage Limits in the docs).
+or Word files with many contributors, especially in a larger organization). The DeepL API
+limits the size of uploaded documents; see the [usage limits][api-docs-usage-limits] for the current limits.
 In the case that most of this size comes from media included in the documents (e.g. images,
 videos, animations), document minification can help.
 In this case, the library will create a temporary directory to extract the document into,
@@ -1394,6 +1399,8 @@ API usage.
 [api-docs-glossary-lang-list]: https://www.deepl.com/docs-api/managing-glossaries/?utm_source=github&utm_medium=github-dotnet-readme
 
 [api-docs-outputformat-param]: https://www.deepl.com/docs-api/documents/format-conversions/?utm_source=github&utm_medium=github-dotnet-readme
+
+[api-docs-usage-limits]: https://developers.deepl.com/docs/resources/usage-limits
 
 [api-docs-xml-handling]: https://www.deepl.com/docs-api/handling-xml/?utm_source=github&utm_medium=github-dotnet-readme
 
