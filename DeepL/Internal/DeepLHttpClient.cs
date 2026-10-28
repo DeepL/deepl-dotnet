@@ -395,8 +395,10 @@ namespace DeepL.Internal {
         RequestUri = new Uri(_serverUrl, relativeUri),
         Method = HttpMethod.Post,
         Content = bodyParams != null
+#pragma warning disable CS0618 // internal use of a type obsolete only for library users
                   ? new LargeFormUrlEncodedContent(
                         bodyParams.Select(pair => new KeyValuePair<string, string>(pair.Key, pair.Value)))
+#pragma warning restore CS0618
                   : null
       };
       return await ApiCallAsync(requestMessage, cancellationToken);
@@ -446,8 +448,10 @@ namespace DeepL.Internal {
         RequestUri = new Uri(_serverUrl, relativeUri),
         Method = HttpMethod.Put,
         Content = bodyParams != null
+#pragma warning disable CS0618 // internal use of a type obsolete only for library users
                   ? new LargeFormUrlEncodedContent(
                         bodyParams.Select(pair => new KeyValuePair<string, string>(pair.Key, pair.Value)))
+#pragma warning restore CS0618
                   : null
       };
       return await ApiCallAsync(requestMessage, cancellationToken);
@@ -488,8 +492,10 @@ namespace DeepL.Internal {
         RequestUri = new Uri(_serverUrl, relativeUri),
         Method = new HttpMethod("PATCH"),
         Content = bodyParams != null
+#pragma warning disable CS0618 // internal use of a type obsolete only for library users
                   ? new LargeFormUrlEncodedContent(
                         bodyParams.Select(pair => new KeyValuePair<string, string>(pair.Key, pair.Value)))
+#pragma warning restore CS0618
                   : null
       };
       return await ApiCallAsync(requestMessage, cancellationToken);

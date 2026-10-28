@@ -68,6 +68,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DocumentMinifier`, `IDocumentMinifier`, `DocumentMinificationException` and `DocumentDeminificationException`.
   They keep working and will be removed in the next major version. The DeepL API accepts larger documents than when
   minification was added; see the [usage limits](https://developers.deepl.com/docs/resources/usage-limits).
+- Deprecated public types that are implementation details with `[Obsolete]`: `DeepL.Internal.LargeFormUrlEncodedContent`,
+  `MultilingualGlossaryDictionaryEntriesResult`, and the `MultilingualGlossaryDictionaryEntries` constructor that takes a
+  `MultilingualGlossaryDictionaryEntriesResult`. They keep working and will be made internal in the next major version.
 
 ### Fixed
 - A request that exceeds `PerRetryConnectionTimeout` now throws a `ConnectionException` with a "Request timed out"

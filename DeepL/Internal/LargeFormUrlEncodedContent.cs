@@ -14,6 +14,7 @@ namespace DeepL.Internal {
   /// <summary>Custom replacement for System.Net.Http.FormUrlEncodedContent to avoid size limitations.</summary>
   /// There was a bugfix for .NET 5 (https://github.com/dotnet/corefx/pull/41686) that solved this issue.
   /// This class avoids the problem by using WebUtility.UrlEncoded() instead of Uri.EscapeDataString().
+  [Obsolete("Internal type; will be made internal in the next major version.")]
   public class LargeFormUrlEncodedContent : ByteArrayContent {
     private static readonly Encoding Utf8Encoding = Encoding.UTF8;
 

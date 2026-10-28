@@ -2,6 +2,7 @@
 // Use of this source code is governed by an MIT
 // license that can be found in the LICENSE file.
 
+using System;
 using System.Text.Json.Serialization;
 
 namespace DeepL.Model {
@@ -27,6 +28,7 @@ namespace DeepL.Model {
             (sourceLanguageCode, targetLanguageCode, entries);
     }
 
+    [Obsolete("Internal type; will be made internal in the next major version.")]
     public MultilingualGlossaryDictionaryEntries(MultilingualGlossaryDictionaryEntriesResult dictionaryEntriesResult) {
       (SourceLanguageCode, TargetLanguageCode, Entries) =
             (dictionaryEntriesResult.SourceLanguageCode, dictionaryEntriesResult.TargetLanguageCode,
@@ -59,6 +61,7 @@ namespace DeepL.Model {
   }
 
   /// <summary>Class used for JSON-deserialization of glossary dictionary entries results.</summary>
+  [Obsolete("Internal type; will be made internal in the next major version.")]
   public readonly struct MultilingualGlossaryDictionaryEntriesResult {
     /// <summary>
     ///   Initializes a new instance of <see cref="MultilingualGlossaryDictionaryEntriesResult" />, used for JSON

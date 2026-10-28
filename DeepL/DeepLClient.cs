@@ -1124,7 +1124,9 @@ namespace DeepL {
 
       // When the source and target language codes are specified, there should be at most one dictionary returned where
       // a NotFoundException would be thrown if no dictionary cannot be found for the given source and target language codes
+#pragma warning disable CS0618 // internal use of a type obsolete only for library users
       return new MultilingualGlossaryDictionaryEntries(dictionaryEntriesList.Dictionaries[0]);
+#pragma warning restore CS0618
     }
 
     /// <inheritdoc />
@@ -1665,6 +1667,7 @@ namespace DeepL {
       ///   Initializes a new instance of <see cref="MultilingualGlossaryDictionaryEntriesListResult" />, used for JSON
       ///   deserialization.
       /// </summary>
+#pragma warning disable CS0618 // internal use of a type obsolete only for library users
       [JsonConstructor]
       public MultilingualGlossaryDictionaryEntriesListResult(
             MultilingualGlossaryDictionaryEntriesResult[] dictionaries) {
@@ -1676,6 +1679,7 @@ namespace DeepL {
       ///   including their entries.
       /// </summary>
       public MultilingualGlossaryDictionaryEntriesResult[] Dictionaries { get; }
+#pragma warning restore CS0618
     }
 
     /// <summary>Class used for JSON-deserialization of glossary list results.</summary>
