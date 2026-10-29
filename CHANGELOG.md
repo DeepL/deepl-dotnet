@@ -45,7 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   description or industry and an empty list unlinks all components of that kind. Both options classes derive from
   `BaseRequestOptions`: `ExtraBodyParameters` are added to the body last. The glossary, style rule list and
   translation memory lists take IDs or resource objects (`SetGlossaries()`, `SetStyleRules()`,
-  `SetTranslationMemories()`).
+  `SetTranslationMemories()`). `StyleProfile.CreationTime` and `UpdatedTime` are non-nullable.
 - Added `ISpokenTermsManager`, implemented by `DeepLClient`, to manage Spoken Terms collections (`/v3/spoken-terms`):
   `CreateSpokenTermsAsync()`, `ListSpokenTermsAsync()`, `GetSpokenTermsAsync()`, `UpdateSpokenTermsAsync()`,
   `GetSpokenTermsEntriesAsync()`, `ReplaceSpokenTermsListAsync()`, `DeleteSpokenTermsAsync()` and

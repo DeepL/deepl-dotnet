@@ -23,6 +23,10 @@ namespace DeepL.Model {
     /// <param name="glossaryPriorityOrderEnabled">Whether the order of the glossary IDs sets their priority.</param>
     /// <param name="creationTime"><see cref="DateTime" /> when the style profile was created.</param>
     /// <param name="updatedTime"><see cref="DateTime" /> when the style profile was last updated.</param>
+    /// <exception cref="DeepLException">
+    ///   If <paramref name="creationTime" /> or <paramref name="updatedTime" /> is <c>default</c>, which is what a
+    ///   timestamp missing from the response deserializes to.
+    /// </exception>
     /// <remarks>
     ///   The constructor for this class (and all other Model classes) should not be used by library users. Ideally it
     ///   would be marked <see langword="internal" />, but needs to be <see langword="public" /> for JSON deserialization.
@@ -38,14 +42,17 @@ namespace DeepL.Model {
           string[]? styleRuleIds,
           string[]? translationMemoryIds,
           bool glossaryPriorityOrderEnabled,
-          DateTime? creationTime,
-          DateTime? updatedTime) {
+          DateTime creationTime,
+          DateTime updatedTime) {
       (StyleProfileId, Name, Description, Industry) = (styleProfileId, name, description, industry);
       GlossaryIds = glossaryIds ?? new string[0];
       StyleRuleIds = styleRuleIds ?? new string[0];
       TranslationMemoryIds = translationMemoryIds ?? new string[0];
       GlossaryPriorityOrderEnabled = glossaryPriorityOrderEnabled;
-      (CreationTime, UpdatedTime) = (creationTime, updatedTime);
+      // System.Text.Json passes default(DateTime) for a missing field, and its constructor parameters must have the
+      // property types, so a missing timestamp is detected by its default value.
+      CreationTime = creationTime != default ? creationTime : throw MissingField("creation_time");
+      UpdatedTime = updatedTime != default ? updatedTime : throw MissingField("updated_time");
     }
 
     /// <summary>ID of the style profile.</summary>
@@ -89,17 +96,17 @@ namespace DeepL.Model {
     [JsonPropertyName("glossary_priority_order_enabled")]
     public bool GlossaryPriorityOrderEnabled { get; }
 
-    /// <summary><see cref="DateTime" /> when the style profile was created, or <c>null</c> if it could not be read.</summary>
+    /// <summary><see cref="DateTime" /> when the style profile was created.</summary>
     [JsonPropertyName("creation_time")]
-    [JsonConverter(typeof(LenientNullableDateTimeConverter))]
-    public DateTime? CreationTime { get; }
+    public DateTime CreationTime { get; }
 
-    /// <summary>
-    ///   <see cref="DateTime" /> when the style profile was last updated, or <c>null</c> if it could not be read.
-    /// </summary>
+    /// <summary><see cref="DateTime" /> when the style profile was last updated.</summary>
     [JsonPropertyName("updated_time")]
-    [JsonConverter(typeof(LenientNullableDateTimeConverter))]
-    public DateTime? UpdatedTime { get; }
+    public DateTime UpdatedTime { get; }
+
+    /// <summary>Returns the exception for a required timestamp missing from the response.</summary>
+    private static DeepLException MissingField(string fieldName) =>
+          new DeepLException($"Failed to deserialize JSON in received response: style profile without {fieldName}");
 
     /// <summary>Creates a string containing the name and ID of the current <see cref="StyleProfile" /> object.</summary>
     /// <returns>A string containing the name and ID of the <see cref="StyleProfile" /> object.</returns>

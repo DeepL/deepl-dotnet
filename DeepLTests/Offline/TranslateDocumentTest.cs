@@ -131,13 +131,13 @@ namespace DeepLTests.Offline {
 
     [Fact]
     public Task SendsStyleProfileOfStyleProfileObject() {
-      var styleProfile = new StyleProfile("sp1", "n", null, null, null, null, null, false, null, null);
+      var styleProfile = new StyleProfile("sp1", "n", null, null, null, null, null, false, DateTime.UtcNow, DateTime.UtcNow);
       return Upload(new DocumentTranslateOptions { StyleProfile = styleProfile }, ("style_profile_id", null, "sp1"));
     }
 
     [Fact]
     public Task SendsStyleProfileIdOfStyleProfile() {
-      var styleProfile = new StyleProfile("sp1", "n", null, null, null, null, null, false, null, null);
+      var styleProfile = new StyleProfile("sp1", "n", null, null, null, null, null, false, DateTime.UtcNow, DateTime.UtcNow);
       return Upload(new DocumentTranslateOptions(styleProfile), ("style_profile_id", null, "sp1"));
     }
 

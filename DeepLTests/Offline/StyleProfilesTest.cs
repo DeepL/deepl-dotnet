@@ -129,17 +129,19 @@ namespace DeepLTests.Offline {
       Assert.True(profile.GlossaryPriorityOrderEnabled);
       Assert.Equal(
             new DateTime(2026, 4, 1, 16, 34, 25, 223, DateTimeKind.Utc),
-            profile.CreationTime!.Value.ToUniversalTime());
+            profile.CreationTime.ToUniversalTime());
       Assert.Equal(
             new DateTime(2026, 8, 6, 9, 12, 44, 108, DateTimeKind.Utc),
-            profile.UpdatedTime!.Value.ToUniversalTime());
+            profile.UpdatedTime.ToUniversalTime());
     }
 
     [Fact]
     public async Task ParsesMissingOptionalFieldsSevenDigitTimestampsAndIgnoresUnknownFields() {
       ExpectNoBody(HttpMethod.Get, "v3/style_profiles/sp1").RespondJson(MinimalReply);
       ExpectNoBody(HttpMethod.Get, "v3/style_profiles/sp2")
-            .RespondJson("{\"style_profile_id\":\"sp2\",\"name\":\"Bare\",\"description\":null,\"glossary_ids\":null}");
+            .RespondJson(
+                  "{\"style_profile_id\":\"sp2\",\"name\":\"Bare\",\"description\":null,\"glossary_ids\":null," +
+                  "\"creation_time\":\"2026-04-01T16:34:25.223Z\",\"updated_time\":\"2026-08-06T09:12:44.108Z\"}");
       var client = CreateClient();
 
       var profile = await client.GetStyleProfileAsync("sp1");
@@ -150,28 +152,25 @@ namespace DeepLTests.Offline {
       Assert.Empty(profile.StyleRuleIds);
       Assert.Equal(
             new DateTime(2026, 10, 26, 16, 27, 10, DateTimeKind.Utc).AddTicks(2982869),
-            profile.CreationTime!.Value.ToUniversalTime());
+            profile.CreationTime.ToUniversalTime());
       Assert.Null(bare.Description);
       Assert.Empty(bare.GlossaryIds);
       Assert.Empty(bare.StyleRuleIds);
       Assert.Empty(bare.TranslationMemoryIds);
       Assert.False(bare.GlossaryPriorityOrderEnabled);
-      Assert.Null(bare.CreationTime);
     }
 
     [Fact]
-    public async Task ToleratesAnUnparseableTimestampAndNonStringIds() {
+    public async Task ToleratesNonStringIds() {
       ExpectNoBody(HttpMethod.Get, "v3/style_profiles")
             .RespondJson(
                   "{\"style_profiles\":[{\"style_profile_id\":\"sp1\",\"name\":\"Odd\",\"description\":\"D\"," +
                   "\"glossary_ids\":[\"g1\",42,null,{\"id\":\"x\"},\"g2\"],\"style_rule_ids\":\"s1\"," +
                   "\"translation_memory_ids\":[\"t1\"],\"glossary_priority_order_enabled\":true," +
-                  "\"creation_time\":\"not a timestamp\",\"updated_time\":\"2026-08-06T09:12:44.108Z\"}]}");
+                  "\"creation_time\":\"2026-04-01T16:34:25.223Z\",\"updated_time\":\"2026-08-06T09:12:44.108Z\"}]}");
 
       var profile = Assert.Single(await CreateClient().ListStyleProfilesAsync());
 
-      Assert.Null(profile.CreationTime);
-      Assert.NotNull(profile.UpdatedTime);
       Assert.Equal(new[] { "g1", "g2" }, profile.GlossaryIds);
       Assert.Empty(profile.StyleRuleIds);
       Assert.Equal(new[] { "t1" }, profile.TranslationMemoryIds);
@@ -243,6 +242,31 @@ namespace DeepLTests.Offline {
       await client.UpdateStyleProfileAsync(
             "sp1",
             new UpdateStyleProfileOptions { GlossaryIds = new string[] { multilingualGlossary, glossary, "g3" } });
+    }
+
+    [Fact]
+    public async Task ThrowsOnAnUnparseableRequiredTimestamp() {
+      ExpectNoBody(HttpMethod.Get, "v3/style_profiles/sp1")
+            .RespondJson(
+                  MinimalReply.Replace("2026-10-26T16:27:10.2982869Z\",\"updated", "not a timestamp\",\"updated"));
+
+      await Assert.ThrowsAsync<DeepLException>(() => CreateClient().GetStyleProfileAsync("sp1"));
+    }
+
+    [Fact]
+    public async Task ThrowsOnAMissingRequiredTimestamp() {
+      ExpectNoBody(HttpMethod.Get, "v3/style_profiles/sp1")
+            .RespondJson(MinimalReply.Replace("\"creation_time\":\"2026-10-26T16:27:10.2982869Z\",", ""));
+      ExpectNoBody(HttpMethod.Get, "v3/style_profiles/sp2")
+            .RespondJson(MinimalReply.Replace(",\"updated_time\":\"2026-10-26T16:27:10.2982869Z\"", ""));
+      var client = CreateClient();
+
+      var missingCreation =
+            await Assert.ThrowsAsync<DeepLException>(() => client.GetStyleProfileAsync("sp1"));
+      var missingUpdate = await Assert.ThrowsAsync<DeepLException>(() => client.GetStyleProfileAsync("sp2"));
+
+      Assert.Contains("creation_time", missingCreation.Message);
+      Assert.Contains("updated_time", missingUpdate.Message);
     }
 
     [Fact]
