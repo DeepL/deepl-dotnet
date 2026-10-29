@@ -19,7 +19,9 @@ namespace DeepLTests.RealApi {
         var name = RealApiHelpers.GetUniqueName("styleProfile");
         created = await client.CreateStyleProfileAsync(
               name,
-              new StyleProfileOptions { Description = "Contract wording", StyleRuleIds = new[] { styleRule.StyleId } });
+              new CreateStyleProfileOptions {
+                Description = "Contract wording", StyleRuleIds = new[] { styleRule.StyleId }
+              });
         Assert.Equal(name, created.Name);
         Assert.Equal("Contract wording", created.Description);
         Assert.Equal(new[] { styleRule.StyleId }, created.StyleRuleIds);
@@ -46,8 +48,9 @@ namespace DeepLTests.RealApi {
 
         var updated = await client.UpdateStyleProfileAsync(
               created,
-              name + "-renamed",
-              new StyleProfileOptions { Industry = "Legal", Description = "", StyleRuleIds = new string[0] });
+              new UpdateStyleProfileOptions {
+                Name = name + "-renamed", Industry = "Legal", Description = "", StyleRuleIds = new string[0]
+              });
         Assert.Equal(name + "-renamed", updated.Name);
         Assert.Equal("Legal", updated.Industry);
         Assert.Null(updated.Description);

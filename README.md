@@ -861,10 +861,22 @@ memories, with an optional description and industry. Every style profile
 management method accepts either its ID or a `StyleProfile` object; an empty ID
 throws an `ArgumentException` without sending a request.
 
-The optional fields are set with `StyleProfileOptions`. A property left `null`
-is not sent. An empty string and an empty list are sent as given: on update, `""`
-clears the description or industry, and an empty list unlinks all components of
-that kind.
+The optional fields are set with `CreateStyleProfileOptions` when creating and
+`UpdateStyleProfileOptions` (which adds `Name`) when updating. A property left
+`null` is not sent. An empty string and an empty list are sent as given: on
+update, `""` clears the description or industry, and an empty list unlinks all
+components of that kind.
+
+`GlossaryIds`, `StyleRuleIds` and `TranslationMemoryIds` take IDs. Resource
+objects convert to their ID implicitly, so a list can mix both
+(`new string[] { glossaryInfo, "YOUR_GLOSSARY_ID" }`); to pass a list of
+objects, call `SetGlossaries()` (with `GlossaryInfo` or
+`MultilingualGlossaryInfo` objects), `SetStyleRules()` (`StyleRuleInfo`) or
+`SetTranslationMemories()` (`TranslationMemoryInfo`).
+
+Both options classes also have `ExtraBodyParameters`: a
+`Dictionary<string, string>` of extra parameters added to the JSON body last,
+replacing built-in fields with the same key.
 
 #### Creating a style profile
 
@@ -876,7 +888,7 @@ var profile = await client.CreateStyleProfileAsync("Legal, German");
 
 var linked = await client.CreateStyleProfileAsync(
     "Legal, German (linked)",
-    new StyleProfileOptions {
+    new CreateStyleProfileOptions {
       Description = "Contract wording for the German market.",
       Industry = "Legal",
       GlossaryIds = new[] { "YOUR_GLOSSARY_ID", "YOUR_OTHER_GLOSSARY_ID" },
@@ -885,6 +897,11 @@ var linked = await client.CreateStyleProfileAsync(
       GlossaryPriorityOrderEnabled = true // the first glossary wins when two define the same term
     });
 Console.WriteLine($"Created {linked.Name} ({linked.StyleProfileId})");
+
+var options = new CreateStyleProfileOptions();
+options.SetGlossaries(new[] { await client.GetMultilingualGlossaryAsync("YOUR_GLOSSARY_ID") });
+options.SetStyleRules(new[] { await client.GetStyleRuleAsync("YOUR_STYLE_ID") });
+var fromObjects = await client.CreateStyleProfileAsync("Legal, German (objects)", options);
 ```
 
 #### Getting and listing style profiles
@@ -909,8 +926,8 @@ replaces the linked list of that kind in full.
 ```c#
 var updated = await client.UpdateStyleProfileAsync(
     profile,
-    name: "Legal, German v2",
-    options: new StyleProfileOptions {
+    new UpdateStyleProfileOptions {
+      Name = "Legal, German v2",
       Industry = "Legal",
       Description = "",              // clears the description
       StyleRuleIds = new string[0]   // unlinks all style rule lists

@@ -64,7 +64,7 @@ namespace DeepLTests.Offline {
 
       await CreateClient().CreateStyleProfileAsync(
             "Legal",
-            new StyleProfileOptions {
+            new CreateStyleProfileOptions {
               Description = "D",
               Industry = "I",
               GlossaryIds = new List<string> { "g2", "g1" },
@@ -83,8 +83,7 @@ namespace DeepLTests.Offline {
 
       var updated = await client.UpdateStyleProfileAsync(
             "sp1",
-            "New",
-            new StyleProfileOptions { Description = "", StyleRuleIds = new string[0] });
+            new UpdateStyleProfileOptions { Name = "New", Description = "", StyleRuleIds = new string[0] });
       await client.UpdateStyleProfileAsync(updated);
     }
 
@@ -99,7 +98,7 @@ namespace DeepLTests.Offline {
 
       var profile = await client.GetStyleProfileAsync("a b/c");
       await client.GetStyleProfileAsync(profile);
-      await client.UpdateStyleProfileAsync(profile, options: new StyleProfileOptions { Industry = "Legal" });
+      await client.UpdateStyleProfileAsync(profile, new UpdateStyleProfileOptions { Industry = "Legal" });
       await client.DeleteStyleProfileAsync(profile);
       await client.DeleteStyleProfileAsync("a b/c");
     }
@@ -109,7 +108,8 @@ namespace DeepLTests.Offline {
       var client = CreateClient();
 
       await Assert.ThrowsAsync<ArgumentException>(() => client.GetStyleProfileAsync(""));
-      await Assert.ThrowsAsync<ArgumentException>(() => client.UpdateStyleProfileAsync("", "New"));
+      await Assert.ThrowsAsync<ArgumentException>(
+            () => client.UpdateStyleProfileAsync("", new UpdateStyleProfileOptions { Name = "New" }));
       await Assert.ThrowsAsync<ArgumentException>(() => client.DeleteStyleProfileAsync(""));
     }
 
@@ -177,6 +177,72 @@ namespace DeepLTests.Offline {
       Assert.Equal(new[] { "t1" }, profile.TranslationMemoryIds);
       Assert.Equal(("sp1", "Odd", "D"), (profile.StyleProfileId, profile.Name, profile.Description));
       Assert.True(profile.GlossaryPriorityOrderEnabled);
+    }
+
+    [Fact]
+    public async Task SendsTheNameFromTheUpdateOptions() {
+      ExpectJson(Patch, "v3/style_profiles/sp1", "{\"name\":\"Renamed\"}").RespondJson(MinimalReply);
+      var client = CreateClient();
+
+      await client.UpdateStyleProfileAsync("sp1", new UpdateStyleProfileOptions { Name = "Renamed" });
+    }
+
+    [Fact]
+    public async Task MergesExtraBodyParametersLastWhenCreatingAndUpdating() {
+      ExpectJson(
+                  HttpMethod.Post,
+                  "v3/style_profiles",
+                  "{\"name\":\"Legal\",\"description\":\"extra\",\"beta\":\"on\"}")
+            .RespondJson(MinimalReply);
+      ExpectJson(Patch, "v3/style_profiles/sp1", "{\"name\":\"extra\",\"industry\":\"I\",\"beta\":\"on\"}")
+            .RespondJson(MinimalReply);
+      var client = CreateClient();
+
+      await client.CreateStyleProfileAsync(
+            "Legal",
+            new CreateStyleProfileOptions {
+              Description = "D",
+              ExtraBodyParameters = new Dictionary<string, string> { ["description"] = "extra", ["beta"] = "on" }
+            });
+      await client.UpdateStyleProfileAsync(
+            "sp1",
+            new UpdateStyleProfileOptions {
+              Name = "New",
+              Industry = "I",
+              ExtraBodyParameters = new Dictionary<string, string> { ["name"] = "extra", ["beta"] = "on" }
+            });
+    }
+
+    [Fact]
+    public async Task SendsTheIdsOfResourceObjectsInTheComponentLists() {
+      var created = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+      var glossary = new GlossaryInfo("g1", "G", true, "en", "de", created, 1);
+      var multilingualGlossary =
+            new MultilingualGlossaryInfo("g2", "M", new MultilingualGlossaryDictionaryInfo[0], created);
+      var styleRule = new StyleRuleInfo("s1", "S", created, created, "de", 1, null, null);
+      var translationMemory = new TranslationMemoryInfo("t1", "T", "en", new[] { "de" }, 0);
+      ExpectJson(
+                  HttpMethod.Post,
+                  "v3/style_profiles",
+                  "{\"name\":\"Legal\",\"glossary_ids\":[\"g2\"],\"style_rule_ids\":[\"s1\"]," +
+                  "\"translation_memory_ids\":[\"t1\"]}")
+            .RespondJson(MinimalReply);
+      ExpectJson(Patch, "v3/style_profiles/sp1", "{\"glossary_ids\":[\"g1\"]}").RespondJson(MinimalReply);
+      ExpectJson(Patch, "v3/style_profiles/sp1", "{\"glossary_ids\":[\"g2\",\"g1\",\"g3\"]}")
+            .RespondJson(MinimalReply);
+      var client = CreateClient();
+
+      var createOptions = new CreateStyleProfileOptions();
+      createOptions.SetGlossaries(new[] { multilingualGlossary });
+      createOptions.SetStyleRules(new[] { styleRule });
+      createOptions.SetTranslationMemories(new List<TranslationMemoryInfo> { translationMemory });
+      await client.CreateStyleProfileAsync("Legal", createOptions);
+      var updateOptions = new UpdateStyleProfileOptions();
+      updateOptions.SetGlossaries(new[] { glossary });
+      await client.UpdateStyleProfileAsync("sp1", updateOptions);
+      await client.UpdateStyleProfileAsync(
+            "sp1",
+            new UpdateStyleProfileOptions { GlossaryIds = new string[] { multilingualGlossary, glossary, "g3" } });
     }
 
     [Fact]

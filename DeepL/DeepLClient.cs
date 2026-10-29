@@ -820,7 +820,7 @@ namespace DeepL {
     /// <inheritdoc />
     public async Task<StyleProfile> CreateStyleProfileAsync(
           string name,
-          StyleProfileOptions? options = null,
+          CreateStyleProfileOptions? options = null,
           CancellationToken cancellationToken = default) {
       using var responseMessage = await _client
             .ApiPostJsonAsync(
@@ -854,13 +854,16 @@ namespace DeepL {
     /// <inheritdoc />
     public async Task<StyleProfile> UpdateStyleProfileAsync(
           string styleProfileId,
-          string? name = null,
-          StyleProfileOptions? options = null,
+          UpdateStyleProfileOptions? options = null,
           CancellationToken cancellationToken = default) {
       var path = StyleProfilePath(styleProfileId);
       // With nothing set the body is {}; the API returns the style profile unchanged.
       using var responseMessage = await _client
-            .ApiPatchJsonAsync(path, cancellationToken, CreateStyleProfileBody(name, options), SerializationOptions)
+            .ApiPatchJsonAsync(
+                  path,
+                  cancellationToken,
+                  CreateStyleProfileBody(options?.Name, options),
+                  SerializationOptions)
             .ConfigureAwait(false);
 
       await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.StyleProfile).ConfigureAwait(false);
@@ -870,10 +873,9 @@ namespace DeepL {
     /// <inheritdoc />
     public async Task<StyleProfile> UpdateStyleProfileAsync(
           StyleProfile styleProfile,
-          string? name = null,
-          StyleProfileOptions? options = null,
+          UpdateStyleProfileOptions? options = null,
           CancellationToken cancellationToken = default) =>
-          await UpdateStyleProfileAsync(styleProfile.StyleProfileId, name, options, cancellationToken)
+          await UpdateStyleProfileAsync(styleProfile.StyleProfileId, options, cancellationToken)
                 .ConfigureAwait(false);
 
     /// <inheritdoc />
@@ -1805,11 +1807,16 @@ namespace DeepL {
       return $"v3/style_profiles/{Uri.EscapeDataString(styleProfileId)}";
     }
 
-    /// <summary>Returns the JSON body of a style profile create or update request, containing only the set fields.</summary>
+    /// <summary>
+    ///   Returns the JSON body of a style profile create or update request, containing only the set fields, followed by
+    ///   the extra body parameters of the options.
+    /// </summary>
     /// <param name="name">Name of the style profile, or <c>null</c> to leave it out.</param>
     /// <param name="options">Optional fields of the style profile.</param>
     /// <returns>Dictionary to serialize as the JSON body.</returns>
-    private static Dictionary<string, object> CreateStyleProfileBody(string? name, StyleProfileOptions? options) {
+    private static Dictionary<string, object> CreateStyleProfileBody(
+          string? name,
+          CreateStyleProfileOptions? options) {
       var body = new Dictionary<string, object>();
       if (name != null) body["name"] = name;
       if (options == null) return body;
@@ -1822,6 +1829,7 @@ namespace DeepL {
         body["glossary_priority_order_enabled"] = options.GlossaryPriorityOrderEnabled.Value;
       }
 
+      AddExtraBodyParameters(body, options);
       return body;
     }
 

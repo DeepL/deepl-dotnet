@@ -41,7 +41,7 @@ namespace DeepL {
     /// </exception>
     Task<StyleProfile> CreateStyleProfileAsync(
           string name,
-          StyleProfileOptions? options = null,
+          CreateStyleProfileOptions? options = null,
           CancellationToken cancellationToken = default);
 
     /// <summary>Retrieves a style profile.</summary>
@@ -76,10 +76,9 @@ namespace DeepL {
     ///   full.
     /// </summary>
     /// <param name="styleProfileId">ID of the style profile.</param>
-    /// <param name="name">New name of the style profile; not sent if <c>null</c>.</param>
     /// <param name="options">
-    ///   Fields to change; properties left <c>null</c> are not sent and stay unchanged. An empty string clears the
-    ///   description or industry; an empty list unlinks all components of that kind.
+    ///   Fields to change, including the name; properties left <c>null</c> are not sent and stay unchanged. An empty
+    ///   string clears the description or industry; an empty list unlinks all components of that kind.
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="StyleProfile" /> object with details about the updated style profile.</returns>
@@ -91,8 +90,7 @@ namespace DeepL {
     /// </exception>
     Task<StyleProfile> UpdateStyleProfileAsync(
           string styleProfileId,
-          string? name = null,
-          StyleProfileOptions? options = null,
+          UpdateStyleProfileOptions? options = null,
           CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -100,10 +98,9 @@ namespace DeepL {
     ///   full.
     /// </summary>
     /// <param name="styleProfile">The style profile.</param>
-    /// <param name="name">New name of the style profile; not sent if <c>null</c>.</param>
     /// <param name="options">
-    ///   Fields to change; properties left <c>null</c> are not sent and stay unchanged. An empty string clears the
-    ///   description or industry; an empty list unlinks all components of that kind.
+    ///   Fields to change, including the name; properties left <c>null</c> are not sent and stay unchanged. An empty
+    ///   string clears the description or industry; an empty list unlinks all components of that kind.
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="StyleProfile" /> object with details about the updated style profile.</returns>
@@ -114,8 +111,7 @@ namespace DeepL {
     /// </exception>
     Task<StyleProfile> UpdateStyleProfileAsync(
           StyleProfile styleProfile,
-          string? name = null,
-          StyleProfileOptions? options = null,
+          UpdateStyleProfileOptions? options = null,
           CancellationToken cancellationToken = default);
 
     /// <summary>Deletes a style profile.</summary>
