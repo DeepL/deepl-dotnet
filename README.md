@@ -1357,6 +1357,8 @@ Use
 `groupBy` to break the usage down by key (`AdminUsageGroupBy.Key`, see
 `KeyUsages`) or by key and day (`AdminUsageGroupBy.KeyAndDay`, see
 `KeyAndDayUsages`, whose `KeyUsage` entries also contain the `UsageDate`).
+`groupBy` also accepts the API value as a string (`"key"`, `"key_and_day"`),
+sent as given, for values the enum does not have.
 `report.GroupBy` is the raw grouping string returned by the API (`key` or
 `keyAndDay` at the time of writing). The usage breakdowns contain the
 characters per product, `SpeechToTextMinutes` and `SpeechToSpeechMinutes`.
@@ -1376,7 +1378,8 @@ foreach (var keyUsage in report.KeyUsages) {
 `GetCustomTagUsageAnalyticsAsync()` returns a `CustomTagUsageReport` with the
 usage per custom tag. Use `aggregateBy` to choose between the whole period
 (`CustomTagUsageAggregateBy.Period`, the default) and per-day usage
-(`CustomTagUsageAggregateBy.Day`). The results are paginated: pass the
+(`CustomTagUsageAggregateBy.Day`); `aggregateBy` also accepts the API value
+as a string (`"period"`, `"day"`), sent as given. The results are paginated: pass the
 `NextPage` value of a report as `page` to get the next page.
 
 ```c#

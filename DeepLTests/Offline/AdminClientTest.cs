@@ -263,6 +263,26 @@ namespace DeepLTests.Offline {
       await client.GetCustomTagUsageAnalyticsAsync("2026-10-19", "2026-10-20", CustomTagUsageAggregateBy.Day, 2);
     }
 
+    [Fact]
+    public async Task TestStringGroupByAndAggregateByAreSentAsGiven() {
+      ExpectNoBody(HttpMethod.Get, "v2/admin/analytics?start_date=2026-10-19&end_date=2026-10-20&group_by=key_and_hour")
+            .RespondJson("{}");
+      ExpectNoBody(HttpMethod.Get, "v2/admin/analytics?start_date=2026-10-19&end_date=2026-10-20&group_by=key")
+            .RespondJson("{}");
+      ExpectNoBody(
+                  HttpMethod.Get,
+                  "v2/admin/analytics/custom-tags?start_date=2026-10-19&end_date=2026-10-20&aggregate_by=week&page=2")
+            .RespondJson("{}");
+      ExpectNoBody(HttpMethod.Get, "v2/admin/analytics/custom-tags?start_date=2026-10-19&end_date=2026-10-20&aggregate_by=day")
+            .RespondJson("{}");
+      var client = CreateAdminClient();
+
+      await client.GetUsageAnalyticsAsync("2026-10-19", "2026-10-20", "key_and_hour");
+      await client.GetUsageAnalyticsAsync(new DateTime(2026, 10, 19), new DateTime(2026, 10, 20), "key");
+      await client.GetCustomTagUsageAnalyticsAsync("2026-10-19", "2026-10-20", "week", 2);
+      await client.GetCustomTagUsageAnalyticsAsync(new DateTime(2026, 10, 19), new DateTime(2026, 10, 20), "day");
+    }
+
     [Theory]
     [InlineData("2026-10-1")]
     [InlineData("2026-13-01")]

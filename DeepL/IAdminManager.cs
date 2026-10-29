@@ -40,6 +40,35 @@ namespace DeepL {
     ///   Retrieves usage statistics for the organization within the given date range.
     /// </summary>
     /// <param name="startDate">
+    ///   Start date of the report. The API counts usage per UTC calendar day and includes both the start and the end
+    ///   day. For a <see cref="DateTime" /> the UTC date of that moment is used: <see cref="DateTimeKind.Local" />
+    ///   values are converted to UTC, <see cref="DateTimeKind.Unspecified" /> values are treated as UTC. For example,
+    ///   local midnight on 2026-10-20 in UTC+2 is sent as 2026-10-19.
+    /// </param>
+    /// <param name="endDate">
+    ///   End date of the report, treated like <paramref name="startDate" />. It must be after the start date, so a
+    ///   report covers at least two days, and at most 366 days after it. Otherwise the API rejects the range.
+    /// </param>
+    /// <param name="groupBy">
+    ///   Grouping of the usage as the API value, for example <c>"key"</c> or <c>"key_and_day"</c>. It is sent as
+    ///   given, so values that <see cref="AdminUsageGroupBy" /> does not have can be used; <c>null</c> is not sent.
+    /// </param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns><see cref="AdminUsageReport" /> containing the usage statistics.</returns>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, including a rejected date range, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    Task<AdminUsageReport> GetUsageAnalyticsAsync(
+          DateTime startDate,
+          DateTime endDate,
+          string? groupBy,
+          CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///   Retrieves usage statistics for the organization within the given date range.
+    /// </summary>
+    /// <param name="startDate">
     ///   Start date of the report as a <c>yyyy-MM-dd</c> string, a UTC calendar day. The API includes both the start
     ///   and the end day.
     /// </param>
@@ -61,6 +90,36 @@ namespace DeepL {
           string startDate,
           string endDate,
           AdminUsageGroupBy? groupBy = null,
+          CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///   Retrieves usage statistics for the organization within the given date range.
+    /// </summary>
+    /// <param name="startDate">
+    ///   Start date of the report as a <c>yyyy-MM-dd</c> string, a UTC calendar day. The API includes both the start
+    ///   and the end day.
+    /// </param>
+    /// <param name="endDate">
+    ///   End date of the report as a <c>yyyy-MM-dd</c> string. It must be after the start date, so a report covers at
+    ///   least two days, and at most 366 days after it. Otherwise the API rejects the range.
+    /// </param>
+    /// <param name="groupBy">
+    ///   Grouping of the usage as the API value, for example <c>"key"</c> or <c>"key_and_day"</c>. It is sent as
+    ///   given, so values that <see cref="AdminUsageGroupBy" /> does not have can be used; <c>null</c> is not sent.
+    /// </param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns><see cref="AdminUsageReport" /> containing the usage statistics.</returns>
+    /// <exception cref="ArgumentException">
+    ///   If <paramref name="startDate" /> or <paramref name="endDate" /> is not a <c>yyyy-MM-dd</c> date.
+    /// </exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, including a rejected date range, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    Task<AdminUsageReport> GetUsageAnalyticsAsync(
+          string startDate,
+          string endDate,
+          string? groupBy,
           CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -99,6 +158,39 @@ namespace DeepL {
     ///   to retrieve the following page.
     /// </summary>
     /// <param name="startDate">
+    ///   Start date of the report. The API counts usage per UTC calendar day and includes both the start and the end
+    ///   day. For a <see cref="DateTime" /> the UTC date of that moment is used: <see cref="DateTimeKind.Local" />
+    ///   values are converted to UTC, <see cref="DateTimeKind.Unspecified" /> values are treated as UTC. For example,
+    ///   local midnight on 2026-10-20 in UTC+2 is sent as 2026-10-19.
+    /// </param>
+    /// <param name="endDate">
+    ///   End date of the report, treated like <paramref name="startDate" />. It must be after the start date, so a
+    ///   report covers at least two days, and at most 366 days after it. Otherwise the API rejects the range.
+    /// </param>
+    /// <param name="aggregateBy">
+    ///   Aggregation of the usage as the API value, for example <c>"period"</c> or <c>"day"</c>. It is sent as given,
+    ///   so values that <see cref="CustomTagUsageAggregateBy" /> does not have can be used; <c>null</c> is not sent.
+    /// </param>
+    /// <param name="page">Optional page number to retrieve.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns><see cref="CustomTagUsageReport" /> containing the usage statistics.</returns>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, including a rejected date range, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    Task<CustomTagUsageReport> GetCustomTagUsageAnalyticsAsync(
+          DateTime startDate,
+          DateTime endDate,
+          string? aggregateBy,
+          int? page = null,
+          CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///   Retrieves usage statistics per custom tag within the given date range. Results are
+    ///   paginated; pass the <see cref="CustomTagUsageReport.NextPage" /> value of a report as <paramref name="page" />
+    ///   to retrieve the following page.
+    /// </summary>
+    /// <param name="startDate">
     ///   Start date of the report as a <c>yyyy-MM-dd</c> string, a UTC calendar day. The API includes both the start
     ///   and the end day.
     /// </param>
@@ -121,6 +213,40 @@ namespace DeepL {
           string startDate,
           string endDate,
           CustomTagUsageAggregateBy? aggregateBy = null,
+          int? page = null,
+          CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///   Retrieves usage statistics per custom tag within the given date range. Results are
+    ///   paginated; pass the <see cref="CustomTagUsageReport.NextPage" /> value of a report as <paramref name="page" />
+    ///   to retrieve the following page.
+    /// </summary>
+    /// <param name="startDate">
+    ///   Start date of the report as a <c>yyyy-MM-dd</c> string, a UTC calendar day. The API includes both the start
+    ///   and the end day.
+    /// </param>
+    /// <param name="endDate">
+    ///   End date of the report as a <c>yyyy-MM-dd</c> string. It must be after the start date, so a report covers at
+    ///   least two days, and at most 366 days after it. Otherwise the API rejects the range.
+    /// </param>
+    /// <param name="aggregateBy">
+    ///   Aggregation of the usage as the API value, for example <c>"period"</c> or <c>"day"</c>. It is sent as given,
+    ///   so values that <see cref="CustomTagUsageAggregateBy" /> does not have can be used; <c>null</c> is not sent.
+    /// </param>
+    /// <param name="page">Optional page number to retrieve.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns><see cref="CustomTagUsageReport" /> containing the usage statistics.</returns>
+    /// <exception cref="ArgumentException">
+    ///   If <paramref name="startDate" /> or <paramref name="endDate" /> is not a <c>yyyy-MM-dd</c> date.
+    /// </exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, including a rejected date range, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    Task<CustomTagUsageReport> GetCustomTagUsageAnalyticsAsync(
+          string startDate,
+          string endDate,
+          string? aggregateBy,
           int? page = null,
           CancellationToken cancellationToken = default);
 

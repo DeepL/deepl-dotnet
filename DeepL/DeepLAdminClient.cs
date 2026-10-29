@@ -63,13 +63,29 @@ namespace DeepL {
           DateTime endDate,
           AdminUsageGroupBy? groupBy = null,
           CancellationToken cancellationToken = default) =>
-          GetUsageAnalyticsAsync(CreateDateRangeParams(startDate, endDate), groupBy, cancellationToken);
+          GetUsageAnalyticsAsync(CreateDateRangeParams(startDate, endDate), groupBy?.ToApiValue(), cancellationToken);
 
     /// <inheritdoc />
     public Task<AdminUsageReport> GetUsageAnalyticsAsync(
           string startDate,
           string endDate,
           AdminUsageGroupBy? groupBy = null,
+          CancellationToken cancellationToken = default) =>
+          GetUsageAnalyticsAsync(CreateDateRangeParams(startDate, endDate), groupBy?.ToApiValue(), cancellationToken);
+
+    /// <inheritdoc />
+    public Task<AdminUsageReport> GetUsageAnalyticsAsync(
+          DateTime startDate,
+          DateTime endDate,
+          string? groupBy,
+          CancellationToken cancellationToken = default) =>
+          GetUsageAnalyticsAsync(CreateDateRangeParams(startDate, endDate), groupBy, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<AdminUsageReport> GetUsageAnalyticsAsync(
+          string startDate,
+          string endDate,
+          string? groupBy,
           CancellationToken cancellationToken = default) =>
           GetUsageAnalyticsAsync(CreateDateRangeParams(startDate, endDate), groupBy, cancellationToken);
 
@@ -81,7 +97,7 @@ namespace DeepL {
           int? page = null,
           CancellationToken cancellationToken = default) =>
           GetCustomTagUsageAnalyticsAsync(
-                CreateDateRangeParams(startDate, endDate), aggregateBy, page, cancellationToken);
+                CreateDateRangeParams(startDate, endDate), aggregateBy?.ToApiValue(), page, cancellationToken);
 
     /// <inheritdoc />
     public Task<CustomTagUsageReport> GetCustomTagUsageAnalyticsAsync(
@@ -91,14 +107,34 @@ namespace DeepL {
           int? page = null,
           CancellationToken cancellationToken = default) =>
           GetCustomTagUsageAnalyticsAsync(
+                CreateDateRangeParams(startDate, endDate), aggregateBy?.ToApiValue(), page, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<CustomTagUsageReport> GetCustomTagUsageAnalyticsAsync(
+          DateTime startDate,
+          DateTime endDate,
+          string? aggregateBy,
+          int? page = null,
+          CancellationToken cancellationToken = default) =>
+          GetCustomTagUsageAnalyticsAsync(
+                CreateDateRangeParams(startDate, endDate), aggregateBy, page, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<CustomTagUsageReport> GetCustomTagUsageAnalyticsAsync(
+          string startDate,
+          string endDate,
+          string? aggregateBy,
+          int? page = null,
+          CancellationToken cancellationToken = default) =>
+          GetCustomTagUsageAnalyticsAsync(
                 CreateDateRangeParams(startDate, endDate), aggregateBy, page, cancellationToken);
 
     private async Task<AdminUsageReport> GetUsageAnalyticsAsync(
           List<(string Key, string Value)> queryParams,
-          AdminUsageGroupBy? groupBy,
+          string? groupBy,
           CancellationToken cancellationToken) {
       if (groupBy != null) {
-        queryParams.Add(("group_by", groupBy.Value.ToApiValue()));
+        queryParams.Add(("group_by", groupBy));
       }
 
       using var responseMessage = await _client
@@ -111,11 +147,11 @@ namespace DeepL {
 
     private async Task<CustomTagUsageReport> GetCustomTagUsageAnalyticsAsync(
           List<(string Key, string Value)> queryParams,
-          CustomTagUsageAggregateBy? aggregateBy,
+          string? aggregateBy,
           int? page,
           CancellationToken cancellationToken) {
       if (aggregateBy != null) {
-        queryParams.Add(("aggregate_by", aggregateBy.Value.ToApiValue()));
+        queryParams.Add(("aggregate_by", aggregateBy));
       }
 
       if (page != null) {
