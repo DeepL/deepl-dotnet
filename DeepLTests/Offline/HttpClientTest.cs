@@ -94,8 +94,10 @@ namespace DeepLTests.Offline {
                     return true;
                   })
             .Throw(new InvalidOperationException("not transient"));
-      await Assert.ThrowsAsync<ConnectionException>(() => CreateClientWithRetries(2, PerRetryTimeout).GetUsageAsync());
+      var exception = await Assert.ThrowsAsync<ConnectionException>(
+            () => CreateClientWithRetries(2, PerRetryTimeout).GetUsageAsync());
       Assert.Equal(1, attempts);
+      Assert.Null(exception.ShouldRetry);
     }
 
     [Fact]

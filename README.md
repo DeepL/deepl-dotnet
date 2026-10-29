@@ -1302,6 +1302,29 @@ All library functions may raise `DeepLException` or one of its subclasses. If
 invalid arguments are provided, they may raise the standard exceptions
 `ArgumentException`.
 
+| Exception | Raised when |
+|---|---|
+| `AuthorizationException` | HTTP 401 or 403: the key is invalid or not authorized |
+| `NotFoundException` | HTTP 404 (`GlossaryNotFoundException` on glossary endpoints) |
+| `TooManyRequestsException` | HTTP 429 after all retries |
+| `QuotaExceededException` | HTTP 456: the quota is exceeded |
+| `DocumentNotReadyException` | HTTP 503 while downloading a document |
+| `ConnectionException` | no HTTP response, for example a timeout or a failed connection |
+| `DeepLException` | any other HTTP status, or a malformed response |
+
+`DeepLException.HttpStatusCode` holds the HTTP status of the failed response, or
+`null` if there was no response. `DeepLException.ShouldRetry` is `true` if
+repeating the request could succeed (HTTP 429, 5xx, timeouts and failed
+connections), `false` for other HTTP statuses, and `null` if unknown.
+
+```c#
+try {
+  await client.GetUsageAsync();
+} catch (DeepLException exception) when (exception.ShouldRetry == true) {
+  Console.WriteLine($"Temporary failure (HTTP status {exception.HttpStatusCode}), try again later");
+}
+```
+
 ### Writing a Plugin
 
 If you use this library in an application, please identify the application with

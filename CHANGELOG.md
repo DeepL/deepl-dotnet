@@ -50,6 +50,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   documents (`docx` and `pdf` output only).
 - Added `CorrectTextAsync()` method to the `DeepLClient` class for correcting
   grammar and spelling errors via the `v2/write/correct` endpoint.
+- Added `DeepLException.HttpStatusCode`, the HTTP status of the failed response (`null` if there was none), and
+  `DeepLException.ShouldRetry`: `true` for HTTP 429, 5xx and transient network failures (timeouts, failed connections),
+  `false` for other HTTP statuses.
 
 ### Changed
 - Target languages `EN` and `PT` are no longer rejected client-side in text translation, document translation and

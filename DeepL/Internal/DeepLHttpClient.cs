@@ -321,33 +321,43 @@ namespace DeepL.Internal {
         message = string.Empty;
       }
 
+      var exception = CreateStatusException(statusCode, message, resourceType, downloadingDocument);
+      exception.HttpStatusCode = (int)statusCode;
+      exception.ShouldRetry = statusCode == HttpStatusCodeTooManyRequests ||
+                              statusCode >= HttpStatusCode.InternalServerError;
+      throw exception;
+    }
+
+    /// <summary>Creates the exception for an unsuccessful HTTP status.</summary>
+    private static DeepLException CreateStatusException(
+          HttpStatusCode statusCode,
+          string message,
+          ResourceType? resourceType,
+          bool downloadingDocument) {
       switch (statusCode) {
         case HttpStatusCode.Unauthorized:
         case HttpStatusCode.Forbidden:
-          throw new AuthorizationException("Authorization failure, check AuthKey" + message);
+          return new AuthorizationException("Authorization failure, check AuthKey" + message);
         case HttpStatusCodeQuotaExceeded:
-          throw new QuotaExceededException("Quota for this billing period has been exceeded" + message);
+          return new QuotaExceededException("Quota for this billing period has been exceeded" + message);
         case HttpStatusCode.NotFound:
           var notFoundMessage = resourceType != null
                 ? $"{resourceType.Value.ToDisplayString()} not found" + message
                 : "Not found" + message;
-          if (resourceType == ResourceType.Glossary) {
-            throw new GlossaryNotFoundException(notFoundMessage);
-          }
-          throw new NotFoundException(notFoundMessage);
+          return resourceType == ResourceType.Glossary
+                ? new GlossaryNotFoundException(notFoundMessage)
+                : new NotFoundException(notFoundMessage);
         case HttpStatusCode.BadRequest:
-          throw new DeepLException("Bad request" + message);
+          return new DeepLException("Bad request" + message);
         case HttpStatusCodeTooManyRequests:
-          throw new TooManyRequestsException(
+          return new TooManyRequestsException(
                 "Too many requests, DeepL servers are currently experiencing high load" + message);
         case HttpStatusCode.ServiceUnavailable:
-          if (downloadingDocument) {
-            throw new DocumentNotReadyException("Document not ready" + message);
-          } else {
-            throw new DeepLException("Service unavailable" + message);
-          }
+          return downloadingDocument
+                ? new DocumentNotReadyException("Document not ready" + message)
+                : new DeepLException("Service unavailable" + message);
         default:
-          throw new DeepLException("Unexpected status code: " + statusCode + message);
+          return new DeepLException("Unexpected status code: " + statusCode + message);
       }
     }
 
@@ -629,11 +639,11 @@ namespace DeepL.Internal {
       } catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) {
         throw;
       } catch (TaskCanceledException ex) {
-        throw new ConnectionException($"Request timed out: {ex.Message}", ex);
+        throw new ConnectionException($"Request timed out: {ex.Message}", ex) { ShouldRetry = true };
       } catch (TimeoutRejectedException ex) {
-        throw new ConnectionException($"Request timed out: {ex.Message}", ex);
+        throw new ConnectionException($"Request timed out: {ex.Message}", ex) { ShouldRetry = true };
       } catch (HttpRequestException ex) {
-        throw new ConnectionException($"Request failed: {ex.Message}", ex);
+        throw new ConnectionException($"Request failed: {ex.Message}", ex) { ShouldRetry = true };
       } catch (Exception ex) {
         throw new ConnectionException($"Unexpected request failure: {ex.Message}", ex);
       }

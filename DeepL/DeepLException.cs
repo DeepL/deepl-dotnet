@@ -21,6 +21,15 @@ namespace DeepL {
     /// <param name="innerException">Exception that is the cause of this exception.</param>
     public DeepLException(string message, Exception innerException) : base(message, innerException) {
     }
+
+    /// <summary>HTTP status code of the failed response, or <c>null</c> if the error has no HTTP response.</summary>
+    public int? HttpStatusCode { get; internal set; }
+
+    /// <summary>
+    ///   <c>true</c> if repeating the request could succeed: HTTP 429, any 5xx status, and transient network failures
+    ///   (connect, DNS, timeout). <c>false</c> for other HTTP statuses; <c>null</c> if unknown.
+    /// </summary>
+    public bool? ShouldRetry { get; internal set; }
   }
 
   /// <summary>Exception thrown when the specified authentication key was invalid.</summary>

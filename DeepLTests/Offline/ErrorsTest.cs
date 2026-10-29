@@ -31,6 +31,29 @@ namespace DeepLTests.Offline {
     }
 
     [Theory]
+    [InlineData(400, false)]
+    [InlineData(401, false)]
+    [InlineData(404, false)]
+    [InlineData(429, true)]
+    [InlineData(456, false)]
+    [InlineData(500, true)]
+    [InlineData(503, true)]
+    public async Task ReportsHttpStatusCodeAndShouldRetry(int status, bool shouldRetry) {
+      ExpectNoBody(HttpMethod.Get, "v2/usage").RespondJson("{\"message\":\"m\"}", (HttpStatusCode)status);
+      var exception = await Assert.ThrowsAnyAsync<DeepLException>(() => CreateClient().GetUsageAsync());
+      Assert.Equal(status, exception.HttpStatusCode);
+      Assert.Equal(shouldRetry, exception.ShouldRetry);
+    }
+
+    [Fact]
+    public async Task ReportsShouldRetryForTimeoutWithoutHttpStatusCode() {
+      ExpectNoBody(HttpMethod.Get, "v2/usage").Throw(new TaskCanceledException("timed out"));
+      var exception = await Assert.ThrowsAsync<ConnectionException>(() => CreateClient().GetUsageAsync());
+      Assert.Null(exception.HttpStatusCode);
+      Assert.True(exception.ShouldRetry);
+    }
+
+    [Theory]
     [InlineData("{\"character_count\":")]
     [InlineData("{\"character_count\":\"many\",\"character_limit\":2}")]
     public async Task ThrowsDeepLExceptionWhenResponseIsMalformed(string body) {
