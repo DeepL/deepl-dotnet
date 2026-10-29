@@ -81,8 +81,9 @@ The `TextResult` contains:
 
 - the translated text,
 - the detected source language code,
-- the number of characters billed for the text, and
-- the translation model type used (only non-null if the ModelType option is specified.)
+- the number of characters billed for the text,
+- the translation model type used (only non-null if the ModelType option is specified), and
+- the tag handling version used, `TagHandlingVersion` (`null` if the response does not contain it).
 
 A response without translations, with fewer translations than texts sent, or without the detected source language
 raises a `DeepLException`.
@@ -131,6 +132,9 @@ foreach (var formality in new[] { Formality.Less, Formality.More }) {
     sentence.
   - `SentenceSplittingMode.NoNewlines`: input text will be split into
     sentences using punctuation but not newlines.
+- `SplitSentences`: the `split_sentences` value as a string, sent unchanged
+  instead of `SentenceSplittingMode` if set. Use it for values the enum does
+  not have.
 - `PreserveFormatting`: controls automatic-formatting-correction. Set to
   `true` to prevent automatic-correction of formatting, default: `false`.
 - `Formality`: controls whether translations should lean toward informal or
@@ -141,25 +145,31 @@ foreach (var formality in new[] { Formality.Less, Formality.More }) {
   - `Formality.Default`: standard level of formality.
   - `Formality.PreferLess`: less formality, if available for the specified target language, otherwise default.
   - `Formality.PreferMore`: more formality, if available for the specified target language, otherwise default.
-- `GlossaryId`: specifies a glossary to use with translation, as a string
-  containing the glossary ID.
+- `FormalityValue`: the `formality` value as a string, sent unchanged instead
+  of `Formality` if set. Use it for values the enum does not have.
+- `Glossary`: specifies a glossary to use with translation: its ID, or a
+  `GlossaryInfo` or `MultilingualGlossaryInfo` (they convert to their ID).
 - `GlossaryIds`: specifies multiple glossaries to use with translation (up to 5),
-  as a list of strings containing the glossary IDs. Glossaries are applied in
+  as a list of glossary IDs; `GlossaryInfo` and `MultilingualGlossaryInfo`
+  objects can be added to it as well, for example
+  `GlossaryIds = { "YOUR_GLOSSARY_ID", glossaryInfo }`. Glossaries are applied in
   order, with the first matching term taking precedence. Using this option
   requires the source language to be specified, and it cannot be combined with
-  `GlossaryId`.
-- `StyleId`: specifies a style rule to use with translation, as a string
-  containing the ID of the style rule.
-- `StyleProfileId`: specifies a style profile to use with translation, as a
-  string containing the ID of the style profile (or pass a `StyleProfile` to the
-  constructor). The profile applies its glossaries, style rule lists and
-  translation memories; a component that does not fit the language pair is left
-  out. The source language is not required. It cannot be combined with
-  `GlossaryId`, `GlossaryIds`, `StyleId`, `TranslationMemoryId`,
-  `TranslationMemoryThreshold` or `CustomInstructions`; the API rejects such a
-  request.
-- `TranslationMemoryId`: specifies a translation memory to use with translation,
-  as a string containing the translation memory ID.
+  `Glossary`.
+- `StyleRule`: specifies a style rule to use with translation: its ID, or a
+  `StyleRuleInfo`.
+- `StyleProfile`: specifies a style profile to use with translation: its ID, or
+  a `StyleProfile` object (or pass the `StyleProfile` to the constructor). The
+  profile applies its glossaries, style rule lists and translation memories; a
+  component that does not fit the language pair is left out. The source
+  language is not required. It cannot be combined with `Glossary`,
+  `GlossaryIds`, `StyleRule`, `TranslationMemory`, `TranslationMemoryThreshold`
+  or `CustomInstructions`; the API rejects such a request.
+- `TranslationMemory`: specifies a translation memory to use with translation:
+  its ID, or a `TranslationMemoryInfo`.
+- `GlossaryId`, `StyleId` and `TranslationMemoryId` (obsolete): the former names
+  of `Glossary`, `StyleRule` and `TranslationMemory`, taking only the ID. They
+  will be removed in the next major version.
 - `TranslationMemoryThreshold`: specifies the minimum matching percentage
   (0 to 100) for translation memory matches. We recommend a minimum
   threshold of 75%.
@@ -182,11 +192,17 @@ foreach (var formality in new[] { Formality.Less, Formality.More }) {
     the highest-quality translation model for the given language pair.
   - `'latency_optimized'` (`ModelType.LatencyOptimized`): use a translation
     model that minimizes response time, at the cost of translation quality.
+- `ModelTypeValue`: the `model_type` value as a string, sent unchanged instead
+  of `ModelType` if set. Use it for values the enum does not have.
 - `TagHandling`: type of tags to parse before translation, options are
-  `"html"` and `"xml"`.
+  `"html"` (`TagHandlingMode.Html`) and `"xml"` (`TagHandlingMode.Xml`). Any
+  other string is sent unchanged.
 - `TagHandlingVersion`: specifies which version of the tag handling algorithm
-  to use. Options are `"v1"` and `"v2"`. This parameter is only used if
-  `TagHandling` is set to `"html"` or `"xml"`.
+  to use. Options are `"v1"` (`TagHandlingVersion.V1`) and `"v2"`
+  (`TagHandlingVersion.V2`); any other string is sent unchanged. This parameter
+  is only used if `TagHandling` is set to `"html"` or `"xml"`. The version the
+  API used is returned in `TextResult.TagHandlingVersion` (`null` if the
+  response does not contain it).
 
 The following options are only used if `TagHandling` is set to `'xml'`:
 
@@ -325,13 +341,16 @@ application needs to execute these steps individually, you can instead use the f
 `DocumentTranslateOptions` has the following properties that impact text translation:
 
 - `Formality`:  same as in [Text translation options](#text-translation-options).
-- `GlossaryId`:  same as in [Text translation options](#text-translation-options).
-- `GlossaryIds`:  same as in [Text translation options](#text-translation-options).
-- `StyleId`:  same as in [Text translation options](#text-translation-options).
-- `StyleProfileId`:  same as in [Text translation options](#text-translation-options), except that
-  `CustomInstructions` does not exist for documents. An unknown style profile is not rejected at upload: the
-  translation fails with a `DocumentTranslationException` whose message contains `Style profile not found.`.
-- `TranslationMemoryId`:  same as in [Text translation options](#text-translation-options).
+- `GlossaryId`:  the glossary ID, as `Glossary` in [Text translation options](#text-translation-options).
+- `GlossaryIds`:  same as in [Text translation options](#text-translation-options), except that it cannot be
+  combined with `GlossaryId`.
+- `StyleId`:  the style rule ID, as `StyleRule` in [Text translation options](#text-translation-options).
+- `StyleProfileId`:  the style profile ID, as `StyleProfile` in
+  [Text translation options](#text-translation-options), except that `CustomInstructions` does not exist for
+  documents. An unknown style profile is not rejected at upload: the translation fails with a
+  `DocumentTranslationException` whose message contains `Style profile not found.`.
+- `TranslationMemoryId`:  the translation memory ID, as `TranslationMemory` in
+  [Text translation options](#text-translation-options).
 - `TranslationMemoryThreshold`:  same as in [Text translation options](#text-translation-options).
 - `EnableDocumentMinification` (obsolete): A `bool` value. If set to `true`, the library will try to minify a document
   before translating it through the API, sending a smaller document if the file contains a lot of media. This is
@@ -597,8 +616,9 @@ Console.WriteLine(updatedGlossary.Name); // 'My new glossary name'
 #### Using a stored glossary
 
 You can use a stored glossary for text (or document) translation by setting the
-`TextTranslationOptions` (or `DocumentTranslationOptions`) `GlossaryId` property
-to the glossary ID. Set `source_lang` as well, so the glossary's language pair
+`TextTranslateOptions` `Glossary` property to the glossary ID or the glossary
+object (or the `DocumentTranslateOptions` `GlossaryId` property to the glossary
+ID). Set `source_lang` as well, so the glossary's language pair
 matches the request:
 
 ```c#
@@ -606,7 +626,7 @@ var resultWithGlossary = await client.TranslateTextAsync(
     "The artist was awarded a prize.",
     "EN",
     "DE",
-    new TextTranslateOptions { GlossaryId = glossaryEnToDe.GlossaryId });
+    new TextTranslateOptions { Glossary = glossaryEnToDe });
 // resultWithGlossary.Text == "Der Maler wurde mit einem Gewinn ausgezeichnet."
 // Without using a glossary: "Der Künstler wurde mit einem Preis ausgezeichnet."
 ```
@@ -701,8 +721,9 @@ of rules for style, formatting, and more. Multiple style rules can be stored wit
 your account, each with a user-specified name and a uniquely-assigned ID.
 
 Style rules can be applied to both text and document translation by setting the
-`StyleId` property (or passing a `StyleRuleInfo` to the constructor) in
-`TextTranslateOptions` or `DocumentTranslateOptions`.
+`StyleRule` property of `TextTranslateOptions` (the ID or a `StyleRuleInfo`) or
+the `StyleId` property of `DocumentTranslateOptions`, or by passing a
+`StyleRuleInfo` to their constructor.
 
 #### Creating a style rule
 
@@ -860,9 +881,10 @@ var updated = await client.UpdateStyleProfileAsync(
 
 #### Translating with a style profile
 
-Set `StyleProfileId` in `TextTranslateOptions` or `DocumentTranslateOptions`, or
-pass the `StyleProfile` to their constructor, to translate with all components
-of the profile through one ID.
+Set `StyleProfile` in `TextTranslateOptions` (the ID or the `StyleProfile`) or
+`StyleProfileId` in `DocumentTranslateOptions`, or pass the `StyleProfile` to
+their constructor, to translate with all components of the profile through one
+ID.
 
 ```c#
 var result = await client.TranslateTextAsync(
@@ -1028,7 +1050,8 @@ await client.DeleteTranslationMemoryAsync("YOUR_TM_ID");
 #### Using a translation memory in translations
 
 You can use a translation memory for text translation by setting the
-`TranslationMemoryId` property in `TextTranslateOptions`. Optionally, set
+`TranslationMemory` property in `TextTranslateOptions` to its ID or a
+`TranslationMemoryInfo`. Optionally, set
 `TranslationMemoryThreshold` to control the minimum similarity score for matches:
 
 ```c#
@@ -1037,7 +1060,7 @@ var result = await client.TranslateTextAsync(
     "EN",
     "DE",
     new TextTranslateOptions {
-      TranslationMemoryId = "YOUR_TM_ID",
+      TranslationMemory = "YOUR_TM_ID",
       TranslationMemoryThreshold = 80
     });
 Console.WriteLine(result.Text);

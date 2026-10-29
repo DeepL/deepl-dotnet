@@ -68,5 +68,13 @@ namespace DeepL.Model {
     ///   compatibility.
     /// </remarks>
     public override string ToString() => $"Glossary \"{Name}\" ({GlossaryId})";
+
+    /// <summary>
+    ///   Implicitly converts the <see cref="GlossaryInfo" /> to its ID, so it can be passed wherever the ID is accepted, for
+    ///   example to <see cref="TextTranslateOptions" /> properties.
+    /// </summary>
+    /// <param name="glossary"><see cref="GlossaryInfo" /> object to convert.</param>
+    /// <returns>The value of <see cref="GlossaryId" />.</returns>
+    public static implicit operator string(GlossaryInfo glossary) => glossary.GlossaryId;
   }
 }

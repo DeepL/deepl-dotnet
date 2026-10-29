@@ -98,6 +98,28 @@ namespace DeepLTests.Offline {
                 ("tag_handling_version", "v2"));
 
     [Fact]
+    public Task SendsTagHandlingModeAndVersionConstants() =>
+          Translate(
+                new TextTranslateOptions { TagHandling = TagHandlingMode.Xml, TagHandlingVersion = TagHandlingVersion.V1 },
+                ("tag_handling", "xml"),
+                ("tag_handling_version", "v1"));
+
+    [Fact]
+    public Task SendsStringValuesUnchangedInsteadOfEnums() =>
+          Translate(
+                new TextTranslateOptions {
+                  Formality = Formality.Less,
+                  FormalityValue = "new_formality",
+                  SentenceSplittingMode = SentenceSplittingMode.Off,
+                  SplitSentences = "new_mode",
+                  ModelType = ModelType.LatencyOptimized,
+                  ModelTypeValue = "new_model"
+                },
+                ("formality", "new_formality"),
+                ("split_sentences", "new_mode"),
+                ("model_type", "new_model"));
+
+    [Fact]
     public Task SendsTagListsCommaSeparated() =>
           Translate(
                 new TextTranslateOptions {
@@ -118,9 +140,27 @@ namespace DeepLTests.Offline {
                 ("custom_instructions", "Use informal language"),
                 ("custom_instructions", "Be concise"));
 
+#pragma warning disable CS0618 // The deprecated *Id properties stay covered by the existing tests.
     [Fact]
     public Task SendsGlossaryId() =>
           Translate(new TextTranslateOptions { GlossaryId = "g1" }, ("glossary_id", "g1"));
+#pragma warning restore CS0618
+
+    [Fact]
+    public Task SendsGlossaryOfGlossaryInfo() {
+      var glossary = new MultilingualGlossaryInfo("g1", "n", new MultilingualGlossaryDictionaryInfo[0], DateTime.UtcNow);
+      return Translate(new TextTranslateOptions { Glossary = glossary }, ("glossary_id", "g1"));
+    }
+
+    [Fact]
+    public Task SendsGlossaryIdsMixingIdsAndGlossaryObjects() {
+      var glossary = new GlossaryInfo("g2", "n", true, "en", "de", DateTime.UtcNow, 1);
+      var multilingualGlossary =
+            new MultilingualGlossaryInfo("g3", "n", new MultilingualGlossaryDictionaryInfo[0], DateTime.UtcNow);
+      var options = new TextTranslateOptions { GlossaryIds = { "g1", glossary } };
+      options.GlossaryIds.Add(multilingualGlossary);
+      return Translate(options, ("glossary_ids", "g1,g2,g3"));
+    }
 
     [Fact]
     public Task SendsGlossaryIdOfGlossaryInfo() {
@@ -141,8 +181,16 @@ namespace DeepLTests.Offline {
       return Translate(new TextTranslateOptions(glossaries), ("glossary_ids", "g1,g2"));
     }
 
+#pragma warning disable CS0618
     [Fact]
     public Task SendsStyleId() => Translate(new TextTranslateOptions { StyleId = "s1" }, ("style_id", "s1"));
+#pragma warning restore CS0618
+
+    [Fact]
+    public Task SendsStyleRuleOfStyleRuleInfo() {
+      var styleRule = new StyleRuleInfo("s1", "n", DateTime.UtcNow, DateTime.UtcNow, "en", 1, null, null);
+      return Translate(new TextTranslateOptions { StyleRule = styleRule }, ("style_id", "s1"));
+    }
 
     [Fact]
     public Task SendsStyleIdOfStyleRuleInfo() {
@@ -152,8 +200,14 @@ namespace DeepLTests.Offline {
 
     // Translate() passes no source language: a style profile must not require one.
     [Fact]
-    public Task SendsStyleProfileId() =>
-          Translate(new TextTranslateOptions { StyleProfileId = "sp1" }, ("style_profile_id", "sp1"));
+    public Task SendsStyleProfile() =>
+          Translate(new TextTranslateOptions { StyleProfile = "sp1" }, ("style_profile_id", "sp1"));
+
+    [Fact]
+    public Task SendsStyleProfileOfStyleProfileObject() {
+      var styleProfile = new StyleProfile("sp1", "n", null, null, null, null, null, false, null, null);
+      return Translate(new TextTranslateOptions { StyleProfile = styleProfile }, ("style_profile_id", "sp1"));
+    }
 
     [Fact]
     public Task SendsStyleProfileIdOfStyleProfile() {
@@ -161,12 +215,23 @@ namespace DeepLTests.Offline {
       return Translate(new TextTranslateOptions(styleProfile), ("style_profile_id", "sp1"));
     }
 
+#pragma warning disable CS0618
     [Fact]
     public Task SendsTranslationMemoryIdAndThreshold() =>
           Translate(
                 new TextTranslateOptions { TranslationMemoryId = "tm1", TranslationMemoryThreshold = 80 },
                 ("translation_memory_id", "tm1"),
                 ("translation_memory_threshold", "80"));
+#pragma warning restore CS0618
+
+    [Fact]
+    public Task SendsTranslationMemoryOfTranslationMemoryInfoAndThreshold() {
+      var translationMemory = new TranslationMemoryInfo("tm1", "n", "en", new[] { "de" }, 1);
+      return Translate(
+            new TextTranslateOptions { TranslationMemory = translationMemory, TranslationMemoryThreshold = 80 },
+            ("translation_memory_id", "tm1"),
+            ("translation_memory_threshold", "80"));
+    }
 
     [Fact]
     public Task SendsTranslationMemoryIdOfTranslationMemoryInfo() {
@@ -229,6 +294,22 @@ namespace DeepLTests.Offline {
       await Assert.ThrowsAsync<DeepLException>(() => CreateClient().TranslateTextAsync("Hello", null, "DE"));
     }
 
+    [Theory]
+    [InlineData(",\"tag_handling_version\":\"v2\"", "v2")]
+    [InlineData(",\"tag_handling_version\":\"v3\"", "v3")]
+    [InlineData("", null)]
+    [InlineData(",\"tag_handling_version\":2", null)]
+    public async Task ParsesTagHandlingVersion(string field, string? expected) {
+      Expect(HttpMethod.Post, "v2/translate")
+            .RespondJson(
+                  "{\"translations\":[{\"detected_source_language\":\"EN\",\"text\":\"Hallo\"," +
+                  "\"billed_characters\":5" + field + "}]}");
+      var result = await CreateClient().TranslateTextAsync("Hello", null, "DE");
+      Assert.Equal(expected, result.TagHandlingVersion);
+      Assert.Equal("Hallo", result.Text);
+      Assert.Equal(5, result.BilledCharacters);
+    }
+
     [Fact]
     public async Task ParsesResult() {
       ExpectForm(HttpMethod.Post, "v2/translate", ("target_lang", "de"), ("show_billed_characters", "1"), ("text", "Hello"))
@@ -262,14 +343,14 @@ namespace DeepLTests.Offline {
     [InlineData(-1)]
     [InlineData(101)]
     public async Task ThrowsArgumentOutOfRangeExceptionWhenThresholdIsOutOfRange(int threshold) {
-      var options = new TextTranslateOptions { TranslationMemoryId = "tm1", TranslationMemoryThreshold = threshold };
+      var options = new TextTranslateOptions { TranslationMemory = "tm1", TranslationMemoryThreshold = threshold };
       await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
             () => CreateClient().TranslateTextAsync("a", null, "DE", options));
     }
 
     [Fact]
-    public async Task ThrowsArgumentExceptionWhenGlossaryIdAndGlossaryIdsAreCombined() {
-      var options = new TextTranslateOptions { GlossaryId = "g1", GlossaryIds = { "g2" } };
+    public async Task ThrowsArgumentExceptionWhenGlossaryAndGlossaryIdsAreCombined() {
+      var options = new TextTranslateOptions { Glossary = "g1", GlossaryIds = { "g2" } };
       await Assert.ThrowsAsync<ArgumentException>(() => CreateClient().TranslateTextAsync("a", null, "DE", options));
     }
 

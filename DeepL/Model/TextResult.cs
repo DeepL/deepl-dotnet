@@ -3,6 +3,7 @@
 // license that can be found in the LICENSE file.
 
 using System.Text.Json.Serialization;
+using DeepL.Internal;
 
 namespace DeepL.Model {
   /// <summary>The result of a text translation.</summary>
@@ -17,9 +18,28 @@ namespace DeepL.Model {
     ///   would be marked <see langword="internal" />, but needs to be <see langword="public" /> for JSON deserialization.
     ///   In future this function may have backwards-incompatible changes.
     /// </remarks>
+    public TextResult(string text, string detectedSourceLanguageCode, int billedCharacters, string? modelTypeUsed)
+          : this(text, detectedSourceLanguageCode, billedCharacters, modelTypeUsed, null) { }
+
+    /// <summary>Initializes a new instance of <see cref="TextResult" />.</summary>
+    /// <param name="text">Translated text.</param>
+    /// <param name="detectedSourceLanguageCode">The detected language code of the input text.</param>
+    /// <param name="billedCharacters">The number of characters billed for the text.</param>
+    /// <param name="modelTypeUsed">Indicates the translation model used, but is null unless the modelType option is specified.</param>
+    /// <param name="tagHandlingVersion">The tag handling version used, or null if the response does not contain it.</param>
+    /// <remarks>
+    ///   The constructor for this class (and all other Model classes) should not be used by library users. Ideally it
+    ///   would be marked <see langword="internal" />, but needs to be <see langword="public" /> for JSON deserialization.
+    ///   In future this function may have backwards-incompatible changes.
+    /// </remarks>
     /// <exception cref="DeepLException">If <paramref name="detectedSourceLanguageCode" /> is null.</exception>
     [JsonConstructor]
-    public TextResult(string text, string detectedSourceLanguageCode, int billedCharacters, string? modelTypeUsed) {
+    public TextResult(
+          string text,
+          string detectedSourceLanguageCode,
+          int billedCharacters,
+          string? modelTypeUsed,
+          string? tagHandlingVersion) {
       Text = text;
       // Raised here so that a response without the field fails with a DeepLException, not a NullReferenceException.
       DetectedSourceLanguageCode = LanguageCode.Standardize(
@@ -27,6 +47,7 @@ namespace DeepL.Model {
             throw new DeepLException("Text translation result is missing detected_source_language"));
       BilledCharacters = billedCharacters;
       ModelTypeUsed = modelTypeUsed;
+      TagHandlingVersion = tagHandlingVersion;
     }
 
     /// <summary>The translated text.</summary>
@@ -43,6 +64,14 @@ namespace DeepL.Model {
     /// <summary>Indicated translation model used, if available.</summary>
     [JsonPropertyName("model_type_used")]
     public string? ModelTypeUsed { get; }
+
+    /// <summary>
+    ///   The tag handling version used, for example <see cref="DeepL.TagHandlingVersion.V2" />; null if the response
+    ///   does not contain it.
+    /// </summary>
+    [JsonPropertyName("tag_handling_version")]
+    [JsonConverter(typeof(LenientStringConverter))]
+    public string? TagHandlingVersion { get; }
 
     /// <summary>Returns the translated text.</summary>
     /// <returns>The translated text.</returns>

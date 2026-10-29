@@ -57,5 +57,13 @@ namespace DeepL.Model {
 
     /// <summary>Returns a string describing the translation memory.</summary>
     public override string ToString() => $"TranslationMemory \"{Name}\" ({TranslationMemoryId})";
+
+    /// <summary>
+    ///   Implicitly converts the <see cref="TranslationMemoryInfo" /> to its ID, so it can be passed wherever the ID is accepted, for
+    ///   example to <see cref="TextTranslateOptions" /> properties.
+    /// </summary>
+    /// <param name="translationMemory"><see cref="TranslationMemoryInfo" /> object to convert.</param>
+    /// <returns>The value of <see cref="TranslationMemoryId" />.</returns>
+    public static implicit operator string(TranslationMemoryInfo translationMemory) => translationMemory.TranslationMemoryId;
   }
 }

@@ -6,8 +6,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
-- Added `StyleProfileId` to `TextTranslateOptions` and `DocumentTranslateOptions`, and constructors taking a
-  `StyleProfile`, to translate text and documents with a style profile (sent as `style_profile_id`).
+- Added `StyleProfile` to `TextTranslateOptions` (the ID or a `StyleProfile` object), `StyleProfileId` to
+  `DocumentTranslateOptions`, and constructors taking a `StyleProfile`, to translate text and documents with a style
+  profile (sent as `style_profile_id`).
+- Added `Glossary`, `StyleRule` and `TranslationMemory` to `TextTranslateOptions`, replacing `GlossaryId`, `StyleId`
+  and `TranslationMemoryId`. Each takes the ID or the resource object (`GlossaryInfo` or `MultilingualGlossaryInfo`,
+  `StyleRuleInfo`, `TranslationMemoryInfo`), so several resource objects can be combined in one options object.
+- `GlossaryInfo`, `MultilingualGlossaryInfo`, `StyleRuleInfo`, `StyleProfile` and `TranslationMemoryInfo` convert
+  implicitly to their ID, so they can also be added to `TextTranslateOptions.GlossaryIds`, mixed with IDs.
+- Added `FormalityValue`, `SplitSentences` and `ModelTypeValue` to `TextTranslateOptions`: the `formality`,
+  `split_sentences` and `model_type` values as strings, sent unchanged instead of the `Formality`,
+  `SentenceSplittingMode` and `ModelType` enum properties if set, for values the enums do not have.
+- Added the `TagHandlingMode` (`Html`, `Xml`) and `TagHandlingVersion` (`V1`, `V2`) constants for
+  `TextTranslateOptions.TagHandling` and `TagHandlingVersion`, which still accept any string.
+- Added `TextResult.TagHandlingVersion`, the `tag_handling_version` of the response (`null` if absent or not a
+  string).
 - Added `IStyleProfileManager`, implemented by `DeepLClient`, to manage style profiles (`/v3/style_profiles`):
   `ListStyleProfilesAsync()`, `CreateStyleProfileAsync()`, `GetStyleProfileAsync()`, `UpdateStyleProfileAsync()` and
   `DeleteStyleProfileAsync()`, with the model `StyleProfile` and the options class `StyleProfileOptions`. Options left
@@ -76,6 +89,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   carry the key given to the constructor.
 
 ### Deprecated
+- Deprecated `TextTranslateOptions.GlossaryId`, `StyleId` and `TranslationMemoryId` with `[Obsolete]`; use `Glossary`,
+  `StyleRule` and `TranslationMemory` instead. They keep working until the next major version.
 - Deprecated the language code constants of the `LanguageCode` class (for example `LanguageCode.German`) with
   `[Obsolete]`; they will be removed in the next major version. Pass the language code as a string, for example
   `"de"`, and use `GetSourceLanguagesAsync()` and `GetTargetLanguagesAsync()` to retrieve the supported languages.

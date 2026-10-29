@@ -142,5 +142,13 @@ namespace DeepL.Model {
 
     /// <summary>Returns a string describing the style rule.</summary>
     public override string ToString() => $"StyleRule \"{Name}\" ({StyleId})";
+
+    /// <summary>
+    ///   Implicitly converts the <see cref="StyleRuleInfo" /> to its ID, so it can be passed wherever the ID is accepted, for
+    ///   example to <see cref="TextTranslateOptions" /> properties.
+    /// </summary>
+    /// <param name="styleRule"><see cref="StyleRuleInfo" /> object to convert.</param>
+    /// <returns>The value of <see cref="StyleId" />.</returns>
+    public static implicit operator string(StyleRuleInfo styleRule) => styleRule.StyleId;
   }
 }

@@ -925,12 +925,16 @@ namespace DeepL {
       var bodyParams = CreateCommonHttpParams(
             sourceLanguageCode,
             targetLanguageCode,
-            options?.Formality,
-            options?.GlossaryId,
-            options?.StyleId,
-            options?.TranslationMemoryId,
+            options?.FormalityValue != null ? null : options?.Formality,
+            options?.Glossary,
+            options?.StyleRule,
+            options?.TranslationMemory,
             options?.GlossaryIds,
-            options?.StyleProfileId);
+            options?.StyleProfile);
+
+      if (options?.FormalityValue != null) {
+        bodyParams.Add(("formality", options.FormalityValue));
+      }
 
       // Always send show_billed_characters=1, remove when the API default is changed to true
       bodyParams.Add(("show_billed_characters", "1"));
@@ -940,8 +944,8 @@ namespace DeepL {
       }
 
       if (options.TranslationMemoryThreshold != null) {
-        if (options.TranslationMemoryId == null) {
-          throw new ArgumentException("TranslationMemoryThreshold requires TranslationMemoryId");
+        if (options.TranslationMemory == null) {
+          throw new ArgumentException("TranslationMemoryThreshold requires TranslationMemory");
         }
 
         if (options.TranslationMemoryThreshold.Value < 0 || options.TranslationMemoryThreshold.Value > 100) {
@@ -958,7 +962,9 @@ namespace DeepL {
         bodyParams.Add(("context", options.Context));
       }
 
-      if (options.SentenceSplittingMode != SentenceSplittingMode.All) {
+      if (options.SplitSentences != null) {
+        bodyParams.Add(("split_sentences", options.SplitSentences));
+      } else if (options.SentenceSplittingMode != SentenceSplittingMode.All) {
         bodyParams.Add(
               ("split_sentences", options.SentenceSplittingMode == SentenceSplittingMode.Off ? "0" : "nonewlines"));
       }
@@ -991,7 +997,9 @@ namespace DeepL {
         bodyParams.Add(("ignore_tags", string.Join(",", options.IgnoreTags)));
       }
 
-      if (options.ModelType != null) {
+      if (options.ModelTypeValue != null) {
+        bodyParams.Add(("model_type", options.ModelTypeValue));
+      } else if (options.ModelType != null) {
         bodyParams.Add(("model_type", options.ModelType.Value.ToApiValue()));
       }
 

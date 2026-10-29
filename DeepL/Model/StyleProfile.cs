@@ -107,5 +107,13 @@ namespace DeepL.Model {
     ///   compatibility.
     /// </remarks>
     public override string ToString() => $"Style profile \"{Name}\" ({StyleProfileId})";
+
+    /// <summary>
+    ///   Implicitly converts the <see cref="StyleProfile" /> to its ID, so it can be passed wherever the ID is accepted, for
+    ///   example to <see cref="TextTranslateOptions" /> properties.
+    /// </summary>
+    /// <param name="styleProfile"><see cref="StyleProfile" /> object to convert.</param>
+    /// <returns>The value of <see cref="StyleProfileId" />.</returns>
+    public static implicit operator string(StyleProfile styleProfile) => styleProfile.StyleProfileId;
   }
 }
