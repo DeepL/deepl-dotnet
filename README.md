@@ -268,17 +268,27 @@ styles and tones will fail. The current list of supported languages can be found
 [API documentation][api-docs]. We plan to also expose this information via an API endpoint
 in the future.
 
-You can pass a style like so:
+You can pass a style or tone as a string, or as a `WritingStyle` or `WritingTone` enum value
+(sent as its API value, e.g. `WritingStyle.PreferSimple` as `prefer_simple`; `ToApiValue()`
+returns it):
 
 ```c#
-var options = new TextRephraseOptions { WritingStyle = "business" }
+var options = new TextRephraseOptions { WritingStyle = "business" };
 var result = await client.RephraseTextAsync("A rainbouw has seven colours.", "EN-US", options);
 Console.WriteLine(result);
+
+var toneOptions = new TextRephraseOptions(WritingTone.PreferFriendly);
+result = await client.RephraseTextAsync("A rainbouw has seven colours.", "EN-US", toneOptions);
 ```
 
+`targetLanguageCode` may be omitted (it defaults to `null`). `TextRephraseOptions` also has
+`ExtraBodyParameters`: key-value pairs added last to the request body, replacing built-in
+parameters with the same key.
+
 To only fix grammar and spelling errors without otherwise rephrasing the text, use
-`CorrectTextAsync()`. It takes the same text argument (a string or a list of strings) and an
-optional `targetLanguageCode`, but no style or tone options:
+`CorrectTextAsync()`. It takes the same text argument (a string or a list of strings), an
+optional `targetLanguageCode` and optional `CorrectTextOptions`, which have no style or tone
+options, only `ExtraBodyParameters`:
 
 ```c#
 WriteResult result = await client.CorrectTextAsync("I has a apple.", "EN-US");

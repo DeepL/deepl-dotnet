@@ -91,7 +91,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `DocumentTranslateOptions.EnableWatermark` to request a "Translated by DeepL" watermark on translated
   documents (`docx` and `pdf` output only).
 - Added `CorrectTextAsync()` method to the `DeepLClient` class for correcting
-  grammar and spelling errors via the `v2/write/correct` endpoint.
+  grammar and spelling errors via the `v2/write/correct` endpoint. It takes an optional `CorrectTextOptions`, whose
+  `ExtraBodyParameters` are added to the request body last.
+- `TextRephraseOptions` now derives from `BaseRequestOptions`: its `ExtraBodyParameters` are added to the
+  `RephraseTextAsync()` request body last, replacing built-in parameters with the same key.
+- Added `TextRephraseOptions` constructors taking a `WritingStyle` or `WritingTone` enum value, and the
+  `ToApiValue()` extension methods for both enums (e.g. `WritingStyle.PreferSimple` is sent as `prefer_simple`).
+- The `targetLanguageCode` parameter of `RephraseTextAsync()` and `CorrectTextAsync()` now defaults to `null`, so it
+  can be omitted.
 - Added `DeepLException.HttpStatusCode`, the HTTP status of the failed response (`null` if there was none), and
   `DeepLException.ShouldRetry`: `true` for HTTP 429, 5xx and transient network failures (timeouts, failed connections),
   `false` for other HTTP statuses. For `CreateDeveloperKeyAsync()`, which is not safe to repeat, it is `true` only for

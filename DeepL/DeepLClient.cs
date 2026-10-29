@@ -31,7 +31,7 @@ namespace DeepL {
     /// </exception>
     Task<WriteResult[]> RephraseTextAsync(
           IEnumerable<string> texts,
-          string? targetLanguageCode,
+          string? targetLanguageCode = null,
           TextRephraseOptions? options = null,
           CancellationToken cancellationToken = default);
 
@@ -48,13 +48,14 @@ namespace DeepL {
     /// </exception>
     Task<WriteResult> RephraseTextAsync(
           string text,
-          string? targetLanguageCode,
+          string? targetLanguageCode = null,
           TextRephraseOptions? options = null,
           CancellationToken cancellationToken = default);
 
     /// <summary>Correct specified texts, improving them by fixing grammar and spelling errors.</summary>
     /// <param name="texts">Texts to improve; must not be empty.</param>
     /// <param name="targetLanguageCode">Language code of the desired output language.</param>
+    /// <param name="options">Extra <see cref="CorrectTextOptions" /> influencing correction.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>Texts without grammatical or spelling errors.</returns>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
@@ -64,12 +65,14 @@ namespace DeepL {
     /// </exception>
     Task<WriteResult[]> CorrectTextAsync(
           IEnumerable<string> texts,
-          string? targetLanguageCode,
+          string? targetLanguageCode = null,
+          CorrectTextOptions? options = null,
           CancellationToken cancellationToken = default);
 
     /// <summary>Correct specified text, improving it by fixing grammar and spelling errors.</summary>
     /// <param name="text">Text to improve; must not be empty.</param>
     /// <param name="targetLanguageCode">Language code of the desired output language.</param>
+    /// <param name="options">Extra <see cref="CorrectTextOptions" /> influencing correction.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>Text without grammatical or spelling errors.</returns>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
@@ -79,7 +82,8 @@ namespace DeepL {
     /// </exception>
     Task<WriteResult> CorrectTextAsync(
           string text,
-          string? targetLanguageCode,
+          string? targetLanguageCode = null,
+          CorrectTextOptions? options = null,
           CancellationToken cancellationToken = default);
   }
 
@@ -111,7 +115,7 @@ namespace DeepL {
     /// <inheritdoc />
     public async Task<WriteResult> RephraseTextAsync(
           string text,
-          string? targetLanguageCode,
+          string? targetLanguageCode = null,
           TextRephraseOptions? options = null,
           CancellationToken cancellationToken = default) => (await RephraseTextAsync(
                 new[] { text },
@@ -123,7 +127,7 @@ namespace DeepL {
     /// <inheritdoc />
     public async Task<WriteResult[]> RephraseTextAsync(
           IEnumerable<string> texts,
-          string? targetLanguageCode,
+          string? targetLanguageCode = null,
           TextRephraseOptions? options = null,
           CancellationToken cancellationToken = default) {
       var bodyParams = new List<(string Key, string Value)>();
@@ -132,9 +136,7 @@ namespace DeepL {
         bodyParams.Add(("target_lang", targetLanguageCode));
       }
 
-      var textParams = texts
-            .Where(text => text.Length > 0 ? true : throw new ArgumentException("text must not be empty"))
-            .Select(text => ("text", text));
+      var textList = CheckWriteTexts(texts);
       if (options != null && options.WritingStyle != null) {
         bodyParams.Add(("writing_style", options.WritingStyle));
       }
@@ -144,30 +146,27 @@ namespace DeepL {
       }
       // TODO add `show_billed_characters` once write API supports it.
 
-      using var responseMessage = await _client
-            .ApiPostAsync("v2/write/rephrase", cancellationToken, bodyParams.Concat(textParams))
+      return await WriteAsync("v2/write/rephrase", bodyParams, textList, options, cancellationToken)
             .ConfigureAwait(false);
-
-      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage).ConfigureAwait(false);
-      var rephrasedTexts =
-            await JsonUtils.DeserializeAsync<TextRephraseResult>(responseMessage).ConfigureAwait(false);
-      return rephrasedTexts.Improvements;
     }
 
     /// <inheritdoc />
     public async Task<WriteResult> CorrectTextAsync(
           string text,
-          string? targetLanguageCode,
+          string? targetLanguageCode = null,
+          CorrectTextOptions? options = null,
           CancellationToken cancellationToken = default) => (await CorrectTextAsync(
                 new[] { text },
                 targetLanguageCode,
+                options,
                 cancellationToken)
           .ConfigureAwait(false))[0];
 
     /// <inheritdoc />
     public async Task<WriteResult[]> CorrectTextAsync(
           IEnumerable<string> texts,
-          string? targetLanguageCode,
+          string? targetLanguageCode = null,
+          CorrectTextOptions? options = null,
           CancellationToken cancellationToken = default) {
       var bodyParams = new List<(string Key, string Value)>();
       if (targetLanguageCode != null) {
@@ -175,18 +174,42 @@ namespace DeepL {
         bodyParams.Add(("target_lang", targetLanguageCode));
       }
 
-      var textParams = texts
-            .Where(text => text.Length > 0 ? true : throw new ArgumentException("text must not be empty"))
-            .Select(text => ("text", text));
+      var textList = CheckWriteTexts(texts);
+      return await WriteAsync("v2/write/correct", bodyParams, textList, options, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>Returns the texts of a Write API request as a list, checking that none is empty.</summary>
+    /// <exception cref="ArgumentException">If any text is empty.</exception>
+    private static List<string> CheckWriteTexts(IEnumerable<string> texts) =>
+          texts.Select(text => text.Length > 0 ? text : throw new ArgumentException("text must not be empty"))
+                .ToList();
+
+    /// <summary>
+    ///   Sends a Write API request with the given parameters, then the texts, then the extra body parameters of the
+    ///   options, and returns the improvements.
+    /// </summary>
+    private async Task<WriteResult[]> WriteAsync(
+          string path,
+          List<(string Key, string Value)> bodyParams,
+          List<string> texts,
+          BaseRequestOptions? options,
+          CancellationToken cancellationToken) {
+      bodyParams.AddRange(texts.Select(text => ("text", text)));
+      if (options?.ExtraBodyParameters != null) {
+        foreach (var pair in options.ExtraBodyParameters) {
+          bodyParams.RemoveAll(param => param.Key == pair.Key);
+          bodyParams.Add((pair.Key, pair.Value));
+        }
+      }
 
       using var responseMessage = await _client
-            .ApiPostAsync("v2/write/correct", cancellationToken, bodyParams.Concat(textParams))
+            .ApiPostAsync(path, cancellationToken, bodyParams)
             .ConfigureAwait(false);
 
       await DeepLHttpClient.CheckStatusCodeAsync(responseMessage).ConfigureAwait(false);
-      var correctedTexts =
-            await JsonUtils.DeserializeAsync<TextRephraseResult>(responseMessage).ConfigureAwait(false);
-      return correctedTexts.Improvements;
+      var result = await JsonUtils.DeserializeAsync<TextRephraseResult>(responseMessage).ConfigureAwait(false);
+      return result.Improvements;
     }
 
     /// <inheritdoc />
