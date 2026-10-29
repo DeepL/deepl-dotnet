@@ -704,11 +704,11 @@ namespace DeepL {
           string targetLanguageCode,
           DocumentTranslateOptions? options = null,
           CancellationToken cancellationToken = default) {
-      // inputFileName is null when the overload without it is used and DocumentTranslateOptions.Filename is unset.
+      // null if passed so, or if the overload without it is used and DocumentTranslateOptions.Filename is unset.
       if (inputFileName == null) {
         throw new ArgumentException(
-              $"{nameof(DocumentTranslateOptions)}.{nameof(DocumentTranslateOptions.Filename)} is required with " +
-              "stream input");
+              $"{nameof(inputFileName)} or {nameof(DocumentTranslateOptions)}." +
+              $"{nameof(DocumentTranslateOptions.Filename)} is required with stream input");
       }
 
       // Document translation cannot detect the source language when a glossary is used.

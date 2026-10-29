@@ -224,6 +224,14 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
+    public async Task NamesBothFileNameSourcesWhenInputFileNameIsNull() {
+      var exception = await Assert.ThrowsAsync<ArgumentException>(
+            () => CreateClient().TranslateDocumentUploadAsync(Text("hello"), null!, null, "DE"));
+      Assert.Contains("inputFileName", exception.Message);
+      Assert.Contains("DocumentTranslateOptions.Filename", exception.Message);
+    }
+
+    [Fact]
     public async Task TranslatesStreamWithFilenameOption() {
       ExpectMultipart("v2/document", ("target_lang", null, "de"), ("file", "b.txt", "hello")).RespondJson(HandleReply);
       ExpectForm(HttpMethod.Post, "v2/document/d1", ("document_key", "k1"))
