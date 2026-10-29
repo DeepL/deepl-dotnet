@@ -153,6 +153,22 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
+    public async Task NullResourceObjectsLeaveTheOptionsUnset() {
+      GlossaryInfo? glossary = null;
+      StyleRuleInfo? styleRule = null;
+      StyleProfile? styleProfile = null;
+      TranslationMemoryInfo? translationMemory = null;
+      var options = new TextTranslateOptions {
+        Glossary = glossary, StyleRule = styleRule, StyleProfile = styleProfile, TranslationMemory = translationMemory
+      };
+      Assert.Null(options.Glossary);
+      Assert.Null(options.StyleRule);
+      Assert.Null(options.StyleProfile);
+      Assert.Null(options.TranslationMemory);
+      await Translate(options);
+    }
+
+    [Fact]
     public Task SendsGlossaryIdsMixingIdsAndGlossaryObjects() {
       var glossary = new GlossaryInfo("g2", "n", true, "en", "de", DateTime.UtcNow, 1);
       var multilingualGlossary =

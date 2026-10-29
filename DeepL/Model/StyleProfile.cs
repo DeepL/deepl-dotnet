@@ -3,6 +3,7 @@
 // license that can be found in the LICENSE file.
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 using DeepL.Internal;
 
@@ -113,7 +114,8 @@ namespace DeepL.Model {
     ///   example to <see cref="TextTranslateOptions" /> properties.
     /// </summary>
     /// <param name="styleProfile"><see cref="StyleProfile" /> object to convert.</param>
-    /// <returns>The value of <see cref="StyleProfileId" />.</returns>
-    public static implicit operator string(StyleProfile styleProfile) => styleProfile.StyleProfileId;
+    /// <returns>The value of <see cref="StyleProfileId" />, or <c>null</c> if <paramref name="styleProfile" /> is <c>null</c>.</returns>
+    [return: NotNullIfNotNull("styleProfile")]
+    public static implicit operator string?(StyleProfile? styleProfile) => styleProfile?.StyleProfileId;
   }
 }

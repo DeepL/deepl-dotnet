@@ -13,7 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and `TranslationMemoryId`. Each takes the ID or the resource object (`GlossaryInfo` or `MultilingualGlossaryInfo`,
   `StyleRuleInfo`, `TranslationMemoryInfo`), so several resource objects can be combined in one options object.
 - `GlossaryInfo`, `MultilingualGlossaryInfo`, `StyleRuleInfo`, `StyleProfile` and `TranslationMemoryInfo` convert
-  implicitly to their ID, so they can also be added to `TextTranslateOptions.GlossaryIds`, mixed with IDs.
+  implicitly to their ID, so they can also be added to `TextTranslateOptions.GlossaryIds`, mixed with IDs. A `null`
+  object converts to `null`, so assigning one leaves the option unset.
 - Added `FormalityValue`, `SplitSentences` and `ModelTypeValue` to `TextTranslateOptions`: the `formality`,
   `split_sentences` and `model_type` values as strings, sent unchanged instead of the `Formality`,
   `SentenceSplittingMode` and `ModelType` enum properties if set, for values the enums do not have.

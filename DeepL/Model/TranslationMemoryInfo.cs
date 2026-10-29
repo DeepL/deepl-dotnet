@@ -3,6 +3,7 @@
 // license that can be found in the LICENSE file.
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
 namespace DeepL.Model {
@@ -63,7 +64,8 @@ namespace DeepL.Model {
     ///   example to <see cref="TextTranslateOptions" /> properties.
     /// </summary>
     /// <param name="translationMemory"><see cref="TranslationMemoryInfo" /> object to convert.</param>
-    /// <returns>The value of <see cref="TranslationMemoryId" />.</returns>
-    public static implicit operator string(TranslationMemoryInfo translationMemory) => translationMemory.TranslationMemoryId;
+    /// <returns>The value of <see cref="TranslationMemoryId" />, or <c>null</c> if <paramref name="translationMemory" /> is <c>null</c>.</returns>
+    [return: NotNullIfNotNull("translationMemory")]
+    public static implicit operator string?(TranslationMemoryInfo? translationMemory) => translationMemory?.TranslationMemoryId;
   }
 }

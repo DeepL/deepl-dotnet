@@ -3,6 +3,7 @@
 // license that can be found in the LICENSE file.
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
 namespace DeepL.Model {
@@ -62,7 +63,8 @@ namespace DeepL.Model {
     ///   example to <see cref="TextTranslateOptions" /> properties.
     /// </summary>
     /// <param name="glossary"><see cref="MultilingualGlossaryInfo" /> object to convert.</param>
-    /// <returns>The value of <see cref="GlossaryId" />.</returns>
-    public static implicit operator string(MultilingualGlossaryInfo glossary) => glossary.GlossaryId;
+    /// <returns>The value of <see cref="GlossaryId" />, or <c>null</c> if <paramref name="glossary" /> is <c>null</c>.</returns>
+    [return: NotNullIfNotNull("glossary")]
+    public static implicit operator string?(MultilingualGlossaryInfo? glossary) => glossary?.GlossaryId;
   }
 }

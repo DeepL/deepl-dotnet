@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
 namespace DeepL.Model {
@@ -148,7 +149,8 @@ namespace DeepL.Model {
     ///   example to <see cref="TextTranslateOptions" /> properties.
     /// </summary>
     /// <param name="styleRule"><see cref="StyleRuleInfo" /> object to convert.</param>
-    /// <returns>The value of <see cref="StyleId" />.</returns>
-    public static implicit operator string(StyleRuleInfo styleRule) => styleRule.StyleId;
+    /// <returns>The value of <see cref="StyleId" />, or <c>null</c> if <paramref name="styleRule" /> is <c>null</c>.</returns>
+    [return: NotNullIfNotNull("styleRule")]
+    public static implicit operator string?(StyleRuleInfo? styleRule) => styleRule?.StyleId;
   }
 }
