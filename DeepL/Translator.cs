@@ -507,7 +507,15 @@ namespace DeepL {
       await DeepLHttpClient.CheckStatusCodeAsync(responseMessage).ConfigureAwait(false);
       var translatedTexts =
             await JsonUtils.DeserializeAsync<TextTranslateResult>(responseMessage).ConfigureAwait(false);
-      return translatedTexts.Translations;
+      var translations = translatedTexts.Translations;
+      // An extra "text" parameter may change the number of texts sent; require at least one translation then.
+      var expectedCount = options?.ExtraBodyParameters?.ContainsKey("text") == true ? 1 : textParams.Count;
+      if (translations == null || translations.Length < Math.Max(expectedCount, 1)) {
+        throw new DeepLException(
+              $"Expected {expectedCount} translations in the response, received {translations?.Length ?? 0}");
+      }
+
+      return translations;
     }
 
     /// <inheritdoc />

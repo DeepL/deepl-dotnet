@@ -17,10 +17,14 @@ namespace DeepL.Model {
     ///   would be marked <see langword="internal" />, but needs to be <see langword="public" /> for JSON deserialization.
     ///   In future this function may have backwards-incompatible changes.
     /// </remarks>
+    /// <exception cref="DeepLException">If <paramref name="detectedSourceLanguageCode" /> is null.</exception>
     [JsonConstructor]
     public TextResult(string text, string detectedSourceLanguageCode, int billedCharacters, string? modelTypeUsed) {
       Text = text;
-      DetectedSourceLanguageCode = LanguageCode.Standardize(detectedSourceLanguageCode);
+      // Raised here so that a response without the field fails with a DeepLException, not a NullReferenceException.
+      DetectedSourceLanguageCode = LanguageCode.Standardize(
+            detectedSourceLanguageCode ??
+            throw new DeepLException("Text translation result is missing detected_source_language"));
       BilledCharacters = billedCharacters;
       ModelTypeUsed = modelTypeUsed;
     }

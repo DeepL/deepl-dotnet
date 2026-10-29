@@ -205,6 +205,30 @@ namespace DeepLTests.Offline {
             new TextTranslateOptions { ExtraBodyParameters = new Dictionary<string, string> { { "text", "x" } } });
     }
 
+    [Theory]
+    [InlineData("{}")]
+    [InlineData("{\"translations\":[]}")]
+    [InlineData("{\"translations\":[{\"detected_source_language\":\"EN\",\"text\":\"x\"}]}")]
+    public async Task ThrowsDeepLExceptionWhenTranslationsAreMissing(string reply) {
+      Expect(HttpMethod.Post, "v2/translate").RespondJson(reply);
+      await Assert.ThrowsAsync<DeepLException>(
+            () => CreateClient().TranslateTextAsync(new[] { "a", "b" }, null, "DE"));
+    }
+
+    [Theory]
+    [InlineData("{}")]
+    [InlineData("{\"translations\":[]}")]
+    public async Task ThrowsDeepLExceptionForSingleTextWhenTranslationsAreMissing(string reply) {
+      Expect(HttpMethod.Post, "v2/translate").RespondJson(reply);
+      await Assert.ThrowsAsync<DeepLException>(() => CreateClient().TranslateTextAsync("a", null, "DE"));
+    }
+
+    [Fact]
+    public async Task ThrowsDeepLExceptionWhenDetectedSourceLanguageIsMissing() {
+      Expect(HttpMethod.Post, "v2/translate").RespondJson("{\"translations\":[{\"text\":\"Hallo\"}]}");
+      await Assert.ThrowsAsync<DeepLException>(() => CreateClient().TranslateTextAsync("Hello", null, "DE"));
+    }
+
     [Fact]
     public async Task ParsesResult() {
       ExpectForm(HttpMethod.Post, "v2/translate", ("target_lang", "de"), ("show_billed_characters", "1"), ("text", "Hello"))

@@ -84,6 +84,9 @@ The `TextResult` contains:
 - the number of characters billed for the text, and
 - the translation model type used (only non-null if the ModelType option is specified.)
 
+A response without translations, with fewer translations than texts sent, or without the detected source language
+raises a `DeepLException`.
+
 ```c#
 // Translate text into a target language, in this case, French:
 var translatedText = await client.TranslateTextAsync(
