@@ -1578,13 +1578,44 @@ namespace DeepL {
           string resource,
           IEnumerable<string>? include = null,
           CancellationToken cancellationToken = default) {
+      var options = new GetLanguagesForResourceOptions();
+      if (include != null) {
+        options.Include.AddRange(include);
+      }
+
+      return await GetLanguagesForResourceAsync(resource, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    ///   Retrieves the languages supported by the given DeepL API resource, including whether each language can be
+    ///   used as source or target and the features it supports for that resource.
+    /// </summary>
+    /// <param name="resource">
+    ///   Resource to retrieve languages for, for example <see cref="LanguageResource.TranslateText" /> or
+    ///   <see cref="LanguageResource.Glossary" />.
+    /// </param>
+    /// <param name="options">
+    ///   Optional <see cref="GetLanguagesForResourceOptions" />, for example
+    ///   <see cref="GetLanguagesForResourceOptions.Include" /> to also return beta or external languages and features.
+    /// </param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>Array of <see cref="LanguageSupport" /> objects, one per supported language.</returns>
+    /// <exception cref="ArgumentException">If <paramref name="resource" /> is empty.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<LanguageSupport[]> GetLanguagesForResourceAsync(
+          string resource,
+          GetLanguagesForResourceOptions? options,
+          CancellationToken cancellationToken = default) {
       if (string.IsNullOrEmpty(resource)) {
         throw new ArgumentException($"Parameter {nameof(resource)} must not be empty");
       }
 
       var queryParams = new List<(string Key, string Value)> { ("resource", resource) };
-      if (include != null) {
-        queryParams.AddRange(include.Select(value => ("include", value)));
+      if (options != null) {
+        queryParams.AddRange(options.Include.Select(value => ("include", value)));
       }
 
       using var responseMessage = await _client

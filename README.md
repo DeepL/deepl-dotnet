@@ -1260,9 +1260,10 @@ one DeepL API resource (`LanguageResource.TranslateText`,
 `LanguageResource.TranslateDocument`, `LanguageResource.Glossary`,
 `LanguageResource.Write`, …) as `LanguageSupport` objects, each with
 `UsableAsSource`, `UsableAsTarget`, `Status` and a `Features` map. By default
-only stable languages and features are returned; pass
+only stable languages and features are returned; add
 `LanguageSupport.IncludeBeta` and/or `LanguageSupport.IncludeExternal` to
-include more.
+`GetLanguagesForResourceOptions.Include` (or pass them directly as the `include`
+list) to include more.
 
 `DeepLClient.GetLanguageResourcesAsync()` lists the resources and their
 features, and whether each feature must be supported by the source language,
@@ -1271,7 +1272,7 @@ the target language, or both.
 ```c#
 var languages = await client.GetLanguagesForResourceAsync(
       LanguageResource.TranslateText,
-      new[] { LanguageSupport.IncludeBeta });
+      new GetLanguagesForResourceOptions { Include = { LanguageSupport.IncludeBeta } });
 foreach (var lang in languages) {
   if (lang.UsableAsTarget && lang.Supports(LanguageFeature.Formality)) {
     Console.WriteLine($"{lang.Name} ({lang.Code}) supports formality"); // Example: "German (de) supports formality"

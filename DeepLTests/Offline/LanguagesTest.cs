@@ -67,6 +67,19 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
+    public async Task SendsOptionsIncludesInQuery() {
+      ExpectNoBody(HttpMethod.Get, "v3/languages")
+            .WithExactQueryString("resource=translate_text&include=beta&include=custom")
+            .RespondJson("[]");
+      ExpectNoBody(HttpMethod.Get, "v3/languages").WithExactQueryString("resource=translate_text").RespondJson("[]");
+      var client = CreateClient();
+      await client.GetLanguagesForResourceAsync(
+            LanguageResource.TranslateText,
+            new GetLanguagesForResourceOptions { Include = { LanguageSupport.IncludeBeta, "custom" } });
+      await client.GetLanguagesForResourceAsync(LanguageResource.TranslateText, new GetLanguagesForResourceOptions());
+    }
+
+    [Fact]
     public async Task ParsesLanguageSupportAndFeatures() {
       ExpectNoBody(HttpMethod.Get, "v3/languages")
             .WithExactQueryString("resource=translate_text")

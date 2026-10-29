@@ -7,7 +7,7 @@ using System.Collections.Generic;
 namespace DeepL.Model {
   /// <summary>
   ///   Information about a language supported by the DeepL API for a given resource, as returned by
-  ///   <see cref="DeepLClient.GetLanguagesForResourceAsync" />.
+  ///   <see cref="DeepLClient.GetLanguagesForResourceAsync(string, GetLanguagesForResourceOptions?, System.Threading.CancellationToken)" />.
   /// </summary>
   public sealed class LanguageSupport {
     /// <summary>Include value: also return languages and features in beta.</summary>
@@ -69,7 +69,7 @@ namespace DeepL.Model {
 
   /// <summary>
   ///   Support information for a single feature of a language, as returned by
-  ///   <see cref="DeepLClient.GetLanguagesForResourceAsync" />.
+  ///   <see cref="DeepLClient.GetLanguagesForResourceAsync(string, GetLanguagesForResourceOptions?, System.Threading.CancellationToken)" />.
   /// </summary>
   public sealed class LanguageFeature {
     /// <summary>Feature: automatic source-language detection.</summary>
