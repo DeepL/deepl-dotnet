@@ -158,6 +158,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Its default is now no overall timeout.
 
 ### Fixed
+- Multilingual glossary IDs are now URL-encoded in request paths.
+- `CreateMultilingualGlossaryAsync()` and `CreateMultilingualGlossaryFromCsvAsync()` now throw
+  `GlossaryNotFoundException` on HTTP 404, like the other multilingual glossary methods.
+- `GetMultilingualGlossaryDictionaryEntriesAsync()` no longer throws `ArgumentException` for entries returned by the
+  API that the client-side entry checks would reject.
+- `ReplaceMultilingualGlossaryDictionaryAsync()` and `ReplaceMultilingualGlossaryDictionaryFromCsvAsync()` now send
+  the request body as JSON, the only content type the API accepts for this endpoint.
 - `RephraseTextAsync()` and `CorrectTextAsync()` throw a `DeepLException` if the response holds no `improvements` or
   fewer than texts were sent, instead of returning `null`, a short array, or throwing a `NullReferenceException` or
   `IndexOutOfRangeException`.

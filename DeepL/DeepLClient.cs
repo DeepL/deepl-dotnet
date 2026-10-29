@@ -1098,7 +1098,7 @@ namespace DeepL {
       using var responseMessage = await _client
             .ApiPostAsync("v3/glossaries", cancellationToken, bodyParams).ConfigureAwait(false);
 
-      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage).ConfigureAwait(false);
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.Glossary).ConfigureAwait(false);
       var glossary =
             await JsonUtils.DeserializeAsync<MultilingualGlossaryInfo>(responseMessage).ConfigureAwait(false);
       return glossary;
@@ -1129,7 +1129,7 @@ namespace DeepL {
       using var responseMessage = await _client
             .ApiPostAsync("v3/glossaries", cancellationToken, bodyParams).ConfigureAwait(false);
 
-      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage).ConfigureAwait(false);
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.Glossary).ConfigureAwait(false);
       var glossary =
             await JsonUtils.DeserializeAsync<MultilingualGlossaryInfo>(responseMessage).ConfigureAwait(false);
       return glossary;
@@ -1142,7 +1142,7 @@ namespace DeepL {
       if (string.IsNullOrWhiteSpace(glossaryId))
         throw new ArgumentException($"Parameter {nameof(glossaryId)} must not be empty");
       using var responseMessage =
-            await _client.ApiGetAsync($"v3/glossaries/{glossaryId}", cancellationToken)
+            await _client.ApiGetAsync(MultilingualGlossaryPath(glossaryId), cancellationToken)
                   .ConfigureAwait(false);
 
       await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.Glossary).ConfigureAwait(false);
@@ -1163,7 +1163,7 @@ namespace DeepL {
 
       using var responseMessage =
             await _client.ApiGetAsync(
-                  $"v3/glossaries/{glossaryId}/entries",
+                  MultilingualGlossaryPath(glossaryId) + "/entries",
                   cancellationToken,
                   queryParams).ConfigureAwait(false);
 
@@ -1235,7 +1235,7 @@ namespace DeepL {
       }
 
       using var responseMessage =
-            await _client.ApiDeleteAsync($"v3/glossaries/{glossaryId}", cancellationToken)
+            await _client.ApiDeleteAsync(MultilingualGlossaryPath(glossaryId), cancellationToken)
                   .ConfigureAwait(false);
 
       await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.Glossary).ConfigureAwait(false);
@@ -1260,7 +1260,7 @@ namespace DeepL {
       var queryParams = CreateLanguageQueryParams(sourceLanguageCode, targetLanguageCode);
 
       using var responseMessage =
-            await _client.ApiDeleteAsync($"v3/glossaries/{glossaryId}/dictionaries", cancellationToken, queryParams)
+            await _client.ApiDeleteAsync(MultilingualGlossaryPath(glossaryId) + "/dictionaries", cancellationToken, queryParams)
                   .ConfigureAwait(false);
 
       await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.Glossary).ConfigureAwait(false);
@@ -1405,13 +1405,19 @@ namespace DeepL {
         throw new ArgumentException($"Parameter {nameof(targetLanguageCode)} must not be empty");
       }
 
-      var bodyParams = new (string Key, string Value)[] {
-            ("source_lang", sourceLanguageCode), ("target_lang", targetLanguageCode), ("entries_format", entriesFormat),
-            ("entries", entries)
+      var requestData = new Dictionary<string, object> {
+            ["source_lang"] = sourceLanguageCode,
+            ["target_lang"] = targetLanguageCode,
+            ["entries"] = entries,
+            ["entries_format"] = entriesFormat
       };
-      using var responseMessage =
-            await _client.ApiPutAsync($"v3/glossaries/{glossaryId}/dictionaries", cancellationToken, bodyParams)
-                  .ConfigureAwait(false);
+      using var responseMessage = await _client
+            .ApiPutJsonAsync(
+                  MultilingualGlossaryPath(glossaryId) + "/dictionaries",
+                  cancellationToken,
+                  requestData,
+                  SerializationOptions)
+            .ConfigureAwait(false);
 
       await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.Glossary).ConfigureAwait(false);
       return await JsonUtils.DeserializeAsync<MultilingualGlossaryDictionaryInfo>(responseMessage)
@@ -1429,7 +1435,7 @@ namespace DeepL {
 
       var bodyParams = new (string Key, string Value)[] { ("name", name) };
       using var responseMessage =
-            await _client.ApiPatchAsync($"v3/glossaries/{glossaryId}", cancellationToken, bodyParams)
+            await _client.ApiPatchAsync(MultilingualGlossaryPath(glossaryId), cancellationToken, bodyParams)
                   .ConfigureAwait(false);
 
       await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.Glossary).ConfigureAwait(false);
@@ -1547,7 +1553,7 @@ namespace DeepL {
             entries,
             entriesFormat);
       using var responseMessage =
-            await _client.ApiPatchAsync($"v3/glossaries/{glossaryId}", cancellationToken, bodyParams)
+            await _client.ApiPatchAsync(MultilingualGlossaryPath(glossaryId), cancellationToken, bodyParams)
                   .ConfigureAwait(false);
 
       await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.Glossary).ConfigureAwait(false);
@@ -1855,6 +1861,12 @@ namespace DeepL {
 
       return bodyParams;
     }
+
+    /// <summary>Returns the API path of the given v3 glossary, with the ID URL-encoded.</summary>
+    /// <param name="glossaryId">ID of the glossary.</param>
+    /// <returns>The relative path of the glossary.</returns>
+    private static string MultilingualGlossaryPath(string glossaryId) =>
+          $"v3/glossaries/{Uri.EscapeDataString(glossaryId)}";
 
     /// <summary>Returns the API path of the given style profile.</summary>
     /// <param name="styleProfileId">ID of the style profile.</param>

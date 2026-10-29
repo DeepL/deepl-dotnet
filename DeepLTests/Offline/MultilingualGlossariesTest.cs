@@ -7,6 +7,7 @@ using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using DeepL;
 using DeepL.Model;
@@ -121,12 +122,11 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
-    public async Task SendsPutWhenReplacingDictionary() {
-      var fields = new[] {
-        ("source_lang", "en"), ("target_lang", "de"), ("entries_format", "tsv"), ("entries", "Apple\tApfel")
-      };
-      ExpectForm(HttpMethod.Put, "v3/glossaries/g1/dictionaries", fields).RespondJson(DictionaryReply);
-      ExpectForm(HttpMethod.Put, "v3/glossaries/g1/dictionaries", fields).RespondJson(DictionaryReply);
+    public async Task SendsJsonPutWhenReplacingDictionary() {
+      const string body =
+            "{\"source_lang\":\"en\",\"target_lang\":\"de\",\"entries\":\"Apple\\tApfel\",\"entries_format\":\"tsv\"}";
+      ExpectJson(HttpMethod.Put, "v3/glossaries/g1/dictionaries", body).RespondJson(DictionaryReply);
+      ExpectJson(HttpMethod.Put, "v3/glossaries/g1/dictionaries", body).RespondJson(DictionaryReply);
       var client = CreateClient();
       var replaced = await client.ReplaceMultilingualGlossaryDictionaryAsync("g1", "en", "de", Apple);
       Assert.Equal("en", replaced.SourceLanguageCode);
@@ -138,16 +138,66 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
-    public async Task SendsCsvWhenReplacingDictionaryFromCsv() {
-      ExpectForm(
+    public async Task SendsJsonCsvWhenReplacingDictionaryFromCsv() {
+      ExpectJson(
                   HttpMethod.Put,
                   "v3/glossaries/g1/dictionaries",
-                  ("source_lang", "en"),
-                  ("target_lang", "de"),
-                  ("entries_format", "csv"),
-                  ("entries", Csv))
+                  "{\"source_lang\":\"en\",\"target_lang\":\"de\",\"entries\":" + JsonSerializer.Serialize(Csv) +
+                  ",\"entries_format\":\"csv\"}")
             .RespondJson(DictionaryReply);
       await CreateClient().ReplaceMultilingualGlossaryDictionaryFromCsvAsync("g1", "en", "de", CsvStream());
+    }
+
+    [Fact]
+    public async Task ThrowsGlossaryNotFoundExceptionWhenCreateReturns404() {
+      ExpectForm(
+                  HttpMethod.Post,
+                  "v3/glossaries",
+                  ("name", "n"),
+                  ("dictionaries[0].source_lang", "en"),
+                  ("dictionaries[0].target_lang", "de"),
+                  ("dictionaries[0].entries", "Apple\tApfel"),
+                  ("dictionaries[0].entries_format", "tsv"))
+            .RespondJson("{}", HttpStatusCode.NotFound);
+      ExpectForm(
+                  HttpMethod.Post,
+                  "v3/glossaries",
+                  ("name", "n"),
+                  ("dictionaries[0].source_lang", "en"),
+                  ("dictionaries[0].target_lang", "de"),
+                  ("dictionaries[0].entries", Csv),
+                  ("dictionaries[0].entries_format", "csv"))
+            .RespondJson("{}", HttpStatusCode.NotFound);
+      var client = CreateClient();
+      await Assert.ThrowsAsync<GlossaryNotFoundException>(
+            () => client.CreateMultilingualGlossaryAsync(
+                  "n",
+                  new[] { new MultilingualGlossaryDictionaryEntries("en", "de", Apple) }));
+      await Assert.ThrowsAsync<GlossaryNotFoundException>(
+            () => client.CreateMultilingualGlossaryFromCsvAsync("n", "en", "de", CsvStream()));
+    }
+
+    [Fact]
+    public async Task EncodesGlossaryIdInPaths() {
+      const string path = "v3/glossaries/a%2Fb%3Fc";
+      ExpectNoBody(HttpMethod.Get, path).RespondJson(GlossaryReply);
+      ExpectNoBody(HttpMethod.Get, path + "/entries")
+            .RespondJson(
+                  "{\"dictionaries\":[{\"source_lang\":\"en\",\"target_lang\":\"de\"," +
+                  "\"entries\":\"Apple\\tApfel\",\"entries_format\":\"tsv\"}]}");
+      ExpectNoBody(HttpMethod.Delete, path).Respond(HttpStatusCode.NoContent);
+      ExpectNoBody(HttpMethod.Delete, path + "/dictionaries").Respond(HttpStatusCode.NoContent);
+      Expect(HttpMethod.Put, path + "/dictionaries").RespondJson(DictionaryReply);
+      Expect(Patch, path).RespondJson(GlossaryReply);
+      Expect(Patch, path).RespondJson(GlossaryReply);
+      var client = CreateClient();
+      await client.GetMultilingualGlossaryAsync("a/b?c");
+      await client.GetMultilingualGlossaryDictionaryEntriesAsync("a/b?c", "en", "de");
+      await client.DeleteMultilingualGlossaryAsync("a/b?c");
+      await client.DeleteMultilingualGlossaryDictionaryAsync("a/b?c", "en", "de");
+      await client.ReplaceMultilingualGlossaryDictionaryAsync("a/b?c", "en", "de", Apple);
+      await client.UpdateMultilingualGlossaryNameAsync("a/b?c", "n");
+      await client.UpdateMultilingualGlossaryDictionaryAsync("a/b?c", "en", "de", Apple);
     }
 
     [Fact]
@@ -177,6 +227,17 @@ namespace DeepLTests.Offline {
       Assert.Equal(
             new System.Collections.Generic.Dictionary<string, string> { { "Apple", "Apfel" }, { "Banana", "Banane" } },
             dictionary.Entries.ToDictionary());
+    }
+
+    [Fact]
+    public async Task ParsesEntriesThatClientSideValidationWouldReject() {
+      // A duplicate source term is rejected when sending entries, but must not fail reading what the server returns.
+      ExpectNoBody(HttpMethod.Get, "v3/glossaries/g1/entries")
+            .RespondJson(
+                  "{\"dictionaries\":[{\"source_lang\":\"en\",\"target_lang\":\"de\"," +
+                  "\"entries\":\"Apple\\tApfel\\nApple\\tApfel\",\"entries_format\":\"tsv\"}]}");
+      var dictionary = await CreateClient().GetMultilingualGlossaryDictionaryEntriesAsync("g1", "en", "de");
+      Assert.Equal("Apple\tApfel\nApple\tApfel", dictionary.Entries.ToTsv());
     }
 
     [Fact]

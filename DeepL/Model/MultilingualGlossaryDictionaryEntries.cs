@@ -32,7 +32,7 @@ namespace DeepL.Model {
     public MultilingualGlossaryDictionaryEntries(MultilingualGlossaryDictionaryEntriesResult dictionaryEntriesResult) {
       (SourceLanguageCode, TargetLanguageCode, Entries) =
             (dictionaryEntriesResult.SourceLanguageCode, dictionaryEntriesResult.TargetLanguageCode,
-                  GlossaryEntries.FromTsv(dictionaryEntriesResult.Entries));
+                  GlossaryEntries.FromTsv(dictionaryEntriesResult.Entries, true));
     }
 
     /// <summary>Language code of the source terms in the glossary.</summary>
