@@ -13,7 +13,9 @@ namespace DeepL.Internal {
   internal static class JsonUtils {
     /// <summary>Options used to deserialize JSON data.</summary>
     private static JsonSerializerOptions JsonSerializerOptions { get; } =
-      new JsonSerializerOptions { PropertyNamingPolicy = LowerSnakeCaseNamingPolicy.Instance };
+      new JsonSerializerOptions {
+        PropertyNamingPolicy = LowerSnakeCaseNamingPolicy.Instance, Converters = { new Model.DocumentStatusConverter() }
+      };
 
     /// <summary>
     ///   Deserializes JSON data in given HTTP response into a new object of <see cref="TValue" /> type, with fields named in

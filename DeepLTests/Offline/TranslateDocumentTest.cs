@@ -330,6 +330,16 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
+    public void DeserializesDocumentStatusStoredByUserCodeWithDefaultOptions() {
+      // The shape System.Text.Json wrote for DocumentStatus in earlier versions; the API's converter must not apply.
+      var status = System.Text.Json.JsonSerializer.Deserialize<DocumentStatus>(
+            "{\"DocumentId\":\"d1\",\"Status\":\"Done\",\"SecondsRemaining\":null,\"BilledCharacters\":7}")!;
+      Assert.Equal("d1", status.DocumentId);
+      Assert.Equal(DocumentStatus.StatusCode.Done, status.Status);
+      Assert.Equal(7, status.BilledCharacters);
+    }
+
+    [Fact]
     public async Task ParsesUnknownStatusAsString() {
       ExpectForm(HttpMethod.Post, "v2/document/d1", ("document_key", "k1"))
             .RespondJson("{\"document_id\":\"d1\",\"status\":\"reviewing\"}");

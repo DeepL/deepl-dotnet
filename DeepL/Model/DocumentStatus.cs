@@ -9,7 +9,6 @@ using System.Text.Json.Serialization;
 
 namespace DeepL.Model {
   /// <summary>Status of an in-progress document translation.</summary>
-  [JsonConverter(typeof(DocumentStatusConverter))]
   public sealed class DocumentStatus {
     /// <summary>Status code indicating status of the document translation.</summary>
     [JsonConverter(typeof(JsonStringEnumConverter))]
@@ -126,7 +125,8 @@ namespace DeepL.Model {
 
   /// <summary>
   ///   Reads a <see cref="DocumentStatus" /> tolerantly: an unknown status is kept as a string instead of failing the
-  ///   status request or the polling loop, and a non-numeric count is read as <c>null</c>.
+  ///   status request or the polling loop, and a non-numeric count is read as <c>null</c>. Registered only in the
+  ///   options the SDK uses for API responses, so user serialization of <see cref="DocumentStatus" /> is unchanged.
   /// </summary>
   internal sealed class DocumentStatusConverter : JsonConverter<DocumentStatus> {
     public override DocumentStatus Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {
