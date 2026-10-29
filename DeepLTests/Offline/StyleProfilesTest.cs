@@ -241,7 +241,10 @@ namespace DeepLTests.Offline {
       await client.UpdateStyleProfileAsync("sp1", updateOptions);
       await client.UpdateStyleProfileAsync(
             "sp1",
-            new UpdateStyleProfileOptions { GlossaryIds = new string[] { multilingualGlossary, glossary, "g3" } });
+            new UpdateStyleProfileOptions {
+              // The C# 8 compiler ignores [NotNullIfNotNull] on the implicit conversion, hence the "!".
+              GlossaryIds = new string[] { ((string?)multilingualGlossary)!, ((string?)glossary)!, "g3" }
+            });
     }
 
     [Fact]
