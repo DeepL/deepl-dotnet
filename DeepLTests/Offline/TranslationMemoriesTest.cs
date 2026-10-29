@@ -8,6 +8,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using DeepL;
 using DeepL.Model;
@@ -360,6 +361,37 @@ namespace DeepLTests.Offline {
       await Assert.ThrowsAsync<ArgumentException>(() => client.CreateTranslationMemoryImportAsync("a.tmx", 0));
       await Assert.ThrowsAsync<ArgumentException>(
             () => client.UploadTranslationMemoryFileAsync("", new MemoryStream()));
+    }
+    [Fact]
+    public async Task ParsesUnknownJobStatusAndKeepsPollingOnIt() {
+      ExpectNoBody(HttpMethod.Get, "v3/translation_memories/jobs/j1")
+            .RespondJson(JobReply("{\"status\":\"validating\"}"));
+      ExpectNoBody(HttpMethod.Get, "v3/translation_memories/jobs/j1")
+            .RespondJson(JobReply("{\"status\":\"validating\"}"));
+      ExpectNoBody(HttpMethod.Get, "v3/translation_memories/jobs/j1").RespondJson(JobReply(CompletedResult));
+      var client = CreateClient();
+      var job = await client.GetTranslationMemoryJobAsync("j1");
+      Assert.Equal(TranslationMemoryJobStatus.Unknown, job.Status);
+      Assert.Equal("validating", job.StatusValue);
+      Assert.Equal("validating", job.Result!.StatusValue);
+      Assert.False(job.Done);
+      Assert.True(job.Ok);
+      var done = await client.WaitUntilTranslationMemoryJobDoneAsync("j1");
+      Assert.Equal(TranslationMemoryJobStatus.Completed, done.Status);
+      Assert.Equal("completed", done.StatusValue);
+    }
+
+    [Fact]
+    public async Task SerializesJobWithUnknownStatus() {
+      ExpectNoBody(HttpMethod.Get, "v3/translation_memories/jobs/j1")
+            .RespondJson(JobReply("{\"status\":\"validating\"}"));
+      var job = await CreateClient().GetTranslationMemoryJobAsync("j1");
+      var json = JsonSerializer.Serialize(job);
+      Assert.Contains("\"Status\":\"unknown\"", json);
+      Assert.Contains("\"StatusValue\":\"validating\"", json);
+      var copy = JsonSerializer.Deserialize<TranslationMemoryJob>(json)!;
+      Assert.Equal("j1", copy.JobId);
+      Assert.Equal(TranslationMemoryJobStatus.Unknown, copy.Status);
     }
   }
 }

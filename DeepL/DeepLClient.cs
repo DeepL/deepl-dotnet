@@ -3208,7 +3208,7 @@ namespace DeepL {
       var results = (response.Results ?? new TranslationMemoryJobResultResponse[0])
             .Select(
                   result => new TranslationMemoryJobResult(
-                        result.Status,
+                        result.Status ?? string.Empty,
                         GetParameter(result.StatusMetadata, "required_action"),
                         result.DownloadUrl,
                         result.ExpiresAt,
@@ -3271,7 +3271,7 @@ namespace DeepL {
       /// <summary>Initializes a new instance of <see cref="TranslationMemoryJobResultResponse" />, used for JSON deserialization.</summary>
       [JsonConstructor]
       public TranslationMemoryJobResultResponse(
-            TranslationMemoryJobStatus status,
+            string? status,
             Dictionary<string, string>? statusMetadata,
             string? downloadUrl,
             DateTime? expiresAt,
@@ -3287,9 +3287,9 @@ namespace DeepL {
         SkippedSegmentCount = skippedSegmentCount;
       }
 
-      /// <summary>Status of the job.</summary>
+      /// <summary>Status of the job as returned by the API, kept as a string so unknown statuses do not fail.</summary>
       [JsonPropertyName("status")]
-      public TranslationMemoryJobStatus Status { get; }
+      public string? Status { get; }
 
       /// <summary>Metadata describing the action the caller must take, if any.</summary>
       [JsonPropertyName("status_metadata")]

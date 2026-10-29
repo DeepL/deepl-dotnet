@@ -26,7 +26,13 @@ namespace DeepL.Model {
     Failed,
 
     /// <summary>The job expired before it finished.</summary>
-    Expired
+    Expired,
+
+    /// <summary>
+    ///   A status this library does not know; <see cref="TranslationMemoryJobResult.StatusValue" /> holds the value
+    ///   the API returned. The job is treated as still in progress.
+    /// </summary>
+    Unknown
   }
 
   /// <summary>
@@ -39,14 +45,30 @@ namespace DeepL.Model {
           ref Utf8JsonReader reader,
           Type typeToConvert,
           JsonSerializerOptions options) =>
-          reader.GetString() switch {
+          FromApiValue(reader.GetString());
+
+    /// <summary>Maps a status string of the DeepL API to its enum member, or Unknown if it is not known.</summary>
+    internal static TranslationMemoryJobStatus FromApiValue(string? value) =>
+          value switch {
             "awaiting_input" => TranslationMemoryJobStatus.AwaitingInput,
             "processing" => TranslationMemoryJobStatus.Processing,
             "completed" => TranslationMemoryJobStatus.Completed,
             "downloaded" => TranslationMemoryJobStatus.Downloaded,
             "failed" => TranslationMemoryJobStatus.Failed,
             "expired" => TranslationMemoryJobStatus.Expired,
-            var status => throw new JsonException($"Unrecognized translation memory job status: {status}")
+            _ => TranslationMemoryJobStatus.Unknown
+          };
+
+    /// <summary>Maps a known status to the string used by the DeepL API, or an empty string for Unknown.</summary>
+    internal static string ToApiValue(TranslationMemoryJobStatus value) =>
+          value switch {
+            TranslationMemoryJobStatus.AwaitingInput => "awaiting_input",
+            TranslationMemoryJobStatus.Processing => "processing",
+            TranslationMemoryJobStatus.Completed => "completed",
+            TranslationMemoryJobStatus.Downloaded => "downloaded",
+            TranslationMemoryJobStatus.Failed => "failed",
+            TranslationMemoryJobStatus.Expired => "expired",
+            _ => ""
           };
 
     public override void Write(
@@ -61,6 +83,8 @@ namespace DeepL.Model {
                   TranslationMemoryJobStatus.Downloaded => "downloaded",
                   TranslationMemoryJobStatus.Failed => "failed",
                   TranslationMemoryJobStatus.Expired => "expired",
+                  // The raw value of an unknown status is kept in TranslationMemoryJobResult.StatusValue.
+                  TranslationMemoryJobStatus.Unknown => "unknown",
                   _ => throw new JsonException($"Unrecognized translation memory job status: {value}")
                 });
   }
@@ -88,10 +112,36 @@ namespace DeepL.Model {
       ErrorMessage = errorMessage;
       TranslationMemoryId = translationMemoryId;
       SkippedSegmentCount = skippedSegmentCount;
+      StatusValue = TranslationMemoryJobStatusConverter.ToApiValue(status);
+    }
+
+    /// <summary>Initializes a new <see cref="TranslationMemoryJobResult" /> from the status string returned by the API.</summary>
+    internal TranslationMemoryJobResult(
+          string statusValue,
+          string? requiredAction,
+          string? downloadUrl,
+          DateTime? expiresAt,
+          string? errorMessage,
+          string? translationMemoryId,
+          int? skippedSegmentCount) : this(
+          TranslationMemoryJobStatusConverter.FromApiValue(statusValue),
+          requiredAction,
+          downloadUrl,
+          expiresAt,
+          errorMessage,
+          translationMemoryId,
+          skippedSegmentCount) {
+      StatusValue = statusValue;
     }
 
     /// <summary>Status of the job.</summary>
     public TranslationMemoryJobStatus Status { get; }
+
+    /// <summary>
+    ///   Status of the job as returned by the API, for example <c>"processing"</c>. Unlike <see cref="Status" />, it
+    ///   also holds statuses this library does not know (<see cref="TranslationMemoryJobStatus.Unknown" />).
+    /// </summary>
+    public string StatusValue { get; }
 
     /// <summary>Description of the action the caller must take, set while the job waits on the caller.</summary>
     public string? RequiredAction { get; }
@@ -192,6 +242,12 @@ namespace DeepL.Model {
 
     /// <summary>Status of the job result, or <c>null</c> if the DeepL API returned no result.</summary>
     public TranslationMemoryJobStatus? Status => Result?.Status;
+
+    /// <summary>
+    ///   Status of the job result as returned by the API, or <c>null</c> if the DeepL API returned no result. Unlike
+    ///   <see cref="Status" />, it also holds statuses this library does not know.
+    /// </summary>
+    public string? StatusValue => Result?.StatusValue;
 
     /// <summary><c>true</c> if the job has finished, successfully or not, otherwise <c>false</c>.</summary>
     public bool Done => Result?.Done ?? false;

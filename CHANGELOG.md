@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Added `TranslationMemoryJobStatus.Unknown` and `StatusValue` on `TranslationMemoryJobResult` and
+  `TranslationMemoryJob`, holding the job status as returned by the API.
 - Added `DeepLClient` overloads of all eight style rule methods that take a style rule ID (`GetStyleRuleAsync()`,
   `UpdateStyleRuleNameAsync()`, `UpdateStyleRuleConfiguredRulesAsync()`, `DeleteStyleRuleAsync()`,
   `CreateStyleRuleCustomInstructionAsync()`, `GetStyleRuleCustomInstructionAsync()`,
@@ -195,6 +197,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Its default is now no overall timeout.
 
 ### Fixed
+- Fixed `GetTranslationMemoryJobAsync()` failing on a job status this library does not know: it is now parsed as
+  `TranslationMemoryJobStatus.Unknown`, and `WaitUntilTranslationMemoryJobDoneAsync()` keeps polling on it.
 - Multilingual glossary IDs are now URL-encoded in request paths.
 - `CreateMultilingualGlossaryAsync()` and `CreateMultilingualGlossaryFromCsvAsync()` now throw
   `GlossaryNotFoundException` on HTTP 404, like the other multilingual glossary methods.

@@ -1153,7 +1153,9 @@ job without waiting for it, and `WaitUntilTranslationMemoryJobDoneAsync()` to
 poll it until it finishes. Note that an import job keeps reporting
 `AwaitingInput` for a while after its file has been uploaded, because the DeepL
 API detects the upload asynchronously; that status is polled through like any
-other non-terminal one. A job whose file is never uploaded does not finish on
+other non-terminal one. A status this library does not know is reported as
+`TranslationMemoryJobStatus.Unknown`, with the API's value in `StatusValue`, and
+is also polled through. A job whose file is never uploaded does not finish on
 its own, so pass a `CancellationToken` carrying a timeout when that is a
 possibility:
 
