@@ -71,10 +71,10 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
-    public async Task SendsGivenUserAgentAndAuthorizationInsteadOfDefaults() {
+    public async Task SendsGivenUserAgentButAlwaysTheAuthKeyAsAuthorization() {
       Http.Expect(HttpMethod.Get, ApiUrl + "/v2/usage")
             .WithHeaders("User-Agent", "my-agent")
-            .WithHeaders("Authorization", "Bearer abc")
+            .WithHeaders("Authorization", "DeepL-Auth-Key " + AuthKey)
             .RespondJson(UsageReply);
       var client = CreateClient(
             options => options.Headers = new Dictionary<string, string?> {

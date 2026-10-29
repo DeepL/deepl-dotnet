@@ -63,6 +63,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Each attempt of a request may now run until the time the client would wait before retrying it (the backoff delay)
   when that is longer than `PerRetryConnectionTimeout`. The default client no longer limits a request including all
   retries to 100 seconds; `OverallConnectionTimeout` still applies when it is set.
+- An `Authorization` entry in `Headers` no longer replaces the authentication key: requests to the DeepL API always
+  carry the key given to the constructor.
 
 ### Deprecated
 - Deprecated the language code constants of the `LanguageCode` class (for example `LanguageCode.German`) with

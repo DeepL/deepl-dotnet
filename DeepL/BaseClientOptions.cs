@@ -15,8 +15,9 @@ namespace DeepL {
     internal BaseClientOptions() { }
 
     /// <summary>
-    ///   HTTP headers attached to every HTTP request. By default no extra headers are used. Note that during client
-    ///   initialization headers for Authorization and User-Agent are added, unless they are overridden in this option.
+    ///   HTTP headers attached to every request to the DeepL API. By default no extra headers are used. The client adds
+    ///   a User-Agent header unless one is set here, and always sets the Authorization header from the authentication
+    ///   key; an Authorization header set here is ignored.
     /// </summary>
     public Dictionary<string, string?> Headers { get; set; } = new Dictionary<string, string?>();
 

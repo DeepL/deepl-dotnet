@@ -244,7 +244,8 @@ namespace DeepL.Internal {
     /// <summary>
     ///   Creates a <see cref="DeepLHttpClient" /> configured from the given client options: the HTTP client from
     ///   <see cref="BaseClientOptions.ClientFactory" /> or a default client with retries, and the configured headers plus
-    ///   User-Agent and Authorization headers unless the configured headers already contain them.
+    ///   the User-Agent header unless the configured headers already contain one, and the Authorization header, which
+    ///   always carries the given key.
     /// </summary>
     /// <param name="authKey">Authentication key sent in the Authorization header.</param>
     /// <param name="serverUrl">Base server URL to apply to all relative URLs in requests.</param>
@@ -257,9 +258,7 @@ namespace DeepL.Internal {
         headers.Add("User-Agent", ConstructUserAgentString(options.sendPlatformInfo, options.appInfo));
       }
 
-      if (!headers.ContainsKey("Authorization")) {
-        headers.Add("Authorization", $"DeepL-Auth-Key {authKey}");
-      }
+      headers["Authorization"] = $"DeepL-Auth-Key {authKey}";
 
       var clientFactory = options.ClientFactory ?? (() => CreateDefaultHttpClient(options));
 
