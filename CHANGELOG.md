@@ -166,6 +166,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added the static method `DeepLClient.IsFreeAccountAuthKey()`, replacing `Translator.AuthKeyIsFreeAccount()`.
 
 ### Changed
+- The README documents source language detection with glossaries in text translation: with a `null` source language,
+  DeepL detects it and applies the glossary's dictionary for the detected language pair.
 - Because `GlossaryInfo`, `MultilingualGlossaryInfo`, `StyleRuleInfo`, `StyleProfile` and `TranslationMemoryInfo` now
   convert implicitly to `string`, code recompiled against this version that passes one of them to an API with a
   `string` overload, such as `Console.WriteLine(glossary)`, `"..." + glossary`, `StringBuilder.Append(glossary)` or

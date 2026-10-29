@@ -153,9 +153,8 @@ foreach (var formality in new[] { Formality.Less, Formality.More }) {
   as a list of glossary IDs; `GlossaryInfo` and `MultilingualGlossaryInfo`
   objects can be added to it as well, for example
   `GlossaryIds = { "YOUR_GLOSSARY_ID", glossaryInfo }`. Glossaries are applied in
-  order, with the first matching term taking precedence. Using this option
-  requires the source language to be specified, and it cannot be combined with
-  `Glossary`.
+  order, with the first matching term taking precedence. It cannot be combined
+  with `Glossary`.
 - `StyleRule`: specifies a style rule to use with translation: its ID, or a
   `StyleRuleInfo`.
 - `StyleProfile`: specifies a style profile to use with translation: its ID, or
@@ -371,7 +370,8 @@ methods keep polling then. `DocumentStatus.StatusValue` holds the status string 
 - `FormalityValue`:  same as in [Text translation options](#text-translation-options).
 - `Glossary`:  same as in [Text translation options](#text-translation-options), except that the source language
   is required.
-- `GlossaryIds`:  same as in [Text translation options](#text-translation-options).
+- `GlossaryIds`:  same as in [Text translation options](#text-translation-options), except that the source
+  language is required.
 - `StyleRule`:  same as in [Text translation options](#text-translation-options).
 - `StyleProfile`:  same as in [Text translation options](#text-translation-options), except that
   `CustomInstructions` does not exist for documents. An unknown style profile is not rejected at upload: the
@@ -675,8 +675,7 @@ var updatedGlossary = await client.UpdateMultilingualGlossaryAsync(
 
 You can use a stored glossary for text (or document) translation by setting the
 `TextTranslateOptions` `Glossary` property to the glossary ID or the glossary
-object (or the same property of `DocumentTranslateOptions`). Set `source_lang` as well, so the glossary's language pair
-matches the request:
+object (or the same property of `DocumentTranslateOptions`):
 
 ```c#
 var resultWithGlossary = await client.TranslateTextAsync(
@@ -688,11 +687,9 @@ var resultWithGlossary = await client.TranslateTextAsync(
 // Without using a glossary: "Der Künstler wurde mit einem Preis ausgezeichnet."
 ```
 
-For text translation the library no longer rejects a glossary with no source
-language before sending the request, in preparation for source language
-detection with glossaries. Whether such a request succeeds is determined by the
-API and by what your account has enabled. Document translation still requires a
-source language with a glossary.
+For text translation, if the source language is `null`, DeepL detects it and
+applies the glossary's dictionary for the detected language pair. Document
+translation still requires a source language with a glossary.
 
 ### Spoken terms
 
