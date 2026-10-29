@@ -58,6 +58,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   call the `GET /v3/languages` endpoint instead of the deprecated `GET /v2/languages` and
   `GET /v2/glossary-language-pairs` endpoints. No public API changes, but the returned language lists may include
   additional languages.
+- Retries now cover only HTTP 429, 5xx responses and transient network failures (timeouts, failed connections). Before,
+  any exception thrown while sending a request was retried.
 
 ### Deprecated
 - Deprecated the language code constants of the `LanguageCode` class (for example `LanguageCode.German`) with

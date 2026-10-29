@@ -66,6 +66,20 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
+    public async Task DoesNotRetryOtherExceptions() {
+      var attempts = 0;
+      Http.When(HttpMethod.Get, ApiUrl + "/v2/usage")
+            .With(
+                  _ => {
+                    attempts++;
+                    return true;
+                  })
+            .Throw(new InvalidOperationException("not transient"));
+      await Assert.ThrowsAsync<ConnectionException>(() => CreateClientWithRetries(2, PerRetryTimeout).GetUsageAsync());
+      Assert.Equal(1, attempts);
+    }
+
+    [Fact]
     public async Task ThrowsTooManyRequestsExceptionWhenRetriesAreExhausted() {
       ExpectNoBody(HttpMethod.Get, "v2/usage").RespondJson("{}", (HttpStatusCode)429);
       ExpectNoBody(HttpMethod.Get, "v2/usage").RespondJson("{}", (HttpStatusCode)429);

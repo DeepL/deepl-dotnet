@@ -153,8 +153,7 @@ namespace DeepL.Internal {
       var timeout = Policy.TimeoutAsync<HttpResponseMessage>(perRetryConnectionTimeout);
       var waitAndRetry = Policy.Handle<TaskCanceledException>()
             .Or<TimeoutRejectedException>()
-            .Or<HttpRequestException>(_ => false)
-            .Or<Exception>()
+            .Or<HttpRequestException>()
             .OrResult<HttpResponseMessage>(
                   responseMessage => responseMessage.StatusCode == HttpStatusCodeTooManyRequests ||
                                      responseMessage.StatusCode >= HttpStatusCode.InternalServerError)
