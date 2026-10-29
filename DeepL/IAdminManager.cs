@@ -128,17 +128,22 @@ namespace DeepL {
     ///   Creates a developer key in the organization. To avoid creating duplicate keys, the request is retried only
     ///   when the API cannot have processed it: after HTTP 429 (too many requests) or a failure to resolve the server
     ///   name. Server errors, timeouts and broken connections are not retried; after such a
-    ///   <see cref="ConnectionException" /> or <see cref="DeepLException" />, call <see cref="GetDeveloperKeysAsync" />
+    ///   <see cref="ConnectionException" /> or <see cref="DeepLException" />, call <see cref="ListDeveloperKeysAsync" />
     ///   to check whether the key was created.
     /// </summary>
-    /// <param name="label">Optional label for the new key. The API uses "DeepL API Key" if no label is given.</param>
+    /// <param name="options">
+    ///   Optional <see cref="CreateDeveloperKeyOptions" />, including the label of the new key. The API uses
+    ///   "DeepL API Key" if no label is given.
+    /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="DeveloperKey" /> describing the created key.</returns>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
     /// </exception>
-    Task<DeveloperKey> CreateDeveloperKeyAsync(string? label = null, CancellationToken cancellationToken = default);
+    Task<DeveloperKey> CreateDeveloperKeyAsync(
+          CreateDeveloperKeyOptions? options = null,
+          CancellationToken cancellationToken = default);
 
     /// <summary>Retrieves all developer keys in the organization, including deactivated ones.</summary>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
@@ -147,10 +152,11 @@ namespace DeepL {
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
     /// </exception>
-    Task<DeveloperKey[]> GetDeveloperKeysAsync(CancellationToken cancellationToken = default);
+    Task<DeveloperKey[]> ListDeveloperKeysAsync(CancellationToken cancellationToken = default);
 
     /// <summary>Deactivates a developer key. Deactivation is permanent.</summary>
     /// <param name="keyId">ID of the key to deactivate.</param>
+    /// <param name="options">Optional <see cref="DeactivateDeveloperKeyOptions" />.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="DeveloperKey" /> describing the deactivated key.</returns>
     /// <exception cref="ArgumentException">If <paramref name="keyId" /> is empty.</exception>
@@ -158,10 +164,14 @@ namespace DeepL {
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
     /// </exception>
-    Task<DeveloperKey> DeactivateDeveloperKeyAsync(string keyId, CancellationToken cancellationToken = default);
+    Task<DeveloperKey> DeactivateDeveloperKeyAsync(
+          string keyId,
+          DeactivateDeveloperKeyOptions? options = null,
+          CancellationToken cancellationToken = default);
 
     /// <summary>Deactivates a developer key. Deactivation is permanent.</summary>
     /// <param name="key">The key to deactivate.</param>
+    /// <param name="options">Optional <see cref="DeactivateDeveloperKeyOptions" />.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="DeveloperKey" /> describing the deactivated key.</returns>
     /// <exception cref="ArgumentNullException">If <paramref name="key" /> is null.</exception>
@@ -169,11 +179,15 @@ namespace DeepL {
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
     /// </exception>
-    Task<DeveloperKey> DeactivateDeveloperKeyAsync(DeveloperKey key, CancellationToken cancellationToken = default);
+    Task<DeveloperKey> DeactivateDeveloperKeyAsync(
+          DeveloperKey key,
+          DeactivateDeveloperKeyOptions? options = null,
+          CancellationToken cancellationToken = default);
 
     /// <summary>Changes the label of a developer key.</summary>
     /// <param name="keyId">ID of the key to rename.</param>
     /// <param name="label">New label for the key.</param>
+    /// <param name="options">Optional <see cref="RenameDeveloperKeyOptions" />.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="DeveloperKey" /> describing the renamed key.</returns>
     /// <exception cref="ArgumentException">If <paramref name="keyId" /> is empty.</exception>
@@ -184,11 +198,13 @@ namespace DeepL {
     Task<DeveloperKey> RenameDeveloperKeyAsync(
           string keyId,
           string label,
+          RenameDeveloperKeyOptions? options = null,
           CancellationToken cancellationToken = default);
 
     /// <summary>Changes the label of a developer key.</summary>
     /// <param name="key">The key to rename.</param>
     /// <param name="label">New label for the key.</param>
+    /// <param name="options">Optional <see cref="RenameDeveloperKeyOptions" />.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="DeveloperKey" /> describing the renamed key.</returns>
     /// <exception cref="ArgumentNullException">If <paramref name="key" /> is null.</exception>
@@ -199,6 +215,7 @@ namespace DeepL {
     Task<DeveloperKey> RenameDeveloperKeyAsync(
           DeveloperKey key,
           string label,
+          RenameDeveloperKeyOptions? options = null,
           CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -208,6 +225,7 @@ namespace DeepL {
     /// </summary>
     /// <param name="keyId">ID of the key to modify.</param>
     /// <param name="limits">The usage limits to change.</param>
+    /// <param name="options">Optional <see cref="SetDeveloperKeyUsageLimitsOptions" />.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="DeveloperKey" /> describing the modified key.</returns>
     /// <exception cref="ArgumentNullException">If <paramref name="limits" /> is null.</exception>
@@ -219,6 +237,7 @@ namespace DeepL {
     Task<DeveloperKey> SetDeveloperKeyUsageLimitsAsync(
           string keyId,
           DeveloperKeyUsageLimitsUpdate limits,
+          SetDeveloperKeyUsageLimitsOptions? options = null,
           CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -228,6 +247,7 @@ namespace DeepL {
     /// </summary>
     /// <param name="key">The key to modify.</param>
     /// <param name="limits">The usage limits to change.</param>
+    /// <param name="options">Optional <see cref="SetDeveloperKeyUsageLimitsOptions" />.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="DeveloperKey" /> describing the modified key.</returns>
     /// <exception cref="ArgumentNullException">If <paramref name="key" /> or <paramref name="limits" /> is null.</exception>
@@ -238,6 +258,7 @@ namespace DeepL {
     Task<DeveloperKey> SetDeveloperKeyUsageLimitsAsync(
           DeveloperKey key,
           DeveloperKeyUsageLimitsUpdate limits,
+          SetDeveloperKeyUsageLimitsOptions? options = null,
           CancellationToken cancellationToken = default);
   }
 }

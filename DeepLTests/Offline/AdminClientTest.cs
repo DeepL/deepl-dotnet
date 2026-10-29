@@ -3,6 +3,7 @@
 // license that can be found in the LICENSE file.
 
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
@@ -111,7 +112,7 @@ namespace DeepLTests.Offline {
       ExpectJson(HttpMethod.Post, "v2/admin/developer-keys", @"{""label"":""developer key prod""}")
             .RespondJson(DeveloperKeyJson);
 
-      var key = await CreateAdminClient().CreateDeveloperKeyAsync("developer key prod");
+      var key = await CreateAdminClient().CreateDeveloperKeyAsync(new CreateDeveloperKeyOptions { Label = "developer key prod" });
 
       Assert.Equal(KeyId, key.KeyId);
       Assert.Equal("developer key prod", key.Label);
@@ -130,7 +131,7 @@ namespace DeepLTests.Offline {
             .Replace(@"""is_deactivated"": false", @"""is_deactivated"": true");
       ExpectNoBody(HttpMethod.Get, "v2/admin/developer-keys").RespondJson($"[{DeveloperKeyJson}, {deactivated}]");
 
-      var keys = await CreateAdminClient().GetDeveloperKeysAsync();
+      var keys = await CreateAdminClient().ListDeveloperKeysAsync();
 
       Assert.Equal(new[] { false, true }, Array.ConvertAll(keys, key => key.IsDeactivated));
       Assert.NotNull(keys[1].DeactivatedTime);
@@ -141,7 +142,7 @@ namespace DeepLTests.Offline {
       var withoutCreationTime = DeveloperKeyJson.Replace(@"""2025-07-08T08:15:29.362Z""", "null");
       ExpectNoBody(HttpMethod.Get, "v2/admin/developer-keys").RespondJson($"[{withoutCreationTime}]");
 
-      var keys = await CreateAdminClient().GetDeveloperKeysAsync();
+      var keys = await CreateAdminClient().ListDeveloperKeysAsync();
 
       Assert.Null(Assert.Single(keys).CreationTime);
     }
@@ -156,6 +157,61 @@ namespace DeepLTests.Offline {
 
       await client.DeactivateDeveloperKeyAsync(Key);
       await client.RenameDeveloperKeyAsync(KeyId, "renamed");
+    }
+
+    [Fact]
+    public async Task TestDeveloperKeyRequestsSendExtraBodyParametersLast() {
+      ExpectJson(HttpMethod.Post, "v2/admin/developer-keys", @"{""label"":""override"",""extra"":""1""}")
+            .RespondJson(DeveloperKeyJson);
+      ExpectJson(HttpMethod.Post, "v2/admin/developer-keys", @"{""extra"":""1""}").RespondJson(DeveloperKeyJson);
+      ExpectJson(HttpMethod.Put, "v2/admin/developer-keys/deactivate", $@"{{""key_id"":""{KeyId}"",""extra"":""1""}}")
+            .RespondJson(DeveloperKeyJson);
+      ExpectJson(HttpMethod.Put, "v2/admin/developer-keys/deactivate", $@"{{""key_id"":""other""}}")
+            .RespondJson(DeveloperKeyJson);
+      ExpectJson(HttpMethod.Put, "v2/admin/developer-keys/label", $@"{{""key_id"":""{KeyId}"",""label"":""x"",""extra"":""1""}}")
+            .RespondJson(DeveloperKeyJson);
+      ExpectJson(HttpMethod.Put, "v2/admin/developer-keys/label", $@"{{""key_id"":""{KeyId}"",""label"":""override""}}")
+            .RespondJson(DeveloperKeyJson);
+      ExpectJson(
+                  HttpMethod.Put,
+                  "v2/admin/developer-keys/limits",
+                  $@"{{""key_id"":""{KeyId}"",""characters"":1,""extra"":""1""}}")
+            .RespondJson(DeveloperKeyJson);
+      ExpectJson(HttpMethod.Put, "v2/admin/developer-keys/limits", $@"{{""key_id"":""{KeyId}"",""characters"":""2""}}")
+            .RespondJson(DeveloperKeyJson);
+      var client = CreateAdminClient();
+      var extra = new Dictionary<string, string> { ["extra"] = "1" };
+      var limits = new DeveloperKeyUsageLimitsUpdate { Characters = 1 };
+
+      await client.CreateDeveloperKeyAsync(
+            new CreateDeveloperKeyOptions {
+              Label = "label",
+              ExtraBodyParameters = new Dictionary<string, string> { ["label"] = "override", ["extra"] = "1" }
+            });
+      await client.CreateDeveloperKeyAsync(new CreateDeveloperKeyOptions { ExtraBodyParameters = extra });
+      await client.DeactivateDeveloperKeyAsync(KeyId, new DeactivateDeveloperKeyOptions { ExtraBodyParameters = extra });
+      await client.DeactivateDeveloperKeyAsync(
+            Key,
+            new DeactivateDeveloperKeyOptions {
+              ExtraBodyParameters = new Dictionary<string, string> { ["key_id"] = "other" }
+            });
+      await client.RenameDeveloperKeyAsync(Key, "x", new RenameDeveloperKeyOptions { ExtraBodyParameters = extra });
+      await client.RenameDeveloperKeyAsync(
+            KeyId,
+            "x",
+            new RenameDeveloperKeyOptions {
+              ExtraBodyParameters = new Dictionary<string, string> { ["label"] = "override" }
+            });
+      await client.SetDeveloperKeyUsageLimitsAsync(
+            KeyId,
+            limits,
+            new SetDeveloperKeyUsageLimitsOptions { ExtraBodyParameters = extra });
+      await client.SetDeveloperKeyUsageLimitsAsync(
+            Key,
+            limits,
+            new SetDeveloperKeyUsageLimitsOptions {
+              ExtraBodyParameters = new Dictionary<string, string> { ["characters"] = "2" }
+            });
     }
 
     [Fact]
@@ -288,7 +344,7 @@ namespace DeepLTests.Offline {
                       ""breakdown"": {""total_characters"": 5.0, ""speech_to_speech_minutes"": ""1.5""}}]}}");
       var client = CreateAdminClient();
 
-      var keys = await client.GetDeveloperKeysAsync();
+      var keys = await client.ListDeveloperKeysAsync();
 
       Assert.Equal(new[] { "id-2", "id-3" }, Array.ConvertAll(keys, key => key.KeyId));
       Assert.Equal("kept", keys[0].Label);
@@ -338,7 +394,7 @@ namespace DeepLTests.Offline {
                   $@"{{""usage_report"": {{""key_usages"": [{{""api_key"": ""k***1""{fields.Replace("label", "api_key_label")}}}]}}}}");
       var client = CreateAdminClient();
 
-      var key = Assert.Single(await client.GetDeveloperKeysAsync());
+      var key = Assert.Single(await client.ListDeveloperKeysAsync());
       var report = await client.GetUsageAnalyticsAsync(new DateTime(2025, 9, 29), new DateTime(2025, 10, 1));
 
       Assert.Null(key.Label);
@@ -356,7 +412,7 @@ namespace DeepLTests.Offline {
       ExpectNoBody(HttpMethod.Get, "v2/admin/developer-keys")
             .RespondJson($@"[{{""key_id"": ""id-1"", ""is_deactivated"": {value}}}]");
 
-      var keys = await CreateAdminClient().GetDeveloperKeysAsync();
+      var keys = await CreateAdminClient().ListDeveloperKeysAsync();
 
       Assert.Equal(expected, Assert.Single(keys).IsDeactivated);
     }
@@ -384,7 +440,7 @@ namespace DeepLTests.Offline {
       ExpectNoBody(HttpMethod.Get, "v2/admin/developer-keys")
             .RespondJson($@"[{{""label"": ""no id""}}, {{""key_id"": """"}}, 7, {DeveloperKeyJson}]");
 
-      var keys = await CreateAdminClient().GetDeveloperKeysAsync();
+      var keys = await CreateAdminClient().ListDeveloperKeysAsync();
 
       Assert.Equal(KeyId, Assert.Single(keys).KeyId);
     }
@@ -396,7 +452,7 @@ namespace DeepLTests.Offline {
     public async Task TestDeveloperKeyListThatIsNotAnArrayThrowsDeepLException(string body) {
       ExpectNoBody(HttpMethod.Get, "v2/admin/developer-keys").RespondJson(body);
 
-      await Assert.ThrowsAsync<DeepLException>(() => CreateAdminClient().GetDeveloperKeysAsync());
+      await Assert.ThrowsAsync<DeepLException>(() => CreateAdminClient().ListDeveloperKeysAsync());
     }
 
     [Theory]
@@ -503,7 +559,7 @@ namespace DeepLTests.Offline {
       ExpectNoBody(HttpMethod.Get, "v2/admin/developer-keys").RespondJson("{}", HttpStatusCode.ServiceUnavailable);
       ExpectNoBody(HttpMethod.Get, "v2/admin/developer-keys").RespondJson("[]");
 
-      Assert.Empty(await CreateAdminClientWithRetries(1).GetDeveloperKeysAsync());
+      Assert.Empty(await CreateAdminClientWithRetries(1).ListDeveloperKeysAsync());
     }
 
     [Fact]
@@ -511,7 +567,7 @@ namespace DeepLTests.Offline {
       ExpectNoBody(HttpMethod.Get, "v2/admin/developer-keys")
             .RespondJson(@"{""message"": ""Forbidden""}", HttpStatusCode.Forbidden);
 
-      await Assert.ThrowsAsync<AuthorizationException>(() => CreateAdminClient().GetDeveloperKeysAsync());
+      await Assert.ThrowsAsync<AuthorizationException>(() => CreateAdminClient().ListDeveloperKeysAsync());
     }
 
     private DeepLAdminClient CreateAdminClient() =>

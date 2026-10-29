@@ -1296,10 +1296,11 @@ var adminClient = new DeepLAdminClient("YOUR_ADMIN_KEY");
 #### Managing developer keys
 
 ```c#
-var key = await adminClient.CreateDeveloperKeyAsync("Staging Team Key");
+var key = await adminClient.CreateDeveloperKeyAsync(
+      new CreateDeveloperKeyOptions { Label = "Staging Team Key" });
 Console.WriteLine($"Created {key.Label} ({key.KeyId})");
 
-foreach (var developerKey in await adminClient.GetDeveloperKeysAsync()) {
+foreach (var developerKey in await adminClient.ListDeveloperKeysAsync()) {
   Console.WriteLine($"{developerKey.Label}: deactivated={developerKey.IsDeactivated}");
 }
 
@@ -1318,6 +1319,14 @@ await adminClient.DeactivateDeveloperKeyAsync(key);
 `DeactivateDeveloperKeyAsync()`, `RenameDeveloperKeyAsync()` and
 `SetDeveloperKeyUsageLimitsAsync()` accept either a key ID or a `DeveloperKey`
 object. All functions that change a key return the updated `DeveloperKey`.
+`CreateDeveloperKeyAsync()` takes an optional `CreateDeveloperKeyOptions` with
+the `Label` of the new key; without a label the API uses "DeepL API Key".
+`DeactivateDeveloperKeyAsync()`, `RenameDeveloperKeyAsync()` and
+`SetDeveloperKeyUsageLimitsAsync()` take an optional
+`DeactivateDeveloperKeyOptions`, `RenameDeveloperKeyOptions` or
+`SetDeveloperKeyUsageLimitsOptions`. All four options classes derive from
+`BaseRequestOptions`: their `ExtraBodyParameters` are added last to the JSON
+request body.
 `DeveloperKey.Label` and `DeveloperKey.UsageLimits` are `null` if the API does
 not return them; within `UsageLimits`, a `null` limit means unlimited.
 
@@ -1329,7 +1338,7 @@ not return them; within `UsageLimits`, a `null` limit means unlimited.
 To avoid duplicate keys, `CreateDeveloperKeyAsync()` is retried only when the
 API cannot have processed the request: after HTTP 429 or a failure to resolve
 the server name. Server errors, timeouts and broken connections are not
-retried. If it throws, check `GetDeveloperKeysAsync()` before trying again.
+retried. If it throws, check `ListDeveloperKeysAsync()` before trying again.
 
 #### Retrieving usage analytics
 

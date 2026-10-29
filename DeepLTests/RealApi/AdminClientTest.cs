@@ -13,7 +13,7 @@ namespace DeepLTests.RealApi {
     private static async Task AssertKeyIsListedAsync(DeepLAdminClient client, string keyId) {
       const int attempts = 5;
       for (var attempt = 1; attempt <= attempts; attempt++) {
-        var listed = await client.GetDeveloperKeysAsync();
+        var listed = await client.ListDeveloperKeysAsync();
         if (listed.Any(listedKey => listedKey.KeyId == keyId)) {
           return;
         }
@@ -56,7 +56,8 @@ namespace DeepLTests.RealApi {
     public async Task SendsPostGetAndPutV2AdminDeveloperKeys() {
       using var client = RealApiClient.CreateAdminClient();
 
-      var key = await client.CreateDeveloperKeyAsync(RealApiHelpers.GetUniqueName("developer-key"));
+      var key = await client.CreateDeveloperKeyAsync(
+            new CreateDeveloperKeyOptions { Label = RealApiHelpers.GetUniqueName("developer-key") });
       var failed = false;
       var deactivated = false;
       try {

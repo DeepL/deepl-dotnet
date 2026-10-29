@@ -60,10 +60,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `EndTime` and `Products` (per-product usage as `Usage.Product`). They are `null` when the response does not
   contain them, for example for non-Pro accounts.
 - Added the `DeepLAdminClient` class for the Admin API. It must be created with an admin API key and supports managing
-  developer keys (`CreateDeveloperKeyAsync()`, `GetDeveloperKeysAsync()`, `DeactivateDeveloperKeyAsync()`,
+  developer keys (`CreateDeveloperKeyAsync()`, `ListDeveloperKeysAsync()`, `DeactivateDeveloperKeyAsync()`,
   `RenameDeveloperKeyAsync()`, `SetDeveloperKeyUsageLimitsAsync()`) and retrieving usage analytics
   (`GetUsageAnalyticsAsync()`, `GetCustomTagUsageAnalyticsAsync()`). `SetDeveloperKeyUsageLimitsAsync()` takes a
   `DeveloperKeyUsageLimitsUpdate` and changes only the limits assigned in it.
+  The four key-changing methods take optional `CreateDeveloperKeyOptions` (with the `Label` of the new key),
+  `DeactivateDeveloperKeyOptions`, `RenameDeveloperKeyOptions` and `SetDeveloperKeyUsageLimitsOptions`, derived from
+  `BaseRequestOptions`: their `ExtraBodyParameters` are added last to the JSON request body.
   `DeepLAdminClient` implements the new `IAdminManager` interface.
   Results use the new types `DeveloperKey`, `DeveloperKeyUsageLimits`, `AdminUsageReport`, `AdminUsageBreakdown`
   (including `SpeechToSpeechMinutes`), `KeyUsage`, `CustomTagUsageReport`, `CustomTagUsage` and

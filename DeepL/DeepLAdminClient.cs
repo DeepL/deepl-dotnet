@@ -133,12 +133,14 @@ namespace DeepL {
 
     /// <inheritdoc />
     public async Task<DeveloperKey> CreateDeveloperKeyAsync(
-          string? label = null,
+          CreateDeveloperKeyOptions? options = null,
           CancellationToken cancellationToken = default) {
-      var requestData = new Dictionary<string, object>();
-      if (label != null) {
-        requestData["label"] = label;
+      var requestData = new Dictionary<string, object?>();
+      if (options?.Label != null) {
+        requestData["label"] = options.Label;
       }
+
+      AddExtraBodyParameters(requestData, options);
 
       using var responseMessage = await _client
             .ApiPostJsonAsync("v2/admin/developer-keys", cancellationToken, requestData, retryOnlyUnprocessed: true)
@@ -148,7 +150,7 @@ namespace DeepL {
     }
 
     /// <inheritdoc />
-    public async Task<DeveloperKey[]> GetDeveloperKeysAsync(CancellationToken cancellationToken = default) {
+    public async Task<DeveloperKey[]> ListDeveloperKeysAsync(CancellationToken cancellationToken = default) {
       using var responseMessage =
             await _client.ApiGetAsync("v2/admin/developer-keys", cancellationToken).ConfigureAwait(false);
       await DeepLHttpClient.CheckStatusCodeAsync(responseMessage).ConfigureAwait(false);
@@ -172,39 +174,46 @@ namespace DeepL {
     /// <inheritdoc />
     public Task<DeveloperKey> DeactivateDeveloperKeyAsync(
           string keyId,
+          DeactivateDeveloperKeyOptions? options = null,
           CancellationToken cancellationToken = default) =>
           PutDeveloperKeyAsync(
                 "v2/admin/developer-keys/deactivate",
                 new Dictionary<string, object?> { ["key_id"] = CheckKeyId(keyId) },
+                options,
                 cancellationToken);
 
     /// <inheritdoc />
     public Task<DeveloperKey> DeactivateDeveloperKeyAsync(
           DeveloperKey key,
+          DeactivateDeveloperKeyOptions? options = null,
           CancellationToken cancellationToken = default) =>
-          DeactivateDeveloperKeyAsync(CheckKey(key).KeyId, cancellationToken);
+          DeactivateDeveloperKeyAsync(CheckKey(key).KeyId, options, cancellationToken);
 
     /// <inheritdoc />
     public Task<DeveloperKey> RenameDeveloperKeyAsync(
           string keyId,
           string label,
+          RenameDeveloperKeyOptions? options = null,
           CancellationToken cancellationToken = default) =>
           PutDeveloperKeyAsync(
                 "v2/admin/developer-keys/label",
                 new Dictionary<string, object?> { ["key_id"] = CheckKeyId(keyId), ["label"] = label },
+                options,
                 cancellationToken);
 
     /// <inheritdoc />
     public Task<DeveloperKey> RenameDeveloperKeyAsync(
           DeveloperKey key,
           string label,
+          RenameDeveloperKeyOptions? options = null,
           CancellationToken cancellationToken = default) =>
-          RenameDeveloperKeyAsync(CheckKey(key).KeyId, label, cancellationToken);
+          RenameDeveloperKeyAsync(CheckKey(key).KeyId, label, options, cancellationToken);
 
     /// <inheritdoc />
     public Task<DeveloperKey> SetDeveloperKeyUsageLimitsAsync(
           string keyId,
           DeveloperKeyUsageLimitsUpdate limits,
+          SetDeveloperKeyUsageLimitsOptions? options = null,
           CancellationToken cancellationToken = default) {
       var requestData = new Dictionary<string, object?> { ["key_id"] = CheckKeyId(keyId) };
       if (limits == null) {
@@ -215,21 +224,24 @@ namespace DeepL {
         requestData[limit.Key] = limit.Value;
       }
 
-      return PutDeveloperKeyAsync("v2/admin/developer-keys/limits", requestData, cancellationToken);
+      return PutDeveloperKeyAsync("v2/admin/developer-keys/limits", requestData, options, cancellationToken);
     }
 
     /// <inheritdoc />
     public Task<DeveloperKey> SetDeveloperKeyUsageLimitsAsync(
           DeveloperKey key,
           DeveloperKeyUsageLimitsUpdate limits,
+          SetDeveloperKeyUsageLimitsOptions? options = null,
           CancellationToken cancellationToken = default) =>
-          SetDeveloperKeyUsageLimitsAsync(CheckKey(key).KeyId, limits, cancellationToken);
+          SetDeveloperKeyUsageLimitsAsync(CheckKey(key).KeyId, limits, options, cancellationToken);
 
     /// <summary>Sends a JSON PUT request to a developer key endpoint and returns the resulting key.</summary>
     private async Task<DeveloperKey> PutDeveloperKeyAsync(
           string relativeUri,
           Dictionary<string, object?> requestData,
+          BaseRequestOptions? options,
           CancellationToken cancellationToken) {
+      AddExtraBodyParameters(requestData, options);
       using var responseMessage = await _client
             .ApiPutJsonAsync(relativeUri, cancellationToken, requestData).ConfigureAwait(false);
       await DeepLHttpClient.CheckStatusCodeAsync(responseMessage).ConfigureAwait(false);
@@ -258,6 +270,14 @@ namespace DeepL {
       return element.ValueKind == kind
             ? element
             : throw new DeepLException($"{what} response has an unexpected format");
+    }
+
+    /// <summary>Adds the extra body parameters of the options last, replacing fields with the same key.</summary>
+    private static void AddExtraBodyParameters(Dictionary<string, object?> requestData, BaseRequestOptions? options) {
+      if (options?.ExtraBodyParameters == null) return;
+      foreach (var pair in options.ExtraBodyParameters) {
+        requestData[pair.Key] = pair.Value;
+      }
     }
 
     private static DeveloperKey CheckKey(DeveloperKey key) => key ?? throw new ArgumentNullException(nameof(key));
