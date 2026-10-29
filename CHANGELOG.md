@@ -52,7 +52,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   grammar and spelling errors via the `v2/write/correct` endpoint.
 - Added `DeepLException.HttpStatusCode`, the HTTP status of the failed response (`null` if there was none), and
   `DeepLException.ShouldRetry`: `true` for HTTP 429, 5xx and transient network failures (timeouts, failed connections),
-  `false` for other HTTP statuses.
+  `false` for other HTTP statuses. For `CreateDeveloperKeyAsync()`, which is not safe to repeat, it is `true` only for
+  HTTP 429, name resolution failures and refused connections. Both are also set for errors of pre-signed storage URLs.
 - Added the `Proxy` option to `DeepLClientOptions` and `DeepLAdminClientOptions`: the URL of an HTTP(S) proxy for all
   requests, with optional credentials in the URL. Unlike a custom `ClientFactory`, it keeps the built-in retries and
   timeouts.
@@ -68,8 +69,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Retries now cover only HTTP 429, 5xx responses and transient network failures (timeouts, failed connections). Before,
   any exception thrown while sending a request was retried.
 - Each attempt of a request may now run until the time the client would wait before retrying it (the backoff delay)
-  when that is longer than `PerRetryConnectionTimeout`. The default client no longer limits a request including all
-  retries to 100 seconds; `OverallConnectionTimeout` still applies when it is set.
+  when that is longer than `PerRetryConnectionTimeout`; `Timeout.InfiniteTimeSpan` still disables it. The default
+  client no longer limits a request including all retries to 100 seconds; `OverallConnectionTimeout` still applies
+  when it is set.
 - An `Authorization` entry in `Headers` no longer replaces the authentication key: requests to the DeepL API always
   carry the key given to the constructor.
 
