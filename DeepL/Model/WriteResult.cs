@@ -19,7 +19,10 @@ namespace DeepL.Model {
     [JsonConstructor]
     public WriteResult(string text, string detectedSourceLanguageCode, string targetLanguageCode) {
       Text = text;
-      DetectedSourceLanguageCode = LanguageCode.Standardize(detectedSourceLanguageCode);
+      // Raised here so that a response without the field fails with a DeepLException, not a NullReferenceException.
+      DetectedSourceLanguageCode = LanguageCode.Standardize(
+            detectedSourceLanguageCode ??
+            throw new DeepLException("Write result is missing detected_source_language"));
       TargetLanguageCode = targetLanguageCode;
     }
 

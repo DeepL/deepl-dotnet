@@ -295,6 +295,8 @@ WriteResult result = await client.CorrectTextAsync("I has a apple.", "EN-US");
 Console.WriteLine(result);
 ```
 
+Both methods throw a `DeepLException` if the response does not hold one improvement per input text.
+
 ### Translating documents
 
 To translate documents, call `TranslateDocumentAsync()` with the input and output files as `FileInfo`

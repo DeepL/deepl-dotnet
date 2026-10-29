@@ -156,6 +156,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Its default is now no overall timeout.
 
 ### Fixed
+- `RephraseTextAsync()` and `CorrectTextAsync()` throw a `DeepLException` if the response holds no `improvements` or
+  fewer than texts were sent, instead of returning `null`, a short array, or throwing a `NullReferenceException` or
+  `IndexOutOfRangeException`.
+- A Write API response without `detected_source_language` throws a `DeepLException` instead of a
+  `NullReferenceException`.
 - An unknown document status in the response no longer fails `TranslateDocumentStatusAsync()`,
   `TranslateDocumentWaitUntilDoneAsync()` and `TranslateDocumentAsync()`. Before, it threw a `DeepLException`
   ("Failed to deserialize JSON in received response"); now `DocumentStatus.Status` is `StatusCode.Unknown` and the

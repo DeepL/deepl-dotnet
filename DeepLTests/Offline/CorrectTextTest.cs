@@ -66,6 +66,12 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
+    public async Task ThrowsDeepLExceptionWhenImprovementsAreFewerThanTexts() {
+      Expect(HttpMethod.Post, "v2/write/correct").WithContent("text=a&text=b").RespondJson(Reply);
+      await Assert.ThrowsAsync<DeepLException>(() => CreateClient().CorrectTextAsync(new[] { "a", "b" }));
+    }
+
+    [Fact]
     public async Task ThrowsArgumentExceptionWhenTextIsEmpty() =>
           await Assert.ThrowsAsync<ArgumentException>(() => CreateClient().CorrectTextAsync("", "de"));
   }

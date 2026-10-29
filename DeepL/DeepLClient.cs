@@ -187,8 +187,9 @@ namespace DeepL {
 
     /// <summary>
     ///   Sends a Write API request with the given parameters, then the texts, then the extra body parameters of the
-    ///   options, and returns the improvements.
+    ///   options, and returns one improvement per text.
     /// </summary>
+    /// <exception cref="DeepLException">If the response holds fewer improvements than texts were sent.</exception>
     private async Task<WriteResult[]> WriteAsync(
           string path,
           List<(string Key, string Value)> bodyParams,
@@ -209,7 +210,13 @@ namespace DeepL {
 
       await DeepLHttpClient.CheckStatusCodeAsync(responseMessage).ConfigureAwait(false);
       var result = await JsonUtils.DeserializeAsync<TextRephraseResult>(responseMessage).ConfigureAwait(false);
-      return result.Improvements;
+      var improvements = result.Improvements;
+      if (improvements == null || improvements.Length < texts.Count) {
+        throw new DeepLException(
+              $"Expected {texts.Count} improvements in the response, received {improvements?.Length ?? 0}");
+      }
+
+      return improvements;
     }
 
     /// <inheritdoc />
@@ -1698,12 +1705,12 @@ namespace DeepL {
     private readonly struct TextRephraseResult {
       /// <summary>Initializes a new instance of <see cref="TextRephraseResult" />, used for JSON deserialization.</summary>
       [JsonConstructor]
-      public TextRephraseResult(WriteResult[] improvements) {
+      public TextRephraseResult(WriteResult[]? improvements) {
         Improvements = improvements;
       }
 
       /// <summary>Array of <see cref="WriteResult" /> objects holding text rephrase results.</summary>
-      public WriteResult[] Improvements { get; }
+      public WriteResult[]? Improvements { get; }
     }
 
     /// <summary>Class used for JSON-deserialization of glossary dictionary entries list results.</summary>

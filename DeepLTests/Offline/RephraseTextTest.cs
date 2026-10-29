@@ -112,6 +112,27 @@ namespace DeepLTests.Offline {
             Enum.GetValues(typeof(WritingTone)).Cast<WritingTone>().Select(tone => tone.ToApiValue()));
     }
 
+    [Theory]
+    [InlineData("{}")]
+    [InlineData("{\"improvements\":[]}")]
+    public async Task ThrowsDeepLExceptionWhenImprovementsAreMissing(string reply) {
+      ExpectForm(HttpMethod.Post, "v2/write/rephrase", ("text", "good")).RespondJson(reply);
+      await Assert.ThrowsAsync<DeepLException>(() => CreateClient().RephraseTextAsync("good"));
+    }
+
+    [Fact]
+    public async Task ThrowsDeepLExceptionWhenImprovementsAreFewerThanTexts() {
+      Expect(HttpMethod.Post, "v2/write/rephrase").WithContent("text=a&text=b").RespondJson(Reply);
+      await Assert.ThrowsAsync<DeepLException>(() => CreateClient().RephraseTextAsync(new[] { "a", "b" }));
+    }
+
+    [Fact]
+    public async Task ThrowsDeepLExceptionWhenDetectedSourceLanguageIsMissing() {
+      ExpectForm(HttpMethod.Post, "v2/write/rephrase", ("text", "good"))
+            .RespondJson("{\"improvements\":[{\"text\":\"better\",\"target_language\":\"EN-US\"}]}");
+      await Assert.ThrowsAsync<DeepLException>(() => CreateClient().RephraseTextAsync("good"));
+    }
+
     [Fact]
     public async Task ThrowsArgumentExceptionWhenTextIsEmpty() =>
           await Assert.ThrowsAsync<ArgumentException>(() => CreateClient().RephraseTextAsync("", "en"));
