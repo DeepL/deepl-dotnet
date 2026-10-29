@@ -136,5 +136,18 @@ namespace DeepLTests.Offline {
       Assert.Null(usage.ApiKeyCharacter);
       Assert.Null(usage.Products);
     }
+
+    [Fact]
+    public void JsonFieldsStructExposesOnlyTheReleasedFields() {
+      var type = typeof(DeepL.Model.Usage.JsonFieldsStruct);
+      var constructor = Assert.Single(type.GetConstructors());
+      Assert.Equal(6, constructor.GetParameters().Length);
+      Assert.Equal(
+            new[] {
+                  "CharacterCount", "CharacterLimit", "DocumentCount", "DocumentLimit", "TeamDocumentCount",
+                  "TeamDocumentLimit"
+            },
+            Array.ConvertAll(type.GetProperties(), p => p.Name));
+    }
   }
 }

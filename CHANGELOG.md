@@ -112,7 +112,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added the API Pro fields of `GET /v2/usage` to `Usage`: `ApiKeyCharacter` (the character usage of the API key,
   as opposed to the account-wide `Character`), `SpeechToTextMinutes`, `SpeechToSpeechMinutes`, `StartTime`,
   `EndTime` and `Products` (per-product usage as `Usage.Product`). They are `null` when the response does not
-  contain them, for example for non-Pro accounts.
+  contain them, for example for non-Pro accounts. `Usage.JsonFieldsStruct` keeps its six character and document
+  fields; the API Pro fields are parsed internally.
 - Added the `DeepLAdminClient` class for the Admin API. It must be created with an admin API key and supports managing
   developer keys (`CreateDeveloperKeyAsync()`, `ListDeveloperKeysAsync()`, `DeactivateDeveloperKeyAsync()`,
   `RenameDeveloperKeyAsync()`, `SetDeveloperKeyUsageLimitsAsync()`) and retrieving usage analytics

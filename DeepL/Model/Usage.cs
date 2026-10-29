@@ -22,7 +22,27 @@ namespace DeepL.Model {
     ///   should ONLY be used externally in testing code, never in production code.
     /// </summary>
     /// <param name="fieldsStruct"><see cref="JsonFieldsStruct" /> object containing fields read from JSON data.</param>
-    public Usage(in JsonFieldsStruct fieldsStruct) {
+    public Usage(in JsonFieldsStruct fieldsStruct) : this(new ResponseFieldsStruct(
+          fieldsStruct.CharacterCount,
+          fieldsStruct.CharacterLimit,
+          fieldsStruct.DocumentCount,
+          fieldsStruct.DocumentLimit,
+          fieldsStruct.TeamDocumentCount,
+          fieldsStruct.TeamDocumentLimit,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null)) {
+    }
+
+    /// <summary>Initializes a new <see cref="Usage" /> object from the full <c>GET /v2/usage</c> response.</summary>
+    /// <param name="fieldsStruct"><see cref="ResponseFieldsStruct" /> object containing fields read from JSON data.</param>
+    internal Usage(in ResponseFieldsStruct fieldsStruct) {
       Detail? DetailOrNull(long? count, long? limit) {
         return count != null && limit != null ? new Detail((long)count, (long)limit) : null;
       }
@@ -167,32 +187,33 @@ namespace DeepL.Model {
     ///   instantiate this object in testing code.
     /// </summary>
     public readonly struct JsonFieldsStruct {
+      [JsonConstructor]
       public JsonFieldsStruct(
             long? characterCount,
             long? characterLimit,
             long? documentCount,
             long? documentLimit,
             long? teamDocumentCount,
-            long? teamDocumentLimit) : this(
-            characterCount,
-            characterLimit,
-            documentCount,
-            documentLimit,
-            teamDocumentCount,
-            teamDocumentLimit,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null) {
+            long? teamDocumentLimit) {
+        (CharacterCount, CharacterLimit, DocumentCount, DocumentLimit, TeamDocumentCount, TeamDocumentLimit) =
+              (characterCount, characterLimit, documentCount, documentLimit, teamDocumentCount, teamDocumentLimit);
       }
 
+      public long? CharacterCount { get; }
+      public long? CharacterLimit { get; }
+      public long? DocumentCount { get; }
+      public long? DocumentLimit { get; }
+      public long? TeamDocumentCount { get; }
+      public long? TeamDocumentLimit { get; }
+    }
+
+    /// <summary>
+    ///   Struct used for JSON deserialization of the full <c>GET /v2/usage</c> response, including the API Pro fields.
+    ///   System.Text.Json 5 binds only public constructors and properties, so they are public on this internal type.
+    /// </summary>
+    internal readonly struct ResponseFieldsStruct {
       [JsonConstructor]
-      public JsonFieldsStruct(
+      public ResponseFieldsStruct(
             long? characterCount,
             long? characterLimit,
             long? documentCount,

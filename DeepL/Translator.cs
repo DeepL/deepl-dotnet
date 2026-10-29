@@ -481,7 +481,7 @@ namespace DeepL {
     public async Task<Usage> GetUsageAsync(CancellationToken cancellationToken = default) {
       using var responseMessage = await _client.ApiGetAsync("v2/usage", cancellationToken).ConfigureAwait(false);
       await DeepLHttpClient.CheckStatusCodeAsync(responseMessage).ConfigureAwait(false);
-      var usageFields = await JsonUtils.DeserializeAsync<Usage.JsonFieldsStruct>(responseMessage)
+      var usageFields = await JsonUtils.DeserializeAsync<Usage.ResponseFieldsStruct>(responseMessage)
             .ConfigureAwait(false);
       return new Usage(usageFields);
     }
