@@ -94,6 +94,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Its default is now no overall timeout.
 
 ### Fixed
+- `ExtraBodyParameters` with a `text` key now replace the texts of `TranslateTextAsync()`, like any other parameter.
+  Before, the extra `text` was sent in addition to the texts.
 - A request that exceeds `PerRetryConnectionTimeout` now throws a `ConnectionException` with a "Request timed out"
   message, like the other timeouts, instead of "Unexpected request failure".
 - Cancelling a request through the `CancellationToken` argument now always rethrows the cancellation exception. Before,

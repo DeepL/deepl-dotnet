@@ -495,11 +495,14 @@ namespace DeepL {
           CancellationToken cancellationToken = default) {
       var bodyParams = CreateHttpParams(sourceLanguageCode, targetLanguageCode, options);
       var textParams = texts
-            .Where(text => text.Length > 0 ? true : throw new ArgumentException("text must not be empty"))
-            .Select(text => ("text", text));
+            .Select(text => text.Length > 0 ? ("text", text) : throw new ArgumentException("text must not be empty"))
+            .ToList();
+      bodyParams.AddRange(textParams);
+      // Added after the texts, so that an extra "text" parameter replaces them like any other field.
+      AddExtraBodyParameters(bodyParams, options?.ExtraBodyParameters);
 
       using var responseMessage = await _client
-            .ApiPostAsync("v2/translate", cancellationToken, bodyParams.Concat(textParams)).ConfigureAwait(false);
+            .ApiPostAsync("v2/translate", cancellationToken, bodyParams).ConfigureAwait(false);
 
       await DeepLHttpClient.CheckStatusCodeAsync(responseMessage).ConfigureAwait(false);
       var translatedTexts =
@@ -896,8 +899,8 @@ namespace DeepL {
     }
 
     /// <summary>
-    ///   Checks the specified languages and options are valid, and returns an enumerable of tuples containing the parameters
-    ///   to include in HTTP request.
+    ///   Checks the specified languages and options are valid, and returns a list of tuples containing the parameters
+    ///   to include in HTTP request, without the texts and the extra body parameters.
     /// </summary>
     /// <param name="sourceLanguageCode">
     ///   Language code of translation source language, or null if auto-detection should be
@@ -907,7 +910,7 @@ namespace DeepL {
     /// <param name="options">Extra <see cref="TextTranslateOptions" /> influencing translation.</param>
     /// <returns>Enumerable of tuples containing the parameters to include in HTTP request.</returns>
     /// <exception cref="ArgumentException">If the specified languages or options are invalid.</exception>
-    private static IEnumerable<(string Key, string Value)> CreateHttpParams(
+    private static List<(string Key, string Value)> CreateHttpParams(
           string? sourceLanguageCode,
           string targetLanguageCode,
           TextTranslateOptions? options) {
@@ -989,8 +992,6 @@ namespace DeepL {
           bodyParams.Add(("custom_instructions", instruction));
         }
       }
-
-      AddExtraBodyParameters(bodyParams, options.ExtraBodyParameters);
 
       return bodyParams;
     }

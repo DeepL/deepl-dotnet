@@ -198,8 +198,8 @@ The following options are only used if `TagHandling` is set to `'xml'`:
 - `IgnoreTags`: `List` of XML tags that containing content that should not be
   translated. Format and default are the same as for splitting tags.
 - `ExtraBodyParameters`: `Dictionary<string, string>` of extra parameters to pass in the body of the HTTP request. Keys
-  in this dictionary will be added to the request body and can override built-in parameters. Mostly used by DeepL
-  employees to test functionality, or for beta programs.
+  in this dictionary will be added to the request body and replace built-in parameters with the same key, including
+  `text`. Mostly used by DeepL employees to test functionality, or for beta programs.
 
 For a detailed explanation of the XML handling options, see the [API documentation][api-docs-xml-handling].
 

@@ -194,6 +194,18 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
+    public async Task ExtraTextParameterReplacesTexts() {
+      Expect(HttpMethod.Post, "v2/translate")
+            .WithContent("target_lang=de&show_billed_characters=1&text=x")
+            .RespondJson(Reply);
+      await CreateClient().TranslateTextAsync(
+            new[] { "a", "b" },
+            null,
+            "DE",
+            new TextTranslateOptions { ExtraBodyParameters = new Dictionary<string, string> { { "text", "x" } } });
+    }
+
+    [Fact]
     public async Task ParsesResult() {
       ExpectForm(HttpMethod.Post, "v2/translate", ("target_lang", "de"), ("show_billed_characters", "1"), ("text", "Hello"))
             .RespondJson(
