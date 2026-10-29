@@ -14,6 +14,7 @@ namespace DeepLTests.Offline {
   public sealed class ErrorsTest : OfflineTest {
     [Theory]
     [InlineData(400, typeof(DeepLException), "Bad request")]
+    [InlineData(401, typeof(AuthorizationException), "Authorization failure, check AuthKey")]
     [InlineData(403, typeof(AuthorizationException), "Authorization failure, check AuthKey")]
     [InlineData(404, typeof(NotFoundException), "Not found")]
     [InlineData(413, typeof(DeepLException), "Unexpected status code: RequestEntityTooLarge")]

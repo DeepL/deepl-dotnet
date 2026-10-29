@@ -305,6 +305,7 @@ namespace DeepL.Internal {
       }
 
       switch (statusCode) {
+        case HttpStatusCode.Unauthorized:
         case HttpStatusCode.Forbidden:
           throw new AuthorizationException("Authorization failure, check AuthKey" + message);
         case HttpStatusCodeQuotaExceeded:

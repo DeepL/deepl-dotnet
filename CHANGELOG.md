@@ -81,6 +81,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `InnerException`.
 - Fixed the doc comments of `LanguageCode.English` and `LanguageCode.Portuguese`, which claimed they may only be used as
   source languages.
+- HTTP 401 now throws an `AuthorizationException`, like HTTP 403. Before, it threw a `DeepLException` with an
+  "Unexpected status code" message.
 
 ## [1.22.1] - 2026-08-18
 ### Changed
