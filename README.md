@@ -521,11 +521,14 @@ var csvGlossary = await client.CreateMultilingualGlossaryFromCsvAsync("My CSV gl
 
 The [API documentation][api-docs-csv-format] explains the expected CSV format in detail.
 
+Both create methods have an overload taking a `CreateMultilingualGlossaryOptions` object after the dictionaries
+(or the CSV stream); its `ExtraBodyParameters` are added last to the request body.
+
 #### Getting, listing and deleting stored glossaries
 
 Functions to get, list, and delete stored glossaries are also provided:
 
-- `GetMultilingualGlossaryAsync()` takes a glossary ID and returns a
+- `GetMultilingualGlossaryAsync()` takes a glossary ID or `MultilingualGlossaryInfo` object and returns a
   `MultilingualGlossaryInfo` object for a stored glossary, or raises an
   exception if no such glossary is found.
 - `ListMultilingualGlossariesAsync()` returns a `List` of
@@ -580,6 +583,12 @@ foreach (KeyValuePair<string, string> entry in glossaryDicts[0].Entries.ToDictio
 
 Functions to edit stored glossaries are also provided:
 
+- `UpdateMultilingualGlossaryAsync()` takes a glossary ID or `MultilingualGlossaryInfo`
+  object and an `UpdateMultilingualGlossaryOptions` object, to rename the glossary and update dictionaries in one
+  request: `Name` is the new name, and the entries of each of `Dictionaries` are merged into the dictionary for its
+  language pair (created if missing); the API currently accepts at most one dictionary per request. Only the
+  properties that are set are sent; `ExtraBodyParameters` are added
+  last to the JSON request body.
 - `UpdateMultilingualGlossaryDictionaryAsync()` takes a glossary ID or `MultilingualGlossaryInfo`
   object, plus a source language, target language, and a dictionary of entries.
   It will then either update the list of entries for that dictionary (either
@@ -589,7 +598,11 @@ Functions to edit stored glossaries are also provided:
 - `ReplaceMultilingualGlossaryDictionaryAsync()` takes a glossary ID or `MultilingualGlossaryInfo`
   object, plus a source language, target language, and a dictionary of entries.
   It will then either set the entries to the parameter value, completely
-  replacing any pre-existing entries for that language pair.
+  replacing any pre-existing entries for that language pair. Each overload of
+  it and of `ReplaceMultilingualGlossaryDictionaryFromCsvAsync()` has a variant
+  taking a `ReplaceMultilingualGlossaryDictionaryOptions` object before the
+  cancellation token; its `ExtraBodyParameters` are added last to the JSON
+  request body.
 - `UpdateMultilingualGlossaryNameAsync()` takes a glossary ID or `MultilingualGlossaryInfo`
   object, plus the new name of the glossary.
 
@@ -645,6 +658,17 @@ var updatedGlossary = await client.UpdateMultilingualGlossaryNameAsync(
   "My new glossary name"
 );
 Console.WriteLine(updatedGlossary.Name); // 'My new glossary name'
+
+// Rename the glossary and merge entries into a dictionary in one request
+var updatedGlossary = await client.UpdateMultilingualGlossaryAsync(
+  myGlossary,
+  new UpdateMultilingualGlossaryOptions {
+    Name = "My renamed glossary",
+    Dictionaries = new[] {
+      new MultilingualGlossaryDictionaryEntries(
+        "EN", "DE", new GlossaryEntries(new Dictionary<string, string>{{"prize", "Preis"}}))
+    }
+  });
 ```
 
 #### Using a stored glossary

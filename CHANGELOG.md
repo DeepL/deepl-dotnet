@@ -6,6 +6,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Added `DeepLClient.UpdateMultilingualGlossaryAsync()`, taking a glossary ID or `MultilingualGlossaryInfo` and an
+  `UpdateMultilingualGlossaryOptions` object (`Name`, `Dictionaries`), to rename a glossary and merge entries into
+  its dictionaries in one request. Only the set properties are sent; `ExtraBodyParameters` are added last to the
+  JSON request body.
+- Added `DeepLClient` overloads of `CreateMultilingualGlossaryAsync()` and `CreateMultilingualGlossaryFromCsvAsync()`
+  taking a `CreateMultilingualGlossaryOptions`, and of `ReplaceMultilingualGlossaryDictionaryAsync()` and
+  `ReplaceMultilingualGlossaryDictionaryFromCsvAsync()` taking a `ReplaceMultilingualGlossaryDictionaryOptions`. Both
+  options classes derive from `BaseRequestOptions`: their `ExtraBodyParameters` are added last to the request body.
+- Added `DeepLClient` overloads of `GetMultilingualGlossaryAsync()` and `UpdateMultilingualGlossaryNameAsync()` taking
+  a `MultilingualGlossaryInfo` instead of the glossary ID.
+- The new multilingual glossary methods and overloads are members of `DeepLClient`; the `IGlossaryManager` interface
+  is unchanged.
 - Added `StyleProfile` to `TextTranslateOptions` and `DocumentTranslateOptions` (the ID or a `StyleProfile` object),
   and constructors taking a `StyleProfile`, to translate text and documents with a style profile (sent as
   `style_profile_id`).

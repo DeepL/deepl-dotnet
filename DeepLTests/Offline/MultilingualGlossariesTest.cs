@@ -3,6 +3,7 @@
 // license that can be found in the LICENSE file.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Http;
@@ -149,6 +150,65 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
+    public async Task SendsExtraBodyParametersWhenReplacingDictionaryWithOptions() {
+      const string body =
+            "{\"source_lang\":\"en\",\"target_lang\":\"de\",\"entries\":\"Apple\\tApfel\"," +
+            "\"entries_format\":\"x\",\"extra\":\"1\"}";
+      var csvBody = "{\"source_lang\":\"en\",\"target_lang\":\"de\",\"entries\":" + JsonSerializer.Serialize(Csv) +
+                    ",\"entries_format\":\"x\",\"extra\":\"1\"}";
+      for (var i = 0; i < 4; i++) {
+        ExpectJson(HttpMethod.Put, "v3/glossaries/g1/dictionaries", body).RespondJson(DictionaryReply);
+      }
+
+      ExpectJson(HttpMethod.Put, "v3/glossaries/g1/dictionaries", csvBody).RespondJson(DictionaryReply);
+      ExpectJson(HttpMethod.Put, "v3/glossaries/g1/dictionaries", csvBody).RespondJson(DictionaryReply);
+      var options = new ReplaceMultilingualGlossaryDictionaryOptions {
+        ExtraBodyParameters = new Dictionary<string, string> { ["entries_format"] = "x", ["extra"] = "1" }
+      };
+      var dictionary = new MultilingualGlossaryDictionaryEntries("en", "de", Apple);
+      var client = CreateClient();
+      await client.ReplaceMultilingualGlossaryDictionaryAsync("g1", "en", "de", Apple, options);
+      await client.ReplaceMultilingualGlossaryDictionaryAsync(Info(), "en", "de", Apple, options);
+      await client.ReplaceMultilingualGlossaryDictionaryAsync("g1", dictionary, options);
+      await client.ReplaceMultilingualGlossaryDictionaryAsync(Info(), dictionary, options);
+      await client.ReplaceMultilingualGlossaryDictionaryFromCsvAsync("g1", "en", "de", CsvStream(), options);
+      await client.ReplaceMultilingualGlossaryDictionaryFromCsvAsync(Info(), "en", "de", CsvStream(), options);
+    }
+
+    [Fact]
+    public async Task SendsExtraBodyParametersWhenCreatingWithOptions() {
+      ExpectForm(
+                  HttpMethod.Post,
+                  "v3/glossaries",
+                  ("name", "n"),
+                  ("dictionaries[0].source_lang", "en"),
+                  ("dictionaries[0].target_lang", "de"),
+                  ("dictionaries[0].entries", "Apple\tApfel"),
+                  ("dictionaries[0].entries_format", "tsv"),
+                  ("extra", "1"))
+            .RespondJson(GlossaryReply);
+      ExpectForm(
+                  HttpMethod.Post,
+                  "v3/glossaries",
+                  ("name", "n"),
+                  ("dictionaries[0].source_lang", "en"),
+                  ("dictionaries[0].target_lang", "de"),
+                  ("dictionaries[0].entries", Csv),
+                  ("dictionaries[0].entries_format", "csv"),
+                  ("extra", "1"))
+            .RespondJson(GlossaryReply);
+      var options = new CreateMultilingualGlossaryOptions {
+        ExtraBodyParameters = new Dictionary<string, string> { ["extra"] = "1" }
+      };
+      var client = CreateClient();
+      await client.CreateMultilingualGlossaryAsync(
+            "n",
+            new[] { new MultilingualGlossaryDictionaryEntries("en", "de", Apple) },
+            options);
+      await client.CreateMultilingualGlossaryFromCsvAsync("n", "en", "de", CsvStream(), options);
+    }
+
+    [Fact]
     public async Task ThrowsGlossaryNotFoundExceptionWhenCreateReturns404() {
       ExpectForm(
                   HttpMethod.Post,
@@ -178,6 +238,38 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
+    public async Task SendsOnlySetFieldsAsJsonWhenUpdating() {
+      ExpectJson(
+                  Patch,
+                  "v3/glossaries/g1",
+                  "{\"name\":\"New name\",\"dictionaries\":[{\"source_lang\":\"en\",\"target_lang\":\"de\"," +
+                  "\"entries\":\"Apple\\tApfel\",\"entries_format\":\"tsv\"}],\"extra\":\"1\"}")
+            .RespondJson(GlossaryReply);
+      ExpectJson(Patch, "v3/glossaries/g1", "{\"name\":\"New name\"}").RespondJson(GlossaryReply);
+      ExpectJson(Patch, "v3/glossaries/g1", "{}").RespondJson(GlossaryReply);
+      var client = CreateClient();
+      var updated = await client.UpdateMultilingualGlossaryAsync(
+            "g1",
+            new UpdateMultilingualGlossaryOptions {
+              Name = "New name",
+              Dictionaries = new[] { new MultilingualGlossaryDictionaryEntries("en", "de", Apple) },
+              ExtraBodyParameters = new Dictionary<string, string> { ["extra"] = "1" }
+            });
+      Assert.Equal("g1", updated.GlossaryId);
+      await client.UpdateMultilingualGlossaryAsync(Info(), new UpdateMultilingualGlossaryOptions { Name = "New name" });
+      await client.UpdateMultilingualGlossaryAsync("g1");
+    }
+
+    [Fact]
+    public async Task AcceptsGlossaryObjectWhenGettingAndRenaming() {
+      ExpectNoBody(HttpMethod.Get, "v3/glossaries/g1").RespondJson(GlossaryReply);
+      ExpectForm(Patch, "v3/glossaries/g1", ("name", "New name")).RespondJson(GlossaryReply);
+      var client = CreateClient();
+      await client.GetMultilingualGlossaryAsync(Info());
+      await client.UpdateMultilingualGlossaryNameAsync(Info(), "New name");
+    }
+
+    [Fact]
     public async Task EncodesGlossaryIdInPaths() {
       const string path = "v3/glossaries/a%2Fb%3Fc";
       ExpectNoBody(HttpMethod.Get, path).RespondJson(GlossaryReply);
@@ -190,6 +282,7 @@ namespace DeepLTests.Offline {
       Expect(HttpMethod.Put, path + "/dictionaries").RespondJson(DictionaryReply);
       Expect(Patch, path).RespondJson(GlossaryReply);
       Expect(Patch, path).RespondJson(GlossaryReply);
+      Expect(Patch, path).RespondJson(GlossaryReply);
       var client = CreateClient();
       await client.GetMultilingualGlossaryAsync("a/b?c");
       await client.GetMultilingualGlossaryDictionaryEntriesAsync("a/b?c", "en", "de");
@@ -198,6 +291,7 @@ namespace DeepLTests.Offline {
       await client.ReplaceMultilingualGlossaryDictionaryAsync("a/b?c", "en", "de", Apple);
       await client.UpdateMultilingualGlossaryNameAsync("a/b?c", "n");
       await client.UpdateMultilingualGlossaryDictionaryAsync("a/b?c", "en", "de", Apple);
+      await client.UpdateMultilingualGlossaryAsync("a/b?c", new UpdateMultilingualGlossaryOptions { Name = "n" });
     }
 
     [Fact]
