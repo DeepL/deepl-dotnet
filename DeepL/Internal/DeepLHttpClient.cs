@@ -660,10 +660,14 @@ namespace DeepL.Internal {
         return;
       }
 
+      var statusCode = responseMessage.StatusCode;
       var detail = await responseMessage.Content.ReadAsStringAsync().ConfigureAwait(false);
       throw new DeepLException(
-            $"Error {action}, HTTP status: {(int)responseMessage.StatusCode}" +
-            (string.IsNullOrEmpty(detail) ? "" : $", detail: {detail}"));
+            $"Error {action}, HTTP status: {(int)statusCode}" +
+            (string.IsNullOrEmpty(detail) ? "" : $", detail: {detail}")) {
+        HttpStatusCode = (int)statusCode,
+        ShouldRetry = statusCode == HttpStatusCodeTooManyRequests || statusCode >= HttpStatusCode.InternalServerError
+      };
     }
 
     /// <summary>Sends given HTTP request, ensuring message uses HTTP 2.0 and includes configured HTTP headers.</summary>

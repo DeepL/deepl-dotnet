@@ -163,6 +163,17 @@ namespace DeepLTests.Offline {
       Assert.Equal("Error uploading translation memory file, HTTP status: 403, detail: denied", exception.Message);
     }
 
+    [Theory]
+    [InlineData(403, false)]
+    [InlineData(503, true)]
+    public async Task ReportsHttpStatusCodeAndShouldRetryWhenUploadFails(int status, bool shouldRetry) {
+      Http.Expect(HttpMethod.Put, UploadUrl).Respond((HttpStatusCode)status, "text/plain", "failed");
+      var exception = await Assert.ThrowsAsync<DeepLException>(
+            () => CreateClient().UploadTranslationMemoryFileAsync(UploadUrl, new MemoryStream(new byte[] { 1 })));
+      Assert.Equal(status, exception.HttpStatusCode);
+      Assert.Equal(shouldRetry, exception.ShouldRetry);
+    }
+
     [Fact]
     public async Task ParsesJob() {
       ExpectNoBody(HttpMethod.Get, "v3/translation_memories/jobs/j1").RespondJson(JobReply(CompletedResult));
