@@ -78,6 +78,26 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
+    public async Task KeepsInfinitePerRetryTimeoutInfinite() {
+      ExpectNoBody(HttpMethod.Get, "v2/usage")
+            .Respond(
+                  async () => {
+                    await Task.Delay(TimeSpan.FromSeconds(2));
+                    return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(UsageReply) };
+                  });
+      await CreateClientWithRetries(0, Timeout.InfiniteTimeSpan).GetUsageAsync();
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-5)]
+    public void RejectsZeroOrNegativePerRetryTimeout(int milliseconds) =>
+          Assert.Throws<ArgumentOutOfRangeException>(
+                () => new DeepLClient(
+                      "key",
+                      new DeepLClientOptions { PerRetryConnectionTimeout = TimeSpan.FromMilliseconds(milliseconds) }));
+
+    [Fact]
     public void DefaultClientHasNoOverallTimeout() {
       using var client = DeepL.Internal.DeepLHttpClient.CreateDefaultHttpClient(new DeepLClientOptions(), Http)
             .HttpClient;

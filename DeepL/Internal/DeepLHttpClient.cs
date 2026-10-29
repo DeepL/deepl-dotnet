@@ -140,6 +140,13 @@ namespace DeepL.Internal {
           HttpMessageHandler innerHandler,
           TimeSpan perRetryConnectionTimeout,
           int maximumNetworkRetries) {
+      if (perRetryConnectionTimeout <= TimeSpan.Zero &&
+          perRetryConnectionTimeout != System.Threading.Timeout.InfiniteTimeSpan) {
+        throw new ArgumentOutOfRangeException(
+              nameof(BaseClientOptions.PerRetryConnectionTimeout),
+              "must be positive or Timeout.InfiniteTimeSpan");
+      }
+
       var rnd = new Random();
       var computeBackoff = new Func<int, TimeSpan>(
             attempt => {
@@ -181,6 +188,10 @@ namespace DeepL.Internal {
 
       var timeout = Policy.TimeoutAsync<HttpResponseMessage>(
             context => {
+              if (perRetryConnectionTimeout == System.Threading.Timeout.InfiniteTimeSpan) {
+                return perRetryConnectionTimeout;
+              }
+
               var backoff = getBackoff(context);
               return backoff > perRetryConnectionTimeout ? backoff : perRetryConnectionTimeout;
             });
