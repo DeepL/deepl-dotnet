@@ -315,6 +315,7 @@ namespace DeepLTests.Offline {
             .RespondJson("{\"document_id\":\"d1\",\"status\":\"error\",\"error_message\":\"boom\"}");
       var status = await CreateClient().TranslateDocumentGetStatusAsync(Handle);
       Assert.Equal(DocumentStatus.StatusCode.Error, status.Status);
+      Assert.Equal("error", status.StatusValue);
       Assert.Equal("boom", status.ErrorMessage);
       Assert.False(status.Ok);
     }
@@ -323,6 +324,26 @@ namespace DeepLTests.Offline {
     public async Task RetriesStatusUntilDone() {
       ExpectForm(HttpMethod.Post, "v2/document/d1", ("document_key", "k1"))
             .RespondJson("{\"document_id\":\"d1\",\"status\":\"queued\"}");
+      ExpectForm(HttpMethod.Post, "v2/document/d1", ("document_key", "k1"))
+            .RespondJson("{\"document_id\":\"d1\",\"status\":\"done\"}");
+      await CreateClient().TranslateDocumentWaitUntilDoneAsync(Handle);
+    }
+
+    [Fact]
+    public async Task ParsesUnknownStatusAsString() {
+      ExpectForm(HttpMethod.Post, "v2/document/d1", ("document_key", "k1"))
+            .RespondJson("{\"document_id\":\"d1\",\"status\":\"reviewing\"}");
+      var status = await CreateClient().TranslateDocumentGetStatusAsync(Handle);
+      Assert.Equal(DocumentStatus.StatusCode.Unknown, status.Status);
+      Assert.Equal("reviewing", status.StatusValue);
+      Assert.True(status.Ok);
+      Assert.False(status.Done);
+    }
+
+    [Fact]
+    public async Task KeepsPollingOnUnknownStatus() {
+      ExpectForm(HttpMethod.Post, "v2/document/d1", ("document_key", "k1"))
+            .RespondJson("{\"document_id\":\"d1\",\"status\":\"reviewing\"}");
       ExpectForm(HttpMethod.Post, "v2/document/d1", ("document_key", "k1"))
             .RespondJson("{\"document_id\":\"d1\",\"status\":\"done\"}");
       await CreateClient().TranslateDocumentWaitUntilDoneAsync(Handle);

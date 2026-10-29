@@ -348,6 +348,9 @@ application needs to execute these steps individually, you can instead use the f
 when it expires, a `DeepLException` is thrown. `TranslateDocumentStatusAsync()` is the obsolete former name of
 `TranslateDocumentGetStatusAsync()` and will be removed in the next major version.
 
+`DocumentStatus.Status` is `DocumentStatus.StatusCode.Unknown` for a status this library does not know; the waiting
+methods keep polling then. `DocumentStatus.StatusValue` holds the status string as returned by the API.
+
 #### Document translation options
 
 `DocumentTranslateOptions` has the following properties that impact text translation:

@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a `TranslateDocumentWaitUntilDoneAsync()` overload with a `TimeSpan? timeout`, and
   `DocumentTranslateOptions.Timeout` for the wait inside `TranslateDocumentAsync()`. When the timeout expires, a
   `DeepLException` is thrown (wrapped in a `DocumentTranslationException` by `TranslateDocumentAsync()`).
+- Added `DocumentStatus.StatusValue`, the status string as returned by the API, and
+  `DocumentStatus.StatusCode.Unknown` for statuses this library does not know.
 - The new document methods and overloads are members of `Translator` and `DeepLClient`; the obsolete `ITranslator`
   interface is unchanged.
 - Added `Glossary`, `StyleRule` and `TranslationMemory` to `TextTranslateOptions`, replacing `GlossaryId`, `StyleId`
@@ -135,6 +137,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Its default is now no overall timeout.
 
 ### Fixed
+- An unknown document status in the response no longer fails `TranslateDocumentStatusAsync()`,
+  `TranslateDocumentWaitUntilDoneAsync()` and `TranslateDocumentAsync()`. Before, it threw a `DeepLException`
+  ("Failed to deserialize JSON in received response"); now `DocumentStatus.Status` is `StatusCode.Unknown` and the
+  waiting methods keep polling.
 - `ExtraBodyParameters` with a `text` key now replace the texts of `TranslateTextAsync()`, like any other parameter.
   Before, the extra `text` was sent in addition to the texts.
 - `TranslateTextAsync()` now throws a `DeepLException` when the response holds no `translations`, an empty list, or
