@@ -42,6 +42,13 @@ namespace DeepL {
     public TimeSpan PerRetryConnectionTimeout { get; set; } = TimeSpan.FromSeconds(10);
 
     /// <summary>
+    ///   URL of an HTTP(S) proxy for all requests, for example <c>http://user:password@proxy.example.com:3128</c>.
+    ///   Credentials in the URL are sent to the proxy. By default the system proxy settings are used. Only used if
+    ///   <see cref="ClientFactory" /> is unset.
+    /// </summary>
+    public Uri? Proxy { get; set; }
+
+    /// <summary>
     ///   The base URL for DeepL's API that may be overridden for testing purposes. By default <see cref="Translator" />
     ///   and <see cref="DeepLClient" /> select the correct DeepL API URL based on the user account type (free or paid),
     ///   and <see cref="DeepLAdminClient" /> uses <c>https://api.deepl.com</c>.
@@ -50,9 +57,10 @@ namespace DeepL {
 
     /// <summary>
     ///   Factory function returning an <see cref="HttpClient" /> to be used by the client for HTTP requests, and a flag
-    ///   whether to call <see cref="HttpClient.Dispose" /> when the client is disposed. Override this function to provide
-    ///   your own <see cref="HttpClient" />. Note that overriding this function will disable the built-in retrying of
-    ///   failed requests, so you must provide your own retry policy.
+    ///   whether to call <see cref="HttpClient.Dispose" /> when the client is disposed. This is an escape hatch for
+    ///   needs the other options do not cover; for a proxy, use <see cref="Proxy" />. Setting it disables the built-in
+    ///   retries and timeouts (<see cref="MaximumNetworkRetries" />, <see cref="PerRetryConnectionTimeout" />) and
+    ///   <see cref="Proxy" />, so your <see cref="HttpClient" /> must provide its own.
     /// </summary>
     public Func<HttpClientAndDisposeFlag>? ClientFactory { get; set; }
 

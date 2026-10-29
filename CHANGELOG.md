@@ -53,6 +53,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `DeepLException.HttpStatusCode`, the HTTP status of the failed response (`null` if there was none), and
   `DeepLException.ShouldRetry`: `true` for HTTP 429, 5xx and transient network failures (timeouts, failed connections),
   `false` for other HTTP statuses.
+- Added the `Proxy` option to `DeepLClientOptions` and `DeepLAdminClientOptions`: the URL of an HTTP(S) proxy for all
+  requests, with optional credentials in the URL. Unlike a custom `ClientFactory`, it keeps the built-in retries and
+  timeouts.
 
 ### Changed
 - Target languages `EN` and `PT` are no longer rejected client-side in text translation, document translation and

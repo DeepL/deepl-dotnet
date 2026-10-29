@@ -1200,7 +1200,7 @@ translation; developer keys cannot access the Admin API.
 Create a `DeepLAdminClient` with your admin key. It uses the
 `https://api.deepl.com` server by default. `DeepLAdminClientOptions` offers the
 same connection settings as `DeepLClientOptions`, for example `ServerUrl`,
-`Headers`, `ClientFactory` and `appInfo`.
+`Headers`, `Proxy`, `ClientFactory` and `appInfo`.
 
 ```c#
 using DeepL; // this imports the DeepL namespace. Use the code below in your main program.
@@ -1355,17 +1355,49 @@ var options = new DeepLClientOptions {
 var client = new DeepLClient(authKey, options);
 ```
 
-See the `DeepLClientOptions` class for details about the available options.
+The available options:
+
+- `MaximumNetworkRetries`: the number of retries after the first attempt, by
+  default 5. Only HTTP 429, 5xx responses and transient network failures
+  (timeouts, failed connections) are retried, with exponential backoff.
+- `PerRetryConnectionTimeout`: the timeout of each attempt, by default 10
+  seconds. An attempt may run longer, until the time the client would wait
+  before retrying it (the backoff delay), when that is longer.
+- `OverallConnectionTimeout`: a timeout for the request including all retries.
+  By default there is none.
+- `ServerUrl`: overrides the DeepL API server URL.
+- `Headers`: extra HTTP headers sent with every request to the DeepL API. A
+  `User-Agent` header replaces the default one; an `Authorization` header is
+  ignored, the client always sends the authentication key.
+- `Proxy`: see [Proxy configuration](#proxy-configuration).
+- `sendPlatformInfo` and `appInfo`: see
+  [Anonymous platform information](#anonymous-platform-information) and
+  [Writing a Plugin](#writing-a-plugin).
+- `ClientFactory`: an escape hatch to supply your own `HttpClient`, see
+  [Custom HTTP client](#custom-http-client).
 
 #### Proxy configuration
 
-To use the library with a proxy, override the `ClientFactory` with a function returning a custom `HttpClient`:
+To use the library with a proxy, set the `Proxy` option to the proxy URL. Credentials in the URL are sent to the
+proxy. The built-in retries and timeouts still apply.
 
 ```c#
-var proxyUrl = "http://localhost:3001";
-var handler = new System.Net.Http.HttpClientHandler {
-      Proxy = new System.Net.WebProxy(proxyUrl), UseProxy = true,
+var options = new DeepLClientOptions {
+      Proxy = new Uri("http://user:password@localhost:3001"),
 };
+var client = new DeepLClient(authKey, options);
+```
+
+Without the `Proxy` option, the system proxy settings are used.
+
+#### Custom HTTP client
+
+For needs the options above do not cover, `ClientFactory` returns your own `HttpClient`. This disables the built-in
+retries and timeouts (`MaximumNetworkRetries`, `PerRetryConnectionTimeout`) and the `Proxy` option, so your
+`HttpClient` must provide them:
+
+```c#
+var handler = new System.Net.Http.HttpClientHandler { /* your settings */ };
 var options = new DeepLClientOptions {
       ClientFactory = () => new HttpClientAndDisposeFlag {
             HttpClient = new HttpClient(handler), DisposeClient = true,

@@ -225,20 +225,39 @@ namespace DeepL.Internal {
     ///   Creates a default HttpClient with exponential-backoff policy for retrying failed requests, configured from the
     ///   given client options.
     /// </summary>
-    /// <param name="options">Client options supplying retries and timeouts.</param>
+    /// <param name="options">Client options supplying retries, timeouts and proxy.</param>
     /// <param name="innerHandler">Handler sending the requests; by default an <see cref="HttpClientHandler" />.</param>
     /// <returns>Newly initialized <see cref="HttpClient" /> object.</returns>
     internal static HttpClientAndDisposeFlag CreateDefaultHttpClient(
           BaseClientOptions options,
           HttpMessageHandler? innerHandler = null) {
       var handler = CreateHttpMessageHandlerWithRetryPolicy(
-            innerHandler ?? new HttpClientHandler(),
+            innerHandler ?? CreateHttpClientHandler(options.Proxy),
             options.PerRetryConnectionTimeout,
             options.MaximumNetworkRetries);
       return new HttpClientAndDisposeFlag {
         DisposeClient = true,
         HttpClient = new HttpClient(handler) { Timeout = options.OverallConnectionTimeout }
       };
+    }
+
+    /// <summary>Creates the handler sending requests, using the given proxy if set.</summary>
+    private static HttpClientHandler CreateHttpClientHandler(Uri? proxy) {
+      var handler = new HttpClientHandler();
+      if (proxy != null) {
+        var webProxy = new WebProxy(proxy);
+        if (!string.IsNullOrEmpty(proxy.UserInfo)) {
+          var userInfo = proxy.UserInfo.Split(new[] { ':' }, 2);
+          webProxy.Credentials = new NetworkCredential(
+                Uri.UnescapeDataString(userInfo[0]),
+                userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : string.Empty);
+        }
+
+        handler.Proxy = webProxy;
+        handler.UseProxy = true;
+      }
+
+      return handler;
     }
 
     /// <summary>
