@@ -472,7 +472,7 @@ namespace DeepL {
             .ConfigureAwait(false);
       return new TranslationMemoryExport(
             exportResult.JobId,
-            GetParameter(exportResult.Parameters, "translation_memory_id"),
+            exportResult.Parameters?.TranslationMemoryId,
             reusedExisting);
     }
 
@@ -3194,13 +3194,6 @@ namespace DeepL {
       }
     }
 
-    /// <summary>Returns the value of the given key in an optional JSON object, or <c>null</c> if it is absent.</summary>
-    /// <param name="parameters">Dictionary holding the JSON object fields, may be null.</param>
-    /// <param name="key">Name of the field to read.</param>
-    /// <returns>The value of the field, or <c>null</c> if it is absent.</returns>
-    private static string? GetParameter(Dictionary<string, string>? parameters, string key) =>
-          parameters != null && parameters.TryGetValue(key, out var value) ? value : null;
-
     /// <summary>Creates a <see cref="TranslationMemoryJob" /> from the JSON-deserialized DeepL API response.</summary>
     /// <param name="response">The deserialized job response.</param>
     /// <returns>A <see cref="TranslationMemoryJob" /> object holding the flattened job status.</returns>
@@ -3209,10 +3202,10 @@ namespace DeepL {
             .Select(
                   result => new TranslationMemoryJobResult(
                         result.Status ?? string.Empty,
-                        GetParameter(result.StatusMetadata, "required_action"),
+                        result.StatusMetadata?.RequiredAction,
                         result.DownloadUrl,
                         result.ExpiresAt,
-                        GetParameter(result.Error, "message"),
+                        result.Error?.Message,
                         result.TranslationMemoryId,
                         result.SkippedSegmentCount))
             .ToArray();
@@ -3224,8 +3217,8 @@ namespace DeepL {
             response.Product,
             response.CreationTime,
             response.UpdatedTime,
-            GetParameter(response.Parameters, "translation_memory_id"),
-            GetParameter(response.Parameters, "display_name"),
+            response.Parameters?.TranslationMemoryId,
+            response.Parameters?.DisplayName,
             response.SourceFile?.ContentType,
             response.SourceFile?.ContentLength);
     }
@@ -3234,7 +3227,7 @@ namespace DeepL {
     private readonly struct TranslationMemoryExportResult {
       /// <summary>Initializes a new instance of <see cref="TranslationMemoryExportResult" />, used for JSON deserialization.</summary>
       [JsonConstructor]
-      public TranslationMemoryExportResult(string jobId, Dictionary<string, string>? parameters) {
+      public TranslationMemoryExportResult(string jobId, TranslationMemoryJobParameters? parameters) {
         JobId = jobId;
         Parameters = parameters;
       }
@@ -3245,7 +3238,53 @@ namespace DeepL {
 
       /// <summary>Parameters of the export job, holding the translation memory ID.</summary>
       [JsonPropertyName("parameters")]
-      public Dictionary<string, string>? Parameters { get; }
+      public TranslationMemoryJobParameters? Parameters { get; }
+    }
+
+    // The nested job objects are typed rather than string dictionaries, so that fields the API adds later, of any
+    // JSON type, are ignored instead of failing the call.
+    /// <summary>Class used for JSON-deserialization of the parameters of a translation memory job.</summary>
+    private readonly struct TranslationMemoryJobParameters {
+      /// <summary>Initializes a new instance of <see cref="TranslationMemoryJobParameters" />, used for JSON deserialization.</summary>
+      [JsonConstructor]
+      public TranslationMemoryJobParameters(string? translationMemoryId, string? displayName) {
+        TranslationMemoryId = translationMemoryId;
+        DisplayName = displayName;
+      }
+
+      /// <summary>ID of the translation memory an export job reads from.</summary>
+      [JsonPropertyName("translation_memory_id")]
+      public string? TranslationMemoryId { get; }
+
+      /// <summary>Name an import job assigns to the new translation memory.</summary>
+      [JsonPropertyName("display_name")]
+      public string? DisplayName { get; }
+    }
+
+    /// <summary>Class used for JSON-deserialization of the status metadata of a translation memory job result.</summary>
+    private readonly struct TranslationMemoryJobStatusMetadata {
+      /// <summary>Initializes a new instance of <see cref="TranslationMemoryJobStatusMetadata" />, used for JSON deserialization.</summary>
+      [JsonConstructor]
+      public TranslationMemoryJobStatusMetadata(string? requiredAction) {
+        RequiredAction = requiredAction;
+      }
+
+      /// <summary>Description of the action the caller must take.</summary>
+      [JsonPropertyName("required_action")]
+      public string? RequiredAction { get; }
+    }
+
+    /// <summary>Class used for JSON-deserialization of the error of a translation memory job result.</summary>
+    private readonly struct TranslationMemoryJobError {
+      /// <summary>Initializes a new instance of <see cref="TranslationMemoryJobError" />, used for JSON deserialization.</summary>
+      [JsonConstructor]
+      public TranslationMemoryJobError(string? message) {
+        Message = message;
+      }
+
+      /// <summary>Short description of the error.</summary>
+      [JsonPropertyName("message")]
+      public string? Message { get; }
     }
 
     /// <summary>Class used for JSON-deserialization of the source file of a translation memory import job.</summary>
@@ -3272,10 +3311,10 @@ namespace DeepL {
       [JsonConstructor]
       public TranslationMemoryJobResultResponse(
             string? status,
-            Dictionary<string, string>? statusMetadata,
+            TranslationMemoryJobStatusMetadata? statusMetadata,
             string? downloadUrl,
             DateTime? expiresAt,
-            Dictionary<string, string>? error,
+            TranslationMemoryJobError? error,
             string? translationMemoryId,
             int? skippedSegmentCount) {
         Status = status;
@@ -3293,7 +3332,7 @@ namespace DeepL {
 
       /// <summary>Metadata describing the action the caller must take, if any.</summary>
       [JsonPropertyName("status_metadata")]
-      public Dictionary<string, string>? StatusMetadata { get; }
+      public TranslationMemoryJobStatusMetadata? StatusMetadata { get; }
 
       /// <summary>Download URL of the exported TMX file, set once an export completes.</summary>
       [JsonPropertyName("download_url")]
@@ -3305,7 +3344,7 @@ namespace DeepL {
 
       /// <summary>Error information, set when the job failed.</summary>
       [JsonPropertyName("error")]
-      public Dictionary<string, string>? Error { get; }
+      public TranslationMemoryJobError? Error { get; }
 
       /// <summary>ID of the translation memory created by a completed import.</summary>
       [JsonPropertyName("translation_memory_id")]
@@ -3327,7 +3366,7 @@ namespace DeepL {
             string? product,
             DateTime? creationTime,
             DateTime? updatedTime,
-            Dictionary<string, string>? parameters,
+            TranslationMemoryJobParameters? parameters,
             TranslationMemoryJobSourceFile? sourceFile) {
         JobId = jobId;
         Operation = operation;
@@ -3365,7 +3404,7 @@ namespace DeepL {
 
       /// <summary>Parameters of the job, holding the translation memory ID or display name.</summary>
       [JsonPropertyName("parameters")]
-      public Dictionary<string, string>? Parameters { get; }
+      public TranslationMemoryJobParameters? Parameters { get; }
 
       /// <summary>Source file declared by an import job.</summary>
       [JsonPropertyName("source_file")]

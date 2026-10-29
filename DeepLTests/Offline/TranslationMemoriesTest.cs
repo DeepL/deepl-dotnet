@@ -393,5 +393,28 @@ namespace DeepLTests.Offline {
       Assert.Equal("j1", copy.JobId);
       Assert.Equal(TranslationMemoryJobStatus.Unknown, copy.Status);
     }
+
+    [Fact]
+    public async Task IgnoresNonStringFieldsInNestedJobObjects() {
+      var reply =
+            "{\"job_id\":\"j1\",\"operation\":\"import\",\"parameters\":{\"translation_memory_id\":\"tm1\"," +
+            "\"display_name\":\"My TM\",\"segment_limit\":5,\"strict\":true},\"results\":[{\"status\":\"failed\"," +
+            "\"status_metadata\":{\"required_action\":\"none\",\"attempt\":{\"n\":2}}," +
+            "\"error\":{\"message\":\"bad file\",\"code\":7,\"details\":[1,2]}}]}";
+      ExpectNoBody(HttpMethod.Get, "v3/translation_memories/jobs/j1").RespondJson(reply);
+      ExpectNoBody(HttpMethod.Post, "v3/translation_memories/tm1/export")
+            .RespondJson(
+                  "{\"job_id\":\"j2\",\"parameters\":{\"translation_memory_id\":\"tm1\",\"segments\":3}}",
+                  HttpStatusCode.Accepted);
+      var client = CreateClient();
+      var job = await client.GetTranslationMemoryJobAsync("j1");
+      Assert.Equal("tm1", job.TranslationMemoryId);
+      Assert.Equal("My TM", job.DisplayName);
+      Assert.Equal("none", job.Result!.RequiredAction);
+      Assert.Equal("bad file", job.Result.ErrorMessage);
+      var export = await client.CreateTranslationMemoryExportAsync("tm1");
+      Assert.Equal("tm1", export.TranslationMemoryId);
+    }
+
   }
 }

@@ -199,6 +199,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Fixed `GetTranslationMemoryJobAsync()` failing on a job status this library does not know: it is now parsed as
   `TranslationMemoryJobStatus.Unknown`, and `WaitUntilTranslationMemoryJobDoneAsync()` keeps polling on it.
+- Fixed `GetTranslationMemoryJobAsync()` and `CreateTranslationMemoryExportAsync()` failing when the job's
+  `parameters`, `error` or `status_metadata` object contains a non-string field; unknown fields are now ignored.
 - Multilingual glossary IDs are now URL-encoded in request paths.
 - `CreateMultilingualGlossaryAsync()` and `CreateMultilingualGlossaryFromCsvAsync()` now throw
   `GlossaryNotFoundException` on HTTP 404, like the other multilingual glossary methods.
