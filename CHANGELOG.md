@@ -48,6 +48,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `GetSpokenTermsEntriesAsync()`, `ReplaceSpokenTermsListAsync()`, `DeleteSpokenTermsAsync()` and
   `DeleteSpokenTermsListAsync()`, with the models `SpokenTerms`, `SpokenTermsList` and `SpokenTermsEntries`.
   Terms are checked like glossary terms before sending; an invalid term throws `ArgumentException`.
+  `UpdateSpokenTermsAsync()` takes the new name and the terms to merge as an `UpdateSpokenTermsOptions` object
+  (`Name`, `TermLists`). `CreateSpokenTermsAsync()`, `UpdateSpokenTermsAsync()` and `ReplaceSpokenTermsListAsync()`
+  take an optional `CreateSpokenTermsOptions`, `UpdateSpokenTermsOptions` or `ReplaceSpokenTermsListOptions`, whose
+  `ExtraBodyParameters` are added last to the JSON request body.
 - Added the API Pro fields of `GET /v2/usage` to `Usage`: `ApiKeyCharacter` (the character usage of the API key,
   as opposed to the account-wide `Character`), `SpeechToTextMinutes`, `SpeechToSpeechMinutes`, `StartTime`,
   `EndTime` and `Products` (per-product usage as `Usage.Product`). They are `null` when the response does not

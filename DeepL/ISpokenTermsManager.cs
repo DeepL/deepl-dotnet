@@ -12,6 +12,7 @@ namespace DeepL {
     /// <summary>Creates a Spoken Terms collection with one term list per language.</summary>
     /// <param name="name">Name of the Spoken Terms collection.</param>
     /// <param name="termLists">The terms of each language, as <see cref="SpokenTermsEntries" /> objects.</param>
+    /// <param name="options">Optional <see cref="CreateSpokenTermsOptions" />.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="SpokenTerms" /> object with details about the newly created collection.</returns>
     /// <exception cref="ArgumentException">
@@ -24,6 +25,7 @@ namespace DeepL {
     Task<SpokenTerms> CreateSpokenTermsAsync(
           string name,
           IEnumerable<SpokenTermsEntries> termLists,
+          CreateSpokenTermsOptions? options = null,
           CancellationToken cancellationToken = default);
 
     /// <summary>Retrieves all Spoken Terms collections of the account, without their terms.</summary>
@@ -64,12 +66,12 @@ namespace DeepL {
     /// <summary>Renames a Spoken Terms collection and/or merges terms into its term lists.</summary>
     /// <remarks>
     ///   The given terms are merged into the existing list of that language. To replace a list instead, use
-    ///   <see cref="ReplaceSpokenTermsListAsync(string, SpokenTermsEntries, CancellationToken)" />.
+    ///   <see cref="ReplaceSpokenTermsListAsync(string, SpokenTermsEntries, ReplaceSpokenTermsListOptions?, CancellationToken)" />.
     /// </remarks>
     /// <param name="spokenTermsId">ID of the Spoken Terms collection.</param>
-    /// <param name="name">Optional new name for the collection; not sent if <c>null</c>.</param>
-    /// <param name="termLists">
-    ///   Optional terms to merge into the existing term list of each language; not sent if <c>null</c>.
+    /// <param name="options">
+    ///   The new name and/or the terms to merge, as <see cref="UpdateSpokenTermsOptions" />; properties left
+    ///   <c>null</c> are not sent.
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="SpokenTerms" /> object with details about the updated collection.</returns>
@@ -83,19 +85,18 @@ namespace DeepL {
     /// </exception>
     Task<SpokenTerms> UpdateSpokenTermsAsync(
           string spokenTermsId,
-          string? name = null,
-          IEnumerable<SpokenTermsEntries>? termLists = null,
+          UpdateSpokenTermsOptions? options = null,
           CancellationToken cancellationToken = default);
 
     /// <summary>Renames a Spoken Terms collection and/or merges terms into its term lists.</summary>
     /// <remarks>
     ///   The given terms are merged into the existing list of that language. To replace a list instead, use
-    ///   <see cref="ReplaceSpokenTermsListAsync(string, SpokenTermsEntries, CancellationToken)" />.
+    ///   <see cref="ReplaceSpokenTermsListAsync(string, SpokenTermsEntries, ReplaceSpokenTermsListOptions?, CancellationToken)" />.
     /// </remarks>
     /// <param name="spokenTerms">The Spoken Terms collection.</param>
-    /// <param name="name">Optional new name for the collection; not sent if <c>null</c>.</param>
-    /// <param name="termLists">
-    ///   Optional terms to merge into the existing term list of each language; not sent if <c>null</c>.
+    /// <param name="options">
+    ///   The new name and/or the terms to merge, as <see cref="UpdateSpokenTermsOptions" />; properties left
+    ///   <c>null</c> are not sent.
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="SpokenTerms" /> object with details about the updated collection.</returns>
@@ -109,8 +110,7 @@ namespace DeepL {
     /// </exception>
     Task<SpokenTerms> UpdateSpokenTermsAsync(
           SpokenTerms spokenTerms,
-          string? name = null,
-          IEnumerable<SpokenTermsEntries>? termLists = null,
+          UpdateSpokenTermsOptions? options = null,
           CancellationToken cancellationToken = default);
 
     /// <summary>Retrieves the terms of one language of a Spoken Terms collection.</summary>
@@ -146,6 +146,7 @@ namespace DeepL {
     /// <summary>Replaces the term list of one language in a Spoken Terms collection, or adds it if the language is new.</summary>
     /// <param name="spokenTermsId">ID of the Spoken Terms collection.</param>
     /// <param name="entries">The language and terms of the new term list.</param>
+    /// <param name="options">Optional <see cref="ReplaceSpokenTermsListOptions" />.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="SpokenTermsList" /> object with details about the new term list.</returns>
     /// <exception cref="NotFoundException">If the specified Spoken Terms collection was not found.</exception>
@@ -159,11 +160,13 @@ namespace DeepL {
     Task<SpokenTermsList> ReplaceSpokenTermsListAsync(
           string spokenTermsId,
           SpokenTermsEntries entries,
+          ReplaceSpokenTermsListOptions? options = null,
           CancellationToken cancellationToken = default);
 
     /// <summary>Replaces the term list of one language in a Spoken Terms collection, or adds it if the language is new.</summary>
     /// <param name="spokenTerms">The Spoken Terms collection.</param>
     /// <param name="entries">The language and terms of the new term list.</param>
+    /// <param name="options">Optional <see cref="ReplaceSpokenTermsListOptions" />.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="SpokenTermsList" /> object with details about the new term list.</returns>
     /// <exception cref="NotFoundException">If the specified Spoken Terms collection was not found.</exception>
@@ -177,6 +180,7 @@ namespace DeepL {
     Task<SpokenTermsList> ReplaceSpokenTermsListAsync(
           SpokenTerms spokenTerms,
           SpokenTermsEntries entries,
+          ReplaceSpokenTermsListOptions? options = null,
           CancellationToken cancellationToken = default);
 
     /// <summary>Deletes a Spoken Terms collection.</summary>

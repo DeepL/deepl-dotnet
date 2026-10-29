@@ -706,15 +706,22 @@ Console.WriteLine(string.Join(", ", entries.Entries));
 
 #### Updating a Spoken Terms collection
 
-`UpdateSpokenTermsAsync()` renames the collection and/or **merges** the given
-terms into the existing term list of each language. Arguments left `null` are
-not changed.
+`UpdateSpokenTermsAsync()` takes an `UpdateSpokenTermsOptions` object that
+renames the collection and/or **merges** the given terms into the existing term
+list of each language:
+
+- `Name`: the new name of the collection.
+- `TermLists`: the terms to merge, as `SpokenTermsEntries` objects.
+
+Properties left `null` are not sent and not changed.
 
 ```c#
 var updated = await client.UpdateSpokenTermsAsync(
     spokenTerms,
-    name: "Product names v2",
-    termLists: new[] { new SpokenTermsEntries("en", new[] { "authentication" }) });
+    new UpdateSpokenTermsOptions {
+      Name = "Product names v2",
+      TermLists = new[] { new SpokenTermsEntries("en", new[] { "authentication" }) },
+    });
 ```
 
 #### Replacing or deleting the term list of a language
@@ -728,6 +735,16 @@ var termList = await client.ReplaceSpokenTermsListAsync(
     spokenTerms, new SpokenTermsEntries("de", new[] { "Schnittstelle" }));
 await client.DeleteSpokenTermsListAsync(spokenTerms, "de");
 ```
+
+#### Extra body parameters
+
+`CreateSpokenTermsAsync()`, `UpdateSpokenTermsAsync()` and
+`ReplaceSpokenTermsListAsync()` take an optional options object
+(`CreateSpokenTermsOptions`, `UpdateSpokenTermsOptions` and
+`ReplaceSpokenTermsListOptions`) with `ExtraBodyParameters`: a
+`Dictionary<string, string>` of extra parameters added last to the JSON request
+body, replacing built-in parameters with the same key. Mostly used by DeepL
+employees to test functionality, or for beta programs.
 
 #### Deleting a Spoken Terms collection
 

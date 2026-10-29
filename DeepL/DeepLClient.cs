@@ -896,10 +896,12 @@ namespace DeepL {
     public async Task<SpokenTerms> CreateSpokenTermsAsync(
           string name,
           IEnumerable<SpokenTermsEntries> termLists,
+          CreateSpokenTermsOptions? options = null,
           CancellationToken cancellationToken = default) {
       var requestData = new Dictionary<string, object> {
             ["name"] = name, ["term_lists"] = CreateSpokenTermsListsBody(termLists)
       };
+      AddExtraBodyParameters(requestData, options);
       using var responseMessage = await _client
             .ApiPostJsonAsync("v3/spoken-terms", cancellationToken, requestData, SerializationOptions)
             .ConfigureAwait(false);
@@ -938,14 +940,14 @@ namespace DeepL {
     /// <inheritdoc />
     public async Task<SpokenTerms> UpdateSpokenTermsAsync(
           string spokenTermsId,
-          string? name = null,
-          IEnumerable<SpokenTermsEntries>? termLists = null,
+          UpdateSpokenTermsOptions? options = null,
           CancellationToken cancellationToken = default) {
       var path = SpokenTermsPath(spokenTermsId);
       // With neither field set the body is {} and the API reports the error.
       var requestData = new Dictionary<string, object>();
-      if (name != null) requestData["name"] = name;
-      if (termLists != null) requestData["term_lists"] = CreateSpokenTermsListsBody(termLists);
+      if (options?.Name != null) requestData["name"] = options.Name;
+      if (options?.TermLists != null) requestData["term_lists"] = CreateSpokenTermsListsBody(options.TermLists);
+      AddExtraBodyParameters(requestData, options);
       using var responseMessage = await _client
             .ApiPatchJsonAsync(path, cancellationToken, requestData, SerializationOptions)
             .ConfigureAwait(false);
@@ -957,10 +959,9 @@ namespace DeepL {
     /// <inheritdoc />
     public async Task<SpokenTerms> UpdateSpokenTermsAsync(
           SpokenTerms spokenTerms,
-          string? name = null,
-          IEnumerable<SpokenTermsEntries>? termLists = null,
+          UpdateSpokenTermsOptions? options = null,
           CancellationToken cancellationToken = default) =>
-          await UpdateSpokenTermsAsync(spokenTerms.SpokenTermsId, name, termLists, cancellationToken)
+          await UpdateSpokenTermsAsync(spokenTerms.SpokenTermsId, options, cancellationToken)
                 .ConfigureAwait(false);
 
     /// <inheritdoc />
@@ -990,12 +991,15 @@ namespace DeepL {
     public async Task<SpokenTermsList> ReplaceSpokenTermsListAsync(
           string spokenTermsId,
           SpokenTermsEntries entries,
+          ReplaceSpokenTermsListOptions? options = null,
           CancellationToken cancellationToken = default) {
+      var requestData = CreateSpokenTermsListBody(entries).ToDictionary(pair => pair.Key, pair => (object)pair.Value);
+      AddExtraBodyParameters(requestData, options);
       using var responseMessage = await _client
             .ApiPutJsonAsync(
                   SpokenTermsPath(spokenTermsId) + "/term-lists",
                   cancellationToken,
-                  CreateSpokenTermsListBody(entries),
+                  requestData,
                   SerializationOptions)
             .ConfigureAwait(false);
 
@@ -1007,8 +1011,9 @@ namespace DeepL {
     public async Task<SpokenTermsList> ReplaceSpokenTermsListAsync(
           SpokenTerms spokenTerms,
           SpokenTermsEntries entries,
+          ReplaceSpokenTermsListOptions? options = null,
           CancellationToken cancellationToken = default) =>
-          await ReplaceSpokenTermsListAsync(spokenTerms.SpokenTermsId, entries, cancellationToken)
+          await ReplaceSpokenTermsListAsync(spokenTerms.SpokenTermsId, entries, options, cancellationToken)
                 .ConfigureAwait(false);
 
     /// <inheritdoc />
@@ -1857,6 +1862,14 @@ namespace DeepL {
       }
 
       return new Dictionary<string, string> { ["lang"] = entries.Lang, ["entries"] = string.Join("\n", terms) };
+    }
+
+    /// <summary>Adds the extra body parameters of the options last, replacing fields with the same key.</summary>
+    private static void AddExtraBodyParameters(Dictionary<string, object> requestData, BaseRequestOptions? options) {
+      if (options?.ExtraBodyParameters == null) return;
+      foreach (var pair in options.ExtraBodyParameters) {
+        requestData[pair.Key] = pair.Value;
+      }
     }
 
     /// <summary>Returns the JSON <c>term_lists</c> array for the given term lists.</summary>

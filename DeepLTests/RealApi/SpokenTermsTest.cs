@@ -29,7 +29,7 @@ namespace DeepLTests.RealApi {
 
         var updated = await client.UpdateSpokenTermsAsync(
               created,
-              termLists: new[] { new SpokenTermsEntries("en", new[] { "authentication" }) });
+              new UpdateSpokenTermsOptions { TermLists = new[] { new SpokenTermsEntries("en", new[] { "authentication" }) } });
         Assert.Equal(3, Assert.Single(updated.TermLists).EntryCount);
         var merged = await client.GetSpokenTermsEntriesAsync(created, "en");
         Assert.Equal(new[] { "DeepL", "authentication", "webhook" }.OrderBy(x => x), merged.Entries.OrderBy(x => x));
