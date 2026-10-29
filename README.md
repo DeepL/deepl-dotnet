@@ -316,7 +316,8 @@ try {
 
 Alternatively the input and output files may be provided as `Stream` objects; in
 that case the input file name (or extension) is required, so the DeepL API can
-determine the file type:
+determine the file type. Pass it as the `inputFileName` argument, or set the
+`Filename` option and use the overload without it:
 
 ```c#
 ...
@@ -327,31 +328,49 @@ determine the file type:
         "EN",
         "DE",
         new DocumentTranslateOptions { Formality = Formality.More });
+
+  await client.TranslateDocumentAsync(
+        new MemoryStream(buffer),
+        File.OpenWrite(outputDocumentPath),
+        "EN",
+        "DE",
+        new DocumentTranslateOptions { Filename = "Input file.docx" });
 ```
 
 `TranslateDocumentAsync()` manages the upload, wait until translation is complete, and download steps. If your
 application needs to execute these steps individually, you can instead use the following functions directly:
 
 - `TranslateDocumentUploadAsync()`,
-- `TranslateDocumentStatusAsync()` (or `TranslateDocumentWaitUntilDoneAsync()`), and
+- `TranslateDocumentGetStatusAsync()` (or `TranslateDocumentWaitUntilDoneAsync()`), and
 - `TranslateDocumentDownloadAsync()`
+
+`TranslateDocumentWaitUntilDoneAsync()` polls the status every 5 seconds. Pass a `TimeSpan` timeout to limit the wait;
+when it expires, a `DeepLException` is thrown. `TranslateDocumentStatusAsync()` is the obsolete former name of
+`TranslateDocumentGetStatusAsync()` and will be removed in the next major version.
 
 #### Document translation options
 
 `DocumentTranslateOptions` has the following properties that impact text translation:
 
 - `Formality`:  same as in [Text translation options](#text-translation-options).
-- `GlossaryId`:  the glossary ID, as `Glossary` in [Text translation options](#text-translation-options).
-- `GlossaryIds`:  same as in [Text translation options](#text-translation-options), except that it cannot be
-  combined with `GlossaryId`.
-- `StyleId`:  the style rule ID, as `StyleRule` in [Text translation options](#text-translation-options).
-- `StyleProfileId`:  the style profile ID, as `StyleProfile` in
-  [Text translation options](#text-translation-options), except that `CustomInstructions` does not exist for
-  documents. An unknown style profile is not rejected at upload: the translation fails with a
-  `DocumentTranslationException` whose message contains `Style profile not found.`.
-- `TranslationMemoryId`:  the translation memory ID, as `TranslationMemory` in
-  [Text translation options](#text-translation-options).
+- `FormalityValue`:  same as in [Text translation options](#text-translation-options).
+- `Glossary`:  same as in [Text translation options](#text-translation-options), except that the source language
+  is required.
+- `GlossaryIds`:  same as in [Text translation options](#text-translation-options).
+- `StyleRule`:  same as in [Text translation options](#text-translation-options).
+- `StyleProfile`:  same as in [Text translation options](#text-translation-options), except that
+  `CustomInstructions` does not exist for documents. An unknown style profile is not rejected at upload: the
+  translation fails with a `DocumentTranslationException` whose message contains `Style profile not found.`.
+- `TranslationMemory`:  same as in [Text translation options](#text-translation-options).
+- `GlossaryId`, `StyleId` and `TranslationMemoryId` (obsolete): the former names of `Glossary`, `StyleRule` and
+  `TranslationMemory`, taking only the ID. They will be removed in the next major version.
 - `TranslationMemoryThreshold`:  same as in [Text translation options](#text-translation-options).
+- `Filename`: the name of the input file sent with the upload; its extension determines the file type. Required by
+  the `Stream` overloads without an `inputFileName` argument; the `FileInfo` overloads send it instead of the file's
+  name if set, and the overloads with an `inputFileName` argument ignore it.
+- `Timeout`: a `TimeSpan?` limiting how long `TranslateDocumentAsync()` waits for the translation between upload and
+  download. When it expires, a `DocumentTranslationException` is thrown whose `DocumentHandle` can be used to resume.
+  If unset (the default), the wait is not limited. It is not sent to the API.
 - `EnableDocumentMinification` (obsolete): A `bool` value. If set to `true`, the library will try to minify a document
   before translating it through the API, sending a smaller document if the file contains a lot of media. This is
   currently only supported for `pptx` and `docx` files. See also [Document minification](#document-minification).
@@ -617,8 +636,7 @@ Console.WriteLine(updatedGlossary.Name); // 'My new glossary name'
 
 You can use a stored glossary for text (or document) translation by setting the
 `TextTranslateOptions` `Glossary` property to the glossary ID or the glossary
-object (or the `DocumentTranslateOptions` `GlossaryId` property to the glossary
-ID). Set `source_lang` as well, so the glossary's language pair
+object (or the same property of `DocumentTranslateOptions`). Set `source_lang` as well, so the glossary's language pair
 matches the request:
 
 ```c#
@@ -721,8 +739,8 @@ of rules for style, formatting, and more. Multiple style rules can be stored wit
 your account, each with a user-specified name and a uniquely-assigned ID.
 
 Style rules can be applied to both text and document translation by setting the
-`StyleRule` property of `TextTranslateOptions` (the ID or a `StyleRuleInfo`) or
-the `StyleId` property of `DocumentTranslateOptions`, or by passing a
+`StyleRule` property of `TextTranslateOptions` or `DocumentTranslateOptions`
+(the ID or a `StyleRuleInfo`), or by passing a
 `StyleRuleInfo` to their constructor.
 
 #### Creating a style rule
@@ -881,8 +899,8 @@ var updated = await client.UpdateStyleProfileAsync(
 
 #### Translating with a style profile
 
-Set `StyleProfile` in `TextTranslateOptions` (the ID or the `StyleProfile`) or
-`StyleProfileId` in `DocumentTranslateOptions`, or pass the `StyleProfile` to
+Set `StyleProfile` in `TextTranslateOptions` or `DocumentTranslateOptions` (the
+ID or the `StyleProfile`), or pass the `StyleProfile` to
 their constructor, to translate with all components of the profile through one
 ID.
 
@@ -892,7 +910,7 @@ var result = await client.TranslateTextAsync(
 
 await client.TranslateDocumentAsync(
     new FileInfo("input.txt"), new FileInfo("output.txt"), null, "DE",
-    new DocumentTranslateOptions { StyleProfileId = "YOUR_STYLE_PROFILE_ID" });
+    new DocumentTranslateOptions { StyleProfile = "YOUR_STYLE_PROFILE_ID" });
 ```
 
 #### Deleting a style profile
@@ -1082,7 +1100,7 @@ Console.WriteLine(result.Text);
 ```
 
 Translation memories are also supported for document translation. Set the
-`TranslationMemoryId` property (and optionally `TranslationMemoryThreshold`), or
+`TranslationMemory` property (and optionally `TranslationMemoryThreshold`), or
 construct `DocumentTranslateOptions` using a `TranslationMemoryInfo` object, in
 the same way as for text translation:
 
@@ -1093,7 +1111,7 @@ await client.TranslateDocumentAsync(
     "EN",
     "DE",
     new DocumentTranslateOptions {
-      TranslationMemoryId = "YOUR_TM_ID",
+      TranslationMemory = "YOUR_TM_ID",
       TranslationMemoryThreshold = 80
     });
 ```

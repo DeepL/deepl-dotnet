@@ -107,13 +107,33 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
+    public Task SendsFormalityValueUnchanged() =>
+          Upload(
+                new DocumentTranslateOptions { Formality = Formality.Less, FormalityValue = "formal" },
+                ("formality", null, "formal"));
+
+#pragma warning disable CS0618 // The deprecated *Id properties stay covered by the existing tests.
+    [Fact]
     public Task SendsStyleId() =>
           Upload(new DocumentTranslateOptions { StyleId = "s1" }, ("style_id", null, "s1"));
+#pragma warning restore CS0618
+
+    [Fact]
+    public Task SendsStyleRuleOfStyleRuleInfo() {
+      var styleRule = new StyleRuleInfo("s1", "n", DateTime.UtcNow, DateTime.UtcNow, "en", 1, null, null);
+      return Upload(new DocumentTranslateOptions { StyleRule = styleRule }, ("style_id", null, "s1"));
+    }
 
     // Upload() passes no source language: the glossary source-language check must not fire for a style profile.
     [Fact]
-    public Task SendsStyleProfileId() =>
-          Upload(new DocumentTranslateOptions { StyleProfileId = "sp1" }, ("style_profile_id", null, "sp1"));
+    public Task SendsStyleProfile() =>
+          Upload(new DocumentTranslateOptions { StyleProfile = "sp1" }, ("style_profile_id", null, "sp1"));
+
+    [Fact]
+    public Task SendsStyleProfileOfStyleProfileObject() {
+      var styleProfile = new StyleProfile("sp1", "n", null, null, null, null, null, false, null, null);
+      return Upload(new DocumentTranslateOptions { StyleProfile = styleProfile }, ("style_profile_id", null, "sp1"));
+    }
 
     [Fact]
     public Task SendsStyleProfileIdOfStyleProfile() {
@@ -121,12 +141,103 @@ namespace DeepLTests.Offline {
       return Upload(new DocumentTranslateOptions(styleProfile), ("style_profile_id", null, "sp1"));
     }
 
+#pragma warning disable CS0618
     [Fact]
     public Task SendsTranslationMemoryIdAndThreshold() =>
           Upload(
                 new DocumentTranslateOptions { TranslationMemoryId = "tm1", TranslationMemoryThreshold = 90 },
                 ("translation_memory_id", null, "tm1"),
                 ("translation_memory_threshold", null, "90"));
+#pragma warning restore CS0618
+
+    [Fact]
+    public Task SendsTranslationMemoryOfTranslationMemoryInfoAndThreshold() {
+      var translationMemory = new TranslationMemoryInfo("tm1", "n", "en", new[] { "de" }, 1);
+      return Upload(
+            new DocumentTranslateOptions { TranslationMemory = translationMemory, TranslationMemoryThreshold = 90 },
+            ("translation_memory_id", null, "tm1"),
+            ("translation_memory_threshold", null, "90"));
+    }
+
+    [Fact]
+    public async Task SendsGlossaryOfGlossaryInfoWithSourceLanguage() {
+      ExpectMultipart(
+                  "v2/document",
+                  ("target_lang", null, "de"),
+                  ("source_lang", null, "en"),
+                  ("glossary_id", null, "g1"),
+                  ("file", "a.txt", "hello"))
+            .RespondJson(HandleReply);
+      var glossary = new MultilingualGlossaryInfo("g1", "n", new MultilingualGlossaryDictionaryInfo[0], DateTime.UtcNow);
+      await CreateClient().TranslateDocumentUploadAsync(
+            Text("hello"),
+            "a.txt",
+            "EN",
+            "DE",
+            new DocumentTranslateOptions { Glossary = glossary });
+    }
+
+    [Fact]
+    public async Task SendsGlossaryIdsMixingIdsAndGlossaryObjects() {
+      ExpectMultipart(
+                  "v2/document",
+                  ("target_lang", null, "de"),
+                  ("source_lang", null, "en"),
+                  ("glossary_ids", null, "g1,g2,g3"),
+                  ("file", "a.txt", "hello"))
+            .RespondJson(HandleReply);
+      var glossary = new GlossaryInfo("g2", "n", true, "en", "de", DateTime.UtcNow, 1);
+      var multilingualGlossary =
+            new MultilingualGlossaryInfo("g3", "n", new MultilingualGlossaryDictionaryInfo[0], DateTime.UtcNow);
+      // The C# 8 compiler of the .NET Core 3.1 SDK ignores [NotNullIfNotNull] on the conversion, hence the "!".
+      var options = new DocumentTranslateOptions { GlossaryIds = { "g1", ((string)glossary)! } };
+      options.GlossaryIds.Add(((string)multilingualGlossary)!);
+      await CreateClient().TranslateDocumentUploadAsync(Text("hello"), "a.txt", "EN", "DE", options);
+    }
+
+    [Fact]
+    public async Task UploadsStreamWithFilenameOption() {
+      ExpectMultipart("v2/document", ("target_lang", null, "de"), ("file", "b.txt", "hello")).RespondJson(HandleReply);
+      await CreateClient().TranslateDocumentUploadAsync(
+            Text("hello"),
+            null,
+            "DE",
+            new DocumentTranslateOptions { Filename = "b.txt" });
+    }
+
+    [Fact]
+    public async Task UploadsFileWithFilenameOptionInsteadOfFileName() {
+      ExpectMultipart("v2/document", ("target_lang", null, "de"), ("file", "b.txt", Fixtures.EnglishText))
+            .RespondJson(HandleReply);
+      await CreateClient().TranslateDocumentUploadAsync(
+            new FileInfo(Fixtures.CreateTextDocument()),
+            null,
+            "DE",
+            new DocumentTranslateOptions { Filename = "b.txt" });
+    }
+
+    [Fact]
+    public async Task ThrowsArgumentExceptionWhenStreamHasNoFilename() {
+      var exception = await Assert.ThrowsAsync<ArgumentException>(
+            () => CreateClient().TranslateDocumentUploadAsync(Text("hello"), null, "DE", new DocumentTranslateOptions()));
+      Assert.Contains("Filename", exception.Message);
+    }
+
+    [Fact]
+    public async Task TranslatesStreamWithFilenameOption() {
+      ExpectMultipart("v2/document", ("target_lang", null, "de"), ("file", "b.txt", "hello")).RespondJson(HandleReply);
+      ExpectForm(HttpMethod.Post, "v2/document/d1", ("document_key", "k1"))
+            .RespondJson("{\"document_id\":\"d1\",\"status\":\"done\"}");
+      ExpectForm(HttpMethod.Post, "v2/document/d1/result", ("document_key", "k1")).Respond("text/plain", "hallo");
+      using var output = new MemoryStream();
+      await CreateClient().TranslateDocumentAsync(
+            Text("hello"),
+            output,
+            null,
+            "DE",
+            new DocumentTranslateOptions { Filename = "b.txt" });
+      Assert.Equal("hallo", Encoding.UTF8.GetString(output.ToArray()));
+    }
 
     [Fact]
     public async Task SendsGlossaryIdWithSourceLanguage() {
@@ -142,7 +253,9 @@ namespace DeepLTests.Offline {
             "a.txt",
             "EN",
             "DE",
+#pragma warning disable CS0618
             new DocumentTranslateOptions { GlossaryId = "g1" });
+#pragma warning restore CS0618
     }
 
     [Fact]
@@ -185,7 +298,9 @@ namespace DeepLTests.Offline {
       ExpectForm(HttpMethod.Post, "v2/document/d1", ("document_key", "k1"))
             .RespondJson(
                   "{\"document_id\":\"d1\",\"status\":\"translating\",\"seconds_remaining\":3,\"billed_characters\":7}");
+#pragma warning disable CS0618
       var status = await CreateClient().TranslateDocumentStatusAsync(Handle);
+#pragma warning restore CS0618
       Assert.Equal("d1", status.DocumentId);
       Assert.Equal(DocumentStatus.StatusCode.Translating, status.Status);
       Assert.Equal(3, status.SecondsRemaining);
@@ -198,7 +313,7 @@ namespace DeepLTests.Offline {
     public async Task ParsesErrorStatus() {
       ExpectForm(HttpMethod.Post, "v2/document/d1", ("document_key", "k1"))
             .RespondJson("{\"document_id\":\"d1\",\"status\":\"error\",\"error_message\":\"boom\"}");
-      var status = await CreateClient().TranslateDocumentStatusAsync(Handle);
+      var status = await CreateClient().TranslateDocumentGetStatusAsync(Handle);
       Assert.Equal(DocumentStatus.StatusCode.Error, status.Status);
       Assert.Equal("boom", status.ErrorMessage);
       Assert.False(status.Ok);
@@ -211,6 +326,32 @@ namespace DeepLTests.Offline {
       ExpectForm(HttpMethod.Post, "v2/document/d1", ("document_key", "k1"))
             .RespondJson("{\"document_id\":\"d1\",\"status\":\"done\"}");
       await CreateClient().TranslateDocumentWaitUntilDoneAsync(Handle);
+    }
+
+    [Fact]
+    public async Task ThrowsDeepLExceptionWhenWaitTimeoutExpires() {
+      ExpectForm(HttpMethod.Post, "v2/document/d1", ("document_key", "k1"))
+            .RespondJson("{\"document_id\":\"d1\",\"status\":\"translating\"}");
+      var exception = await Assert.ThrowsAsync<DeepLException>(
+            () => CreateClient().TranslateDocumentWaitUntilDoneAsync(Handle, TimeSpan.Zero));
+      Assert.Contains("timeout", exception.Message);
+    }
+
+    [Fact]
+    public async Task ThrowsDocumentTranslationExceptionWithHandleWhenTimeoutOptionExpires() {
+      ExpectMultipart("v2/document", ("target_lang", null, "de"), ("file", "a.txt", "hello")).RespondJson(HandleReply);
+      ExpectForm(HttpMethod.Post, "v2/document/d1", ("document_key", "k1"))
+            .RespondJson("{\"document_id\":\"d1\",\"status\":\"queued\"}");
+      var exception = await Assert.ThrowsAsync<DocumentTranslationException>(
+            () => CreateClient().TranslateDocumentAsync(
+                  Text("hello"),
+                  "a.txt",
+                  new MemoryStream(),
+                  null,
+                  "DE",
+                  new DocumentTranslateOptions { Timeout = TimeSpan.Zero }));
+      Assert.Contains("timeout", exception.Message);
+      Assert.Equal(Handle.DocumentId, exception.DocumentHandle!.Value.DocumentId);
     }
 
     [Fact]
@@ -337,7 +478,7 @@ namespace DeepLTests.Offline {
 
     [Fact]
     public async Task ThrowsArgumentExceptionWhenGlossaryHasNoSourceLanguage() {
-      var options = new DocumentTranslateOptions { GlossaryId = "g1" };
+      var options = new DocumentTranslateOptions { Glossary = "g1" };
       await Assert.ThrowsAsync<ArgumentException>(
             () => CreateClient().TranslateDocumentUploadAsync(Text("hello"), "a.txt", null, "DE", options));
     }
@@ -358,7 +499,7 @@ namespace DeepLTests.Offline {
 
     [Fact]
     public async Task ThrowsArgumentOutOfRangeExceptionWhenThresholdIsOutOfRange() {
-      var options = new DocumentTranslateOptions { TranslationMemoryId = "tm1", TranslationMemoryThreshold = 101 };
+      var options = new DocumentTranslateOptions { TranslationMemory = "tm1", TranslationMemoryThreshold = 101 };
       await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
             () => CreateClient().TranslateDocumentUploadAsync(Text("hello"), "a.txt", null, "DE", options));
     }

@@ -6,9 +6,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
-- Added `StyleProfile` to `TextTranslateOptions` (the ID or a `StyleProfile` object), `StyleProfileId` to
-  `DocumentTranslateOptions`, and constructors taking a `StyleProfile`, to translate text and documents with a style
-  profile (sent as `style_profile_id`).
+- Added `StyleProfile` to `TextTranslateOptions` and `DocumentTranslateOptions` (the ID or a `StyleProfile` object),
+  and constructors taking a `StyleProfile`, to translate text and documents with a style profile (sent as
+  `style_profile_id`).
+- Added `Glossary`, `StyleRule` and `TranslationMemory` to `DocumentTranslateOptions`, replacing `GlossaryId`,
+  `StyleId` and `TranslationMemoryId`, as in `TextTranslateOptions`: each takes the ID or the resource object.
+  Glossary objects can also be added to `DocumentTranslateOptions.GlossaryIds`.
+- Added `DocumentTranslateOptions.FormalityValue`: the `formality` value as a string, sent unchanged instead of
+  `Formality` if set.
+- Added `DocumentTranslateOptions.Filename` and `Stream` overloads of `TranslateDocumentAsync()` and
+  `TranslateDocumentUploadAsync()` without the `inputFileName` parameter, which send `Filename` as the file name.
+  The `FileInfo` overloads send `Filename` instead of the file's name if it is set.
+- Added `TranslateDocumentGetStatusAsync()`, replacing `TranslateDocumentStatusAsync()`.
+- Added a `TranslateDocumentWaitUntilDoneAsync()` overload with a `TimeSpan? timeout`, and
+  `DocumentTranslateOptions.Timeout` for the wait inside `TranslateDocumentAsync()`. When the timeout expires, a
+  `DeepLException` is thrown (wrapped in a `DocumentTranslationException` by `TranslateDocumentAsync()`).
+- The new document methods and overloads are members of `Translator` and `DeepLClient`; the obsolete `ITranslator`
+  interface is unchanged.
 - Added `Glossary`, `StyleRule` and `TranslationMemory` to `TextTranslateOptions`, replacing `GlossaryId`, `StyleId`
   and `TranslationMemoryId`. Each takes the ID or the resource object (`GlossaryInfo` or `MultilingualGlossaryInfo`,
   `StyleRuleInfo`, `TranslationMemoryInfo`), so several resource objects can be combined in one options object.
@@ -98,6 +112,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Deprecated `TextTranslateOptions.GlossaryId`, `StyleId` and `TranslationMemoryId` with `[Obsolete]`; use `Glossary`,
   `StyleRule` and `TranslationMemory` instead. They keep working until the next major version. Error messages of text
   translation name the new properties, e.g. "Glossary and GlossaryIds cannot be used together".
+- Deprecated `DocumentTranslateOptions.GlossaryId`, `StyleId` and `TranslationMemoryId` with `[Obsolete]`; use
+  `Glossary`, `StyleRule` and `TranslationMemory` instead. They keep working until the next major version. Error
+  messages of document translation name the new properties, as for text translation.
+- Deprecated `Translator.TranslateDocumentStatusAsync()` with `[Obsolete]`; use `TranslateDocumentGetStatusAsync()`
+  instead. It keeps working until the next major version.
 - Deprecated the language code constants of the `LanguageCode` class (for example `LanguageCode.German`) with
   `[Obsolete]`; they will be removed in the next major version. Pass the language code as a string, for example
   `"de"`, and use `GetSourceLanguagesAsync()` and `GetTargetLanguagesAsync()` to retrieve the supported languages.
