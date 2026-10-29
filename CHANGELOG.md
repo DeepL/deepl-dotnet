@@ -60,6 +60,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   additional languages.
 - Retries now cover only HTTP 429, 5xx responses and transient network failures (timeouts, failed connections). Before,
   any exception thrown while sending a request was retried.
+- Each attempt of a request may now run until the time the client would wait before retrying it (the backoff delay)
+  when that is longer than `PerRetryConnectionTimeout`. The default client no longer limits a request including all
+  retries to 100 seconds; `OverallConnectionTimeout` still applies when it is set.
 
 ### Deprecated
 - Deprecated the language code constants of the `LanguageCode` class (for example `LanguageCode.German`) with

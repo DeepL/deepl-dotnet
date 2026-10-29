@@ -44,15 +44,13 @@ namespace DeepLTests.Offline {
     /// <summary>
     ///   Creates a client that retries like the default client does, with <see cref="Http" /> as the innermost handler.
     /// </summary>
-    protected DeepLClient CreateClientWithRetries(
-          int maximumNetworkRetries,
-          TimeSpan perRetryConnectionTimeout,
-          TimeSpan? overallConnectionTimeout = null) =>
+    protected DeepLClient CreateClientWithRetries(int maximumNetworkRetries, TimeSpan perRetryConnectionTimeout) =>
           CreateClient(
                 options => options.ClientFactory = () => DeepL.Internal.DeepLHttpClient.CreateDefaultHttpClient(
-                      perRetryConnectionTimeout,
-                      overallConnectionTimeout ?? TimeSpan.FromSeconds(60),
-                      maximumNetworkRetries,
+                      new DeepLClientOptions {
+                        MaximumNetworkRetries = maximumNetworkRetries,
+                        PerRetryConnectionTimeout = perRetryConnectionTimeout
+                      },
                       Http));
 
     /// <summary>Declares a request to the DeepL API that carries the authorization header.</summary>

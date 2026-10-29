@@ -66,6 +66,25 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
+    public async Task RunsAttemptUntilBackoffDeadlineWhenLongerThanTimeout() {
+      // The first backoff is 1 s ± 23 %, so a 100 ms timeout is extended and the 300 ms reply arrives in time.
+      ExpectNoBody(HttpMethod.Get, "v2/usage")
+            .Respond(
+                  async () => {
+                    await Task.Delay(TimeSpan.FromMilliseconds(300));
+                    return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(UsageReply) };
+                  });
+      await CreateClientWithRetries(1, TimeSpan.FromMilliseconds(100)).GetUsageAsync();
+    }
+
+    [Fact]
+    public void DefaultClientHasNoOverallTimeout() {
+      using var client = DeepL.Internal.DeepLHttpClient.CreateDefaultHttpClient(new DeepLClientOptions(), Http)
+            .HttpClient;
+      Assert.Equal(Timeout.InfiniteTimeSpan, client.Timeout);
+    }
+
+    [Fact]
     public async Task DoesNotRetryOtherExceptions() {
       var attempts = 0;
       Http.When(HttpMethod.Get, ApiUrl + "/v2/usage")

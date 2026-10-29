@@ -497,9 +497,7 @@ namespace DeepLTests.Offline {
                 AuthKey,
                 new DeepLAdminClientOptions {
                   ClientFactory = () => DeepL.Internal.DeepLHttpClient.CreateDefaultHttpClient(
-                        TimeSpan.FromSeconds(10),
-                        TimeSpan.FromSeconds(60),
-                        maximumNetworkRetries,
+                        new DeepLAdminClientOptions { MaximumNetworkRetries = maximumNetworkRetries },
                         Http)
                 });
   }

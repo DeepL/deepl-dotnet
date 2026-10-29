@@ -27,13 +27,15 @@ namespace DeepL {
     public int MaximumNetworkRetries { get; set; } = 5;
 
     /// <summary>
-    ///   Connection timeout for HTTP requests, including all retries, the default is 100 seconds. Only used if
-    ///   <see cref="ClientFactory" /> is unset.
+    ///   Timeout for HTTP requests including all retries and the waits between them. By default there is no overall
+    ///   timeout (<see cref="System.Threading.Timeout.InfiniteTimeSpan" />): each attempt is limited by
+    ///   <see cref="PerRetryConnectionTimeout" />. Only used if <see cref="ClientFactory" /> is unset.
     /// </summary>
-    public TimeSpan OverallConnectionTimeout { get; set; } = TimeSpan.FromSeconds(100);
+    public TimeSpan OverallConnectionTimeout { get; set; } = System.Threading.Timeout.InfiniteTimeSpan;
 
     /// <summary>
-    ///   Connection timeout used for each HTTP request retry, the default is 10 seconds. Only used if
+    ///   Timeout for each attempt of an HTTP request, the default is 10 seconds. An attempt may run longer, until the
+    ///   time the client would wait before retrying it (the backoff delay), when that is longer. Only used if
     ///   <see cref="ClientFactory" /> is unset.
     /// </summary>
     public TimeSpan PerRetryConnectionTimeout { get; set; } = TimeSpan.FromSeconds(10);

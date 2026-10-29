@@ -123,11 +123,17 @@ namespace DeepL.Internal {
       }
     }
 
+    /// <summary>Polly context key holding the index of the current attempt (0 = first attempt).</summary>
+    private const string AttemptContextKey = "DeepL.Attempt";
+
+    /// <summary>Polly context key holding the jittered backoff of the current attempt.</summary>
+    private const string BackoffContextKey = "DeepL.Backoff";
+
     /// <summary>
     ///   Creates a policy to retry failed HTTP requests wrapping the given handler.
     /// </summary>
     /// <param name="innerHandler"><see cref="HttpMessageHandler" /> on which requests should be retried.</param>
-    /// <param name="perRetryConnectionTimeout">Maximum time for each attempted request.</param>
+    /// <param name="perRetryConnectionTimeout">Minimum time allowed for each attempted request.</param>
     /// <param name="maximumNetworkRetries">Maximum number of retried requests.</param>
     /// <returns>An <see cref="HttpMessageHandler" /> comprising the inner handler wrapped with the retry policy.</returns>
     private static HttpMessageHandler CreateHttpMessageHandlerWithRetryPolicy(
@@ -135,13 +141,13 @@ namespace DeepL.Internal {
           TimeSpan perRetryConnectionTimeout,
           int maximumNetworkRetries) {
       var rnd = new Random();
-      var getSleepDuration = new Func<int, TimeSpan>(
-            retryCount => {
+      var computeBackoff = new Func<int, TimeSpan>(
+            attempt => {
               const double backoffInitial = 1.0;
               const double backoffMaximum = 120.0;
               const double backoffJitter = 0.23;
               const double backoffMultiplier = 1.6;
-              var backoff = backoffInitial * Math.Pow(backoffMultiplier, retryCount - 1);
+              var backoff = backoffInitial * Math.Pow(backoffMultiplier, attempt);
               backoff = Math.Min(backoff, backoffMaximum);
               lock (rnd) {
                 backoff *= 1.0 + (backoffJitter * ((rnd.NextDouble() * 2.0) - 1.0));
@@ -150,19 +156,46 @@ namespace DeepL.Internal {
               return TimeSpan.FromSeconds(backoff);
             });
 
-      var timeout = Policy.TimeoutAsync<HttpResponseMessage>(perRetryConnectionTimeout);
+      // The backoff of an attempt is both its deadline and the wait before the next attempt; the attempt may run
+      // until that deadline even if it is longer than the configured timeout.
+      var getBackoff = new Func<Context, TimeSpan>(
+            context => {
+              if (context.TryGetValue(BackoffContextKey, out var stored)) {
+                return (TimeSpan)stored;
+              }
+
+              var attempt = context.TryGetValue(AttemptContextKey, out var value) ? (int)value : 0;
+              var backoff = computeBackoff(attempt);
+              context[BackoffContextKey] = backoff;
+              return backoff;
+            });
+      var getSleepDuration = new Func<int, DelegateResult<HttpResponseMessage>, Context, TimeSpan>(
+            (retryCount, _, context) => {
+              var backoff = getBackoff(context);
+              context.Remove(BackoffContextKey);
+              context[AttemptContextKey] = retryCount;
+              return backoff;
+            });
+      var onRetry = new Func<DelegateResult<HttpResponseMessage>, TimeSpan, int, Context, Task>(
+            (result, sleep, retryCount, context) => Task.CompletedTask);
+
+      var timeout = Policy.TimeoutAsync<HttpResponseMessage>(
+            context => {
+              var backoff = getBackoff(context);
+              return backoff > perRetryConnectionTimeout ? backoff : perRetryConnectionTimeout;
+            });
       var waitAndRetry = Policy.Handle<TaskCanceledException>()
             .Or<TimeoutRejectedException>()
             .Or<HttpRequestException>()
             .OrResult<HttpResponseMessage>(
                   responseMessage => responseMessage.StatusCode == HttpStatusCodeTooManyRequests ||
                                      responseMessage.StatusCode >= HttpStatusCode.InternalServerError)
-            .WaitAndRetryAsync(maximumNetworkRetries, getSleepDuration);
+            .WaitAndRetryAsync(maximumNetworkRetries, getSleepDuration, onRetry);
       IAsyncPolicy<HttpResponseMessage> policy = Policy.WrapAsync(waitAndRetry, timeout);
       var waitAndRetryUnprocessed = Policy.Handle<HttpRequestException>(IsNameResolutionFailure)
             .OrResult<HttpResponseMessage>(
                   responseMessage => responseMessage.StatusCode == HttpStatusCodeTooManyRequests)
-            .WaitAndRetryAsync(maximumNetworkRetries, getSleepDuration);
+            .WaitAndRetryAsync(maximumNetworkRetries, getSleepDuration, onRetry);
       IAsyncPolicy<HttpResponseMessage> unprocessedPolicy = Policy.WrapAsync(waitAndRetryUnprocessed, timeout);
       return new PolicyHttpMessageHandler(
             request => request.GetPolicyExecutionContext()?.OperationKey == RetryOnlyUnprocessedOperationKey
@@ -188,33 +221,23 @@ namespace DeepL.Internal {
       return false;
     }
 
-    /// <summary>Creates a default HttpClient with exponential-backoff policy for retrying failed requests.</summary>
-    /// <param name="perRetryConnectionTimeout">Connection timeout for each HTTP request.</param>
-    /// <param name="overallConnectionTimeout">Timeout including all request-retries.</param>
-    /// <param name="maximumNetworkRetries">Maximum number of failed requests that may be retried.</param>
+    /// <summary>
+    ///   Creates a default HttpClient with exponential-backoff policy for retrying failed requests, configured from the
+    ///   given client options.
+    /// </summary>
+    /// <param name="options">Client options supplying retries and timeouts.</param>
+    /// <param name="innerHandler">Handler sending the requests; by default an <see cref="HttpClientHandler" />.</param>
     /// <returns>Newly initialized <see cref="HttpClient" /> object.</returns>
-    public static HttpClientAndDisposeFlag CreateDefaultHttpClient(
-          TimeSpan perRetryConnectionTimeout,
-          TimeSpan overallConnectionTimeout,
-          int maximumNetworkRetries) =>
-          CreateDefaultHttpClient(
-                perRetryConnectionTimeout,
-                overallConnectionTimeout,
-                maximumNetworkRetries,
-                new HttpClientHandler());
-
     internal static HttpClientAndDisposeFlag CreateDefaultHttpClient(
-          TimeSpan perRetryConnectionTimeout,
-          TimeSpan overallConnectionTimeout,
-          int maximumNetworkRetries,
-          HttpMessageHandler innerHandler) {
+          BaseClientOptions options,
+          HttpMessageHandler? innerHandler = null) {
       var handler = CreateHttpMessageHandlerWithRetryPolicy(
-            innerHandler,
-            perRetryConnectionTimeout,
-            maximumNetworkRetries);
+            innerHandler ?? new HttpClientHandler(),
+            options.PerRetryConnectionTimeout,
+            options.MaximumNetworkRetries);
       return new HttpClientAndDisposeFlag {
         DisposeClient = true,
-        HttpClient = new HttpClient(handler) { Timeout = overallConnectionTimeout }
+        HttpClient = new HttpClient(handler) { Timeout = options.OverallConnectionTimeout }
       };
     }
 
@@ -238,11 +261,7 @@ namespace DeepL.Internal {
         headers.Add("Authorization", $"DeepL-Auth-Key {authKey}");
       }
 
-      var clientFactory = options.ClientFactory ?? (() =>
-            CreateDefaultHttpClient(
-                  options.PerRetryConnectionTimeout,
-                  options.OverallConnectionTimeout,
-                  options.MaximumNetworkRetries));
+      var clientFactory = options.ClientFactory ?? (() => CreateDefaultHttpClient(options));
 
       return new DeepLHttpClient(serverUrl, clientFactory, headers);
     }
