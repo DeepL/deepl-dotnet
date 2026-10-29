@@ -38,9 +38,13 @@ namespace DeepL.Internal {
     internal static async Task<TValue> DeserializeAsync<TValue>(Stream contentStream) {
       using var reader = new StreamReader(contentStream);
 
-      return await JsonSerializer.DeserializeAsync<TValue>(contentStream, JsonSerializerOptions)
-                   .ConfigureAwait(false) ??
-             throw new DeepLException("Failed to deserialize JSON in received response");
+      try {
+        return await JsonSerializer.DeserializeAsync<TValue>(contentStream, JsonSerializerOptions)
+                     .ConfigureAwait(false) ??
+               throw new DeepLException("Failed to deserialize JSON in received response");
+      } catch (JsonException exception) {
+        throw new DeepLException("Failed to deserialize JSON in received response", exception);
+      }
     }
 
     /// <summary>Deserializes a JSON element into <typeparamref name="TValue" />, wrapping malformed content.</summary>

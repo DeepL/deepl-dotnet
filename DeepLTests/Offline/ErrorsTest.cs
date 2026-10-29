@@ -30,6 +30,15 @@ namespace DeepLTests.Offline {
       Assert.Equal(expectedStart + ", message: the message, detail: the detail", exception.Message);
     }
 
+    [Theory]
+    [InlineData("{\"character_count\":")]
+    [InlineData("{\"character_count\":\"many\",\"character_limit\":2}")]
+    public async Task ThrowsDeepLExceptionWhenResponseIsMalformed(string body) {
+      ExpectNoBody(HttpMethod.Get, "v2/usage").RespondJson(body);
+      var exception = await Assert.ThrowsAsync<DeepLException>(() => CreateClient().GetUsageAsync());
+      Assert.IsAssignableFrom<System.Text.Json.JsonException>(exception.InnerException);
+    }
+
     [Fact]
     public async Task ThrowsExceptionWithoutDetailWhenBodyIsNotJson() {
       ExpectNoBody(HttpMethod.Get, "v2/usage").Respond(HttpStatusCode.BadRequest, "text/html", "<html>bad</html>");

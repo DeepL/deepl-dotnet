@@ -83,6 +83,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   source languages.
 - HTTP 401 now throws an `AuthorizationException`, like HTTP 403. Before, it threw a `DeepLException` with an
   "Unexpected status code" message.
+- A malformed or mistyped JSON response now throws a `DeepLException` with the `JsonException` as `InnerException`.
+  Before, the raw `JsonException` was thrown.
 
 ## [1.22.1] - 2026-08-18
 ### Changed

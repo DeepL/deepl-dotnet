@@ -300,7 +300,7 @@ namespace DeepL.Internal {
         var errorResult = await JsonUtils.DeserializeAsync<ErrorResult>(responseMessage).ConfigureAwait(false);
         message = (errorResult.Message != null ? $", message: {errorResult.Message}" : "") +
                   (errorResult.Detail != null ? $", detail: {errorResult.Detail}" : "");
-      } catch (JsonException) {
+      } catch (DeepLException) {
         message = string.Empty;
       }
 

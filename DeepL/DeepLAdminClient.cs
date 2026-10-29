@@ -251,8 +251,8 @@ namespace DeepL {
       JsonElement element;
       try {
         element = await JsonUtils.DeserializeAsync<JsonElement>(responseMessage).ConfigureAwait(false);
-      } catch (JsonException exception) {
-        throw new DeepLException($"{what} response is not valid JSON", exception);
+      } catch (DeepLException exception) when (exception.InnerException is JsonException) {
+        throw new DeepLException($"{what} response is not valid JSON", exception.InnerException);
       }
 
       return element.ValueKind == kind
