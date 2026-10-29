@@ -56,6 +56,30 @@ namespace DeepL.Model {
     /// <summary>Vocabulary rules.</summary>
     [JsonPropertyName("vocabulary")]
     public Dictionary<string, string>? Vocabulary { get; }
+
+    /// <summary>
+    ///   Implicitly converts the <see cref="ConfiguredRules" /> to the configured rules map: category to rule to value,
+    ///   keyed by the API names (for example <c>dates_and_times</c>). Categories that are <c>null</c> are left out.
+    /// </summary>
+    /// <param name="configuredRules"><see cref="ConfiguredRules" /> object to convert.</param>
+    /// <returns>A new map of the set categories, or <c>null</c> if <paramref name="configuredRules" /> is <c>null</c>.</returns>
+    [return: NotNullIfNotNull("configuredRules")]
+    public static implicit operator Dictionary<string, Dictionary<string, string>>?(ConfiguredRules? configuredRules) {
+      if (configuredRules == null) return null;
+      var result = new Dictionary<string, Dictionary<string, string>>();
+      void Add(string category, Dictionary<string, string>? rules) {
+        if (rules != null) result[category] = rules;
+      }
+
+      Add("dates_and_times", configuredRules.DatesAndTimes);
+      Add("formatting", configuredRules.Formatting);
+      Add("numbers", configuredRules.Numbers);
+      Add("punctuation", configuredRules.Punctuation);
+      Add("spelling_and_grammar", configuredRules.SpellingAndGrammar);
+      Add("style_and_tone", configuredRules.StyleAndTone);
+      Add("vocabulary", configuredRules.Vocabulary);
+      return result;
+    }
   }
 
   /// <summary>Custom instruction for a style rule.</summary>
@@ -84,6 +108,14 @@ namespace DeepL.Model {
     /// <summary>Optional source language code for the custom instruction.</summary>
     [JsonPropertyName("source_language")]
     public string? SourceLanguage { get; }
+
+    /// <summary>
+    ///   Implicitly converts the <see cref="CustomInstruction" /> to its ID, so it can be passed wherever the
+    ///   instruction ID is accepted.
+    /// </summary>
+    /// <param name="customInstruction"><see cref="CustomInstruction" /> object to convert.</param>
+    /// <returns>The value of <see cref="Id" />, or <c>null</c> if <paramref name="customInstruction" /> is <c>null</c>.</returns>
+    public static implicit operator string?(CustomInstruction? customInstruction) => customInstruction?.Id;
   }
 
   /// <summary>Information about a style rule list.</summary>

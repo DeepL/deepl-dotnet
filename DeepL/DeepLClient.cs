@@ -622,11 +622,71 @@ namespace DeepL {
                 .ConfigureAwait(false);
 
     /// <inheritdoc />
+    [Obsolete(
+          "Use the overload taking the configured rules as a Dictionary<string, Dictionary<string, string>> instead. " +
+          "Will be removed in the next major version.")]
     public async Task<StyleRuleInfo> CreateStyleRuleAsync(
           string name,
           string language,
-          ConfiguredRules? configuredRules = null,
+          ConfiguredRules? configuredRules,
           CustomInstruction[]? customInstructions = null,
+          CancellationToken cancellationToken = default) =>
+          await CreateStyleRuleAsync(name, language, configuredRules, customInstructions, null, cancellationToken)
+                .ConfigureAwait(false);
+
+    /// <summary>Creates a new style rule.</summary>
+    /// <param name="name">Name for the new style rule.</param>
+    /// <param name="language">Language code for the style rule.</param>
+    /// <param name="configuredRules">
+    ///   Optional configured rules: category to rule to value, keyed by the API names (for example
+    ///   <c>dates_and_times</c>), sent as given.
+    /// </param>
+    /// <param name="customInstructions">Optional custom instructions.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>A <see cref="StyleRuleInfo" /> object for the newly created style rule.</returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<StyleRuleInfo> CreateStyleRuleAsync(
+          string name,
+          string language,
+          Dictionary<string, Dictionary<string, string>>? configuredRules = null,
+          CustomInstruction[]? customInstructions = null,
+          CancellationToken cancellationToken = default) =>
+          await CreateStyleRuleAsync(name, language, configuredRules, customInstructions, null, cancellationToken)
+                .ConfigureAwait(false);
+
+    /// <summary>
+    ///   Creates a new style rule, like
+    ///   <see cref="CreateStyleRuleAsync(string, string, Dictionary{string, Dictionary{string, string}}?, CustomInstruction[]?, CancellationToken)" />
+    ///   .
+    /// </summary>
+    /// <param name="name">Name for the new style rule.</param>
+    /// <param name="language">Language code for the style rule.</param>
+    /// <param name="configuredRules">
+    ///   Optional configured rules: category to rule to value, keyed by the API names (for example
+    ///   <c>dates_and_times</c>), sent as given.
+    /// </param>
+    /// <param name="customInstructions">Optional custom instructions.</param>
+    /// <param name="options">
+    ///   Optional <see cref="CreateStyleRuleOptions" />, whose <c>ExtraBodyParameters</c> are added last to the JSON
+    ///   request body.
+    /// </param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>A <see cref="StyleRuleInfo" /> object for the newly created style rule.</returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<StyleRuleInfo> CreateStyleRuleAsync(
+          string name,
+          string language,
+          Dictionary<string, Dictionary<string, string>>? configuredRules,
+          CustomInstruction[]? customInstructions,
+          CreateStyleRuleOptions? options,
           CancellationToken cancellationToken = default) {
       if (string.IsNullOrWhiteSpace(name)) {
         throw new ArgumentException($"Parameter {nameof(name)} must not be empty");
@@ -639,6 +699,7 @@ namespace DeepL {
       var requestData = new Dictionary<string, object> { ["name"] = name, ["language"] = language };
       if (configuredRules != null) requestData["configured_rules"] = configuredRules;
       if (customInstructions != null) requestData["custom_instructions"] = customInstructions;
+      AddExtraBodyParameters(requestData, options);
       using var responseMessage = await _client
             .ApiPostJsonAsync("v3/style_rules", cancellationToken, requestData, SerializationOptions).ConfigureAwait(false);
 
@@ -662,10 +723,51 @@ namespace DeepL {
       return await JsonUtils.DeserializeAsync<StyleRuleInfo>(responseMessage).ConfigureAwait(false);
     }
 
+    /// <summary>
+    ///   Retrieves the given style rule, like <see cref="GetStyleRuleAsync(string, CancellationToken)" />.
+    /// </summary>
+    /// <param name="styleRule">The style rule to retrieve.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>A <see cref="StyleRuleInfo" /> object for the requested style rule.</returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="NotFoundException">If the specified style rule was not found.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<StyleRuleInfo> GetStyleRuleAsync(
+          StyleRuleInfo styleRule,
+          CancellationToken cancellationToken = default) =>
+          await GetStyleRuleAsync(StyleRuleId(styleRule), cancellationToken).ConfigureAwait(false);
+
     /// <inheritdoc />
     public async Task<StyleRuleInfo> UpdateStyleRuleNameAsync(
           string styleId,
           string name,
+          CancellationToken cancellationToken = default) =>
+          await UpdateStyleRuleNameAsync(styleId, name, null, cancellationToken).ConfigureAwait(false);
+
+    /// <summary>
+    ///   Updates the name of a style rule, like <see cref="UpdateStyleRuleNameAsync(string, string, CancellationToken)" />.
+    /// </summary>
+    /// <param name="styleId">The ID of the style rule to update.</param>
+    /// <param name="name">The new name for the style rule.</param>
+    /// <param name="options">
+    ///   Optional <see cref="UpdateStyleRuleNameOptions" />, whose <c>ExtraBodyParameters</c> are added last to the JSON
+    ///   request body.
+    /// </param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>A <see cref="StyleRuleInfo" /> object for the updated style rule.</returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="NotFoundException">If the specified style rule was not found.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<StyleRuleInfo> UpdateStyleRuleNameAsync(
+          string styleId,
+          string name,
+          UpdateStyleRuleNameOptions? options,
           CancellationToken cancellationToken = default) {
       if (string.IsNullOrWhiteSpace(styleId)) {
         throw new ArgumentException($"Parameter {nameof(styleId)} must not be empty");
@@ -676,6 +778,7 @@ namespace DeepL {
       }
 
       var requestData = new Dictionary<string, object> { ["name"] = name };
+      AddExtraBodyParameters(requestData, options);
       using var responseMessage =
             await _client.ApiPatchJsonAsync($"v3/style_rules/{Uri.EscapeDataString(styleId)}", cancellationToken, requestData, SerializationOptions)
                   .ConfigureAwait(false);
@@ -683,6 +786,51 @@ namespace DeepL {
       await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.StyleRule).ConfigureAwait(false);
       return await JsonUtils.DeserializeAsync<StyleRuleInfo>(responseMessage).ConfigureAwait(false);
     }
+
+    /// <summary>
+    ///   Updates the name of the given style rule, like
+    ///   <see cref="UpdateStyleRuleNameAsync(string, string, CancellationToken)" />.
+    /// </summary>
+    /// <param name="styleRule">The style rule to update.</param>
+    /// <param name="name">The new name for the style rule.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>A <see cref="StyleRuleInfo" /> object for the updated style rule.</returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="NotFoundException">If the specified style rule was not found.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<StyleRuleInfo> UpdateStyleRuleNameAsync(
+          StyleRuleInfo styleRule,
+          string name,
+          CancellationToken cancellationToken = default) =>
+          await UpdateStyleRuleNameAsync(StyleRuleId(styleRule), name, null, cancellationToken).ConfigureAwait(false);
+
+    /// <summary>
+    ///   Updates the name of the given style rule, like
+    ///   <see cref="UpdateStyleRuleNameAsync(string, string, UpdateStyleRuleNameOptions?, CancellationToken)" />.
+    /// </summary>
+    /// <param name="styleRule">The style rule to update.</param>
+    /// <param name="name">The new name for the style rule.</param>
+    /// <param name="options">
+    ///   Optional <see cref="UpdateStyleRuleNameOptions" />, whose <c>ExtraBodyParameters</c> are added last to the JSON
+    ///   request body.
+    /// </param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>A <see cref="StyleRuleInfo" /> object for the updated style rule.</returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="NotFoundException">If the specified style rule was not found.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<StyleRuleInfo> UpdateStyleRuleNameAsync(
+          StyleRuleInfo styleRule,
+          string name,
+          UpdateStyleRuleNameOptions? options,
+          CancellationToken cancellationToken = default) =>
+          await UpdateStyleRuleNameAsync(StyleRuleId(styleRule), name, options, cancellationToken).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task DeleteStyleRuleAsync(
@@ -699,11 +847,115 @@ namespace DeepL {
       await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.StyleRule).ConfigureAwait(false);
     }
 
+    /// <summary>Deletes the given style rule, like <see cref="DeleteStyleRuleAsync(string, CancellationToken)" />.</summary>
+    /// <param name="styleRule">The style rule to delete.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="NotFoundException">If the specified style rule was not found.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task DeleteStyleRuleAsync(
+          StyleRuleInfo styleRule,
+          CancellationToken cancellationToken = default) =>
+          await DeleteStyleRuleAsync(StyleRuleId(styleRule), cancellationToken).ConfigureAwait(false);
+
     /// <inheritdoc />
+    [Obsolete(
+          "Use the overload taking the configured rules as a Dictionary<string, Dictionary<string, string>> instead. " +
+          "Will be removed in the next major version.")]
     public async Task<StyleRuleInfo> UpdateStyleRuleConfiguredRulesAsync(
           string styleId,
           ConfiguredRules configuredRules,
-          CancellationToken cancellationToken = default) {
+          CancellationToken cancellationToken = default) =>
+          await UpdateStyleRuleConfiguredRulesCoreAsync(styleId, configuredRules, null, cancellationToken)
+                .ConfigureAwait(false);
+
+    /// <summary>
+    ///   Updates the configured rules of the given style rule, like
+    ///   <see cref="UpdateStyleRuleConfiguredRulesAsync(string, ConfiguredRules, CancellationToken)" />.
+    /// </summary>
+    /// <param name="styleRule">The style rule to update.</param>
+    /// <param name="configuredRules">The new configured rules.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>A <see cref="StyleRuleInfo" /> object for the updated style rule.</returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="NotFoundException">If the specified style rule was not found.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    [Obsolete(
+          "Use the overload taking the configured rules as a Dictionary<string, Dictionary<string, string>> instead. " +
+          "Will be removed in the next major version.")]
+    public async Task<StyleRuleInfo> UpdateStyleRuleConfiguredRulesAsync(
+          StyleRuleInfo styleRule,
+          ConfiguredRules configuredRules,
+          CancellationToken cancellationToken = default) =>
+          await UpdateStyleRuleConfiguredRulesCoreAsync(StyleRuleId(styleRule), configuredRules, null, cancellationToken)
+                .ConfigureAwait(false);
+
+    /// <summary>Updates the configured rules of a style rule.</summary>
+    /// <param name="styleId">The ID of the style rule to update.</param>
+    /// <param name="configuredRules">
+    ///   The new configured rules: category to rule to value, keyed by the API names (for example
+    ///   <c>dates_and_times</c>), sent as given.
+    /// </param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>A <see cref="StyleRuleInfo" /> object for the updated style rule.</returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="NotFoundException">If the specified style rule was not found.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<StyleRuleInfo> UpdateStyleRuleConfiguredRulesAsync(
+          string styleId,
+          Dictionary<string, Dictionary<string, string>> configuredRules,
+          CancellationToken cancellationToken = default) =>
+          await UpdateStyleRuleConfiguredRulesAsync(styleId, configuredRules, null, cancellationToken)
+                .ConfigureAwait(false);
+
+    /// <summary>
+    ///   Updates the configured rules of a style rule, like
+    ///   <see cref="UpdateStyleRuleConfiguredRulesAsync(string, Dictionary{string, Dictionary{string, string}}, CancellationToken)" />
+    ///   .
+    /// </summary>
+    /// <param name="styleId">The ID of the style rule to update.</param>
+    /// <param name="configuredRules">
+    ///   The new configured rules: category to rule to value, keyed by the API names (for example
+    ///   <c>dates_and_times</c>), sent as given.
+    /// </param>
+    /// <param name="options">
+    ///   Optional <see cref="UpdateStyleRuleConfiguredRulesOptions" />, whose <c>ExtraBodyParameters</c> are added last
+    ///   to the request body, the configured rules map, as further keys.
+    /// </param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>A <see cref="StyleRuleInfo" /> object for the updated style rule.</returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="NotFoundException">If the specified style rule was not found.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<StyleRuleInfo> UpdateStyleRuleConfiguredRulesAsync(
+          string styleId,
+          Dictionary<string, Dictionary<string, string>> configuredRules,
+          UpdateStyleRuleConfiguredRulesOptions? options,
+          CancellationToken cancellationToken = default) =>
+          await UpdateStyleRuleConfiguredRulesCoreAsync(styleId, configuredRules, options, cancellationToken)
+                .ConfigureAwait(false);
+
+    /// <summary>
+    ///   Sends the configured rules of a style rule; shared by the overloads taking a map and the deprecated overloads
+    ///   taking a <see cref="ConfiguredRules" />, which pass the converted map (<c>null</c> for a <c>null</c> object).
+    /// </summary>
+    private async Task<StyleRuleInfo> UpdateStyleRuleConfiguredRulesCoreAsync(
+          string styleId,
+          Dictionary<string, Dictionary<string, string>>? configuredRules,
+          UpdateStyleRuleConfiguredRulesOptions? options,
+          CancellationToken cancellationToken) {
       if (string.IsNullOrWhiteSpace(styleId)) {
         throw new ArgumentException($"Parameter {nameof(styleId)} must not be empty");
       }
@@ -712,13 +964,74 @@ namespace DeepL {
         throw new ArgumentNullException(nameof(configuredRules));
       }
 
+      var requestData = new Dictionary<string, object>();
+      foreach (var category in configuredRules) {
+        requestData[category.Key] = category.Value;
+      }
+
+      AddExtraBodyParameters(requestData, options);
       using var responseMessage = await _client
-            .ApiPutJsonAsync($"v3/style_rules/{Uri.EscapeDataString(styleId)}/configured_rules", cancellationToken, configuredRules, SerializationOptions)
+            .ApiPutJsonAsync($"v3/style_rules/{Uri.EscapeDataString(styleId)}/configured_rules", cancellationToken, requestData, SerializationOptions)
             .ConfigureAwait(false);
 
       await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.StyleRule).ConfigureAwait(false);
       return await JsonUtils.DeserializeAsync<StyleRuleInfo>(responseMessage).ConfigureAwait(false);
     }
+
+    /// <summary>
+    ///   Updates the configured rules of the given style rule, like
+    ///   <see cref="UpdateStyleRuleConfiguredRulesAsync(string, Dictionary{string, Dictionary{string, string}}, CancellationToken)" />
+    ///   .
+    /// </summary>
+    /// <param name="styleRule">The style rule to update.</param>
+    /// <param name="configuredRules">
+    ///   The new configured rules: category to rule to value, keyed by the API names (for example
+    ///   <c>dates_and_times</c>), sent as given.
+    /// </param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>A <see cref="StyleRuleInfo" /> object for the updated style rule.</returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="NotFoundException">If the specified style rule was not found.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<StyleRuleInfo> UpdateStyleRuleConfiguredRulesAsync(
+          StyleRuleInfo styleRule,
+          Dictionary<string, Dictionary<string, string>> configuredRules,
+          CancellationToken cancellationToken = default) =>
+          await UpdateStyleRuleConfiguredRulesAsync(StyleRuleId(styleRule), configuredRules, null, cancellationToken)
+                .ConfigureAwait(false);
+
+    /// <summary>
+    ///   Updates the configured rules of the given style rule, like
+    ///   <see cref="UpdateStyleRuleConfiguredRulesAsync(string, Dictionary{string, Dictionary{string, string}}, UpdateStyleRuleConfiguredRulesOptions?, CancellationToken)" />
+    ///   .
+    /// </summary>
+    /// <param name="styleRule">The style rule to update.</param>
+    /// <param name="configuredRules">
+    ///   The new configured rules: category to rule to value, keyed by the API names (for example
+    ///   <c>dates_and_times</c>), sent as given.
+    /// </param>
+    /// <param name="options">
+    ///   Optional <see cref="UpdateStyleRuleConfiguredRulesOptions" />, whose <c>ExtraBodyParameters</c> are added last
+    ///   to the request body, the configured rules map, as further keys.
+    /// </param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>A <see cref="StyleRuleInfo" /> object for the updated style rule.</returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="NotFoundException">If the specified style rule was not found.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<StyleRuleInfo> UpdateStyleRuleConfiguredRulesAsync(
+          StyleRuleInfo styleRule,
+          Dictionary<string, Dictionary<string, string>> configuredRules,
+          UpdateStyleRuleConfiguredRulesOptions? options,
+          CancellationToken cancellationToken = default) =>
+          await UpdateStyleRuleConfiguredRulesAsync(StyleRuleId(styleRule), configuredRules, options, cancellationToken)
+                .ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<CustomInstruction> CreateStyleRuleCustomInstructionAsync(
@@ -726,6 +1039,36 @@ namespace DeepL {
           string label,
           string prompt,
           string? sourceLanguage = null,
+          CancellationToken cancellationToken = default) =>
+          await CreateStyleRuleCustomInstructionAsync(styleId, label, prompt, sourceLanguage, null, cancellationToken)
+                .ConfigureAwait(false);
+
+    /// <summary>
+    ///   Creates a custom instruction for a style rule, like
+    ///   <see cref="CreateStyleRuleCustomInstructionAsync(string, string, string, string?, CancellationToken)" />.
+    /// </summary>
+    /// <param name="styleId">The ID of the style rule.</param>
+    /// <param name="label">Label for the custom instruction.</param>
+    /// <param name="prompt">Prompt text for the custom instruction.</param>
+    /// <param name="sourceLanguage">Optional source language code.</param>
+    /// <param name="options">
+    ///   Optional <see cref="CreateStyleRuleCustomInstructionOptions" />, whose <c>ExtraBodyParameters</c> are added last
+    ///   to the JSON request body.
+    /// </param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>A <see cref="CustomInstruction" /> object for the newly created instruction.</returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="NotFoundException">If the specified style rule was not found.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<CustomInstruction> CreateStyleRuleCustomInstructionAsync(
+          string styleId,
+          string label,
+          string prompt,
+          string? sourceLanguage,
+          CreateStyleRuleCustomInstructionOptions? options,
           CancellationToken cancellationToken = default) {
       if (string.IsNullOrWhiteSpace(styleId)) {
         throw new ArgumentException($"Parameter {nameof(styleId)} must not be empty");
@@ -741,6 +1084,7 @@ namespace DeepL {
 
       var requestData = new Dictionary<string, object> { ["label"] = label, ["prompt"] = prompt };
       if (sourceLanguage != null) requestData["source_language"] = sourceLanguage;
+      AddExtraBodyParameters(requestData, options);
       using var responseMessage = await _client
             .ApiPostJsonAsync($"v3/style_rules/{Uri.EscapeDataString(styleId)}/custom_instructions", cancellationToken, requestData, SerializationOptions)
             .ConfigureAwait(false);
@@ -748,6 +1092,74 @@ namespace DeepL {
       await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.StyleRule).ConfigureAwait(false);
       return await JsonUtils.DeserializeAsync<CustomInstruction>(responseMessage).ConfigureAwait(false);
     }
+
+    /// <summary>
+    ///   Creates a custom instruction for the given style rule, like
+    ///   <see cref="CreateStyleRuleCustomInstructionAsync(string, string, string, string?, CancellationToken)" />.
+    /// </summary>
+    /// <param name="styleRule">The style rule.</param>
+    /// <param name="label">Label for the custom instruction.</param>
+    /// <param name="prompt">Prompt text for the custom instruction.</param>
+    /// <param name="sourceLanguage">Optional source language code.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>A <see cref="CustomInstruction" /> object for the newly created instruction.</returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="NotFoundException">If the specified style rule was not found.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<CustomInstruction> CreateStyleRuleCustomInstructionAsync(
+          StyleRuleInfo styleRule,
+          string label,
+          string prompt,
+          string? sourceLanguage = null,
+          CancellationToken cancellationToken = default) =>
+          await CreateStyleRuleCustomInstructionAsync(
+                      StyleRuleId(styleRule),
+                      label,
+                      prompt,
+                      sourceLanguage,
+                      null,
+                      cancellationToken)
+                .ConfigureAwait(false);
+
+    /// <summary>
+    ///   Creates a custom instruction for the given style rule, like
+    ///   <see cref="CreateStyleRuleCustomInstructionAsync(string, string, string, string?, CreateStyleRuleCustomInstructionOptions?, CancellationToken)" />
+    ///   .
+    /// </summary>
+    /// <param name="styleRule">The style rule.</param>
+    /// <param name="label">Label for the custom instruction.</param>
+    /// <param name="prompt">Prompt text for the custom instruction.</param>
+    /// <param name="sourceLanguage">Optional source language code.</param>
+    /// <param name="options">
+    ///   Optional <see cref="CreateStyleRuleCustomInstructionOptions" />, whose <c>ExtraBodyParameters</c> are added last
+    ///   to the JSON request body.
+    /// </param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>A <see cref="CustomInstruction" /> object for the newly created instruction.</returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="NotFoundException">If the specified style rule was not found.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<CustomInstruction> CreateStyleRuleCustomInstructionAsync(
+          StyleRuleInfo styleRule,
+          string label,
+          string prompt,
+          string? sourceLanguage,
+          CreateStyleRuleCustomInstructionOptions? options,
+          CancellationToken cancellationToken = default) =>
+          await CreateStyleRuleCustomInstructionAsync(
+                      StyleRuleId(styleRule),
+                      label,
+                      prompt,
+                      sourceLanguage,
+                      options,
+                      cancellationToken)
+                .ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<CustomInstruction> GetStyleRuleCustomInstructionAsync(
@@ -771,6 +1183,69 @@ namespace DeepL {
       return await JsonUtils.DeserializeAsync<CustomInstruction>(responseMessage).ConfigureAwait(false);
     }
 
+    /// <summary>
+    ///   Retrieves a custom instruction of the given style rule, like
+    ///   <see cref="GetStyleRuleCustomInstructionAsync(string, string, CancellationToken)" />.
+    /// </summary>
+    /// <param name="styleRule">The style rule.</param>
+    /// <param name="instructionId">The ID of the custom instruction.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>A <see cref="CustomInstruction" /> object for the requested instruction.</returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="NotFoundException">If the specified style rule or custom instruction was not found.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<CustomInstruction> GetStyleRuleCustomInstructionAsync(
+          StyleRuleInfo styleRule,
+          string instructionId,
+          CancellationToken cancellationToken = default) =>
+          await GetStyleRuleCustomInstructionAsync(StyleRuleId(styleRule), instructionId, cancellationToken)
+                .ConfigureAwait(false);
+
+    /// <summary>
+    ///   Retrieves the given custom instruction of a style rule, like
+    ///   <see cref="GetStyleRuleCustomInstructionAsync(string, string, CancellationToken)" />.
+    /// </summary>
+    /// <param name="styleId">The ID of the style rule.</param>
+    /// <param name="instruction">The custom instruction to retrieve.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>A <see cref="CustomInstruction" /> object for the requested instruction.</returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="NotFoundException">If the specified style rule or custom instruction was not found.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<CustomInstruction> GetStyleRuleCustomInstructionAsync(
+          string styleId,
+          CustomInstruction instruction,
+          CancellationToken cancellationToken = default) =>
+          await GetStyleRuleCustomInstructionAsync(styleId, InstructionId(instruction), cancellationToken)
+                .ConfigureAwait(false);
+
+    /// <summary>
+    ///   Retrieves the given custom instruction of the given style rule, like
+    ///   <see cref="GetStyleRuleCustomInstructionAsync(string, string, CancellationToken)" />.
+    /// </summary>
+    /// <param name="styleRule">The style rule.</param>
+    /// <param name="instruction">The custom instruction to retrieve.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>A <see cref="CustomInstruction" /> object for the requested instruction.</returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="NotFoundException">If the specified style rule or custom instruction was not found.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<CustomInstruction> GetStyleRuleCustomInstructionAsync(
+          StyleRuleInfo styleRule,
+          CustomInstruction instruction,
+          CancellationToken cancellationToken = default) =>
+          await GetStyleRuleCustomInstructionAsync(StyleRuleId(styleRule), InstructionId(instruction), cancellationToken)
+                .ConfigureAwait(false);
+
     /// <inheritdoc />
     public async Task<CustomInstruction> UpdateStyleRuleCustomInstructionAsync(
           string styleId,
@@ -778,6 +1253,45 @@ namespace DeepL {
           string label,
           string prompt,
           string? sourceLanguage = null,
+          CancellationToken cancellationToken = default) =>
+          await UpdateStyleRuleCustomInstructionAsync(
+                      styleId,
+                      instructionId,
+                      label,
+                      prompt,
+                      sourceLanguage,
+                      null,
+                      cancellationToken)
+                .ConfigureAwait(false);
+
+    /// <summary>
+    ///   Updates a custom instruction of a style rule, like
+    ///   <see cref="UpdateStyleRuleCustomInstructionAsync(string, string, string, string, string?, CancellationToken)" />.
+    /// </summary>
+    /// <param name="styleId">The ID of the style rule.</param>
+    /// <param name="instructionId">The ID of the custom instruction to update.</param>
+    /// <param name="label">New label for the custom instruction.</param>
+    /// <param name="prompt">New prompt text for the custom instruction.</param>
+    /// <param name="sourceLanguage">Optional source language code.</param>
+    /// <param name="options">
+    ///   Optional <see cref="UpdateStyleRuleCustomInstructionOptions" />, whose <c>ExtraBodyParameters</c> are added last
+    ///   to the JSON request body.
+    /// </param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>A <see cref="CustomInstruction" /> object for the updated instruction.</returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="NotFoundException">If the specified style rule or custom instruction was not found.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<CustomInstruction> UpdateStyleRuleCustomInstructionAsync(
+          string styleId,
+          string instructionId,
+          string label,
+          string prompt,
+          string? sourceLanguage,
+          UpdateStyleRuleCustomInstructionOptions? options,
           CancellationToken cancellationToken = default) {
       if (string.IsNullOrWhiteSpace(styleId)) {
         throw new ArgumentException($"Parameter {nameof(styleId)} must not be empty");
@@ -797,6 +1311,7 @@ namespace DeepL {
 
       var requestData = new Dictionary<string, object> { ["label"] = label, ["prompt"] = prompt };
       if (sourceLanguage != null) requestData["source_language"] = sourceLanguage;
+      AddExtraBodyParameters(requestData, options);
       using var responseMessage = await _client
             .ApiPutJsonAsync(
                   $"v3/style_rules/{Uri.EscapeDataString(styleId)}/custom_instructions/{Uri.EscapeDataString(instructionId)}",
@@ -808,6 +1323,228 @@ namespace DeepL {
       await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.StyleRule).ConfigureAwait(false);
       return await JsonUtils.DeserializeAsync<CustomInstruction>(responseMessage).ConfigureAwait(false);
     }
+
+    /// <summary>
+    ///   Updates a custom instruction of the given style rule, like
+    ///   <see cref="UpdateStyleRuleCustomInstructionAsync(string, string, string, string, string?, CancellationToken)" />.
+    /// </summary>
+    /// <param name="styleRule">The style rule.</param>
+    /// <param name="instructionId">The ID of the custom instruction to update.</param>
+    /// <param name="label">New label for the custom instruction.</param>
+    /// <param name="prompt">New prompt text for the custom instruction.</param>
+    /// <param name="sourceLanguage">Optional source language code.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>A <see cref="CustomInstruction" /> object for the updated instruction.</returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="NotFoundException">If the specified style rule or custom instruction was not found.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<CustomInstruction> UpdateStyleRuleCustomInstructionAsync(
+          StyleRuleInfo styleRule,
+          string instructionId,
+          string label,
+          string prompt,
+          string? sourceLanguage = null,
+          CancellationToken cancellationToken = default) =>
+          await UpdateStyleRuleCustomInstructionAsync(
+                      StyleRuleId(styleRule),
+                      instructionId,
+                      label,
+                      prompt,
+                      sourceLanguage,
+                      null,
+                      cancellationToken)
+                .ConfigureAwait(false);
+
+    /// <summary>
+    ///   Updates the given custom instruction of a style rule, like
+    ///   <see cref="UpdateStyleRuleCustomInstructionAsync(string, string, string, string, string?, CancellationToken)" />.
+    /// </summary>
+    /// <param name="styleId">The ID of the style rule.</param>
+    /// <param name="instruction">The custom instruction to update.</param>
+    /// <param name="label">New label for the custom instruction.</param>
+    /// <param name="prompt">New prompt text for the custom instruction.</param>
+    /// <param name="sourceLanguage">Optional source language code.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>A <see cref="CustomInstruction" /> object for the updated instruction.</returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="NotFoundException">If the specified style rule or custom instruction was not found.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<CustomInstruction> UpdateStyleRuleCustomInstructionAsync(
+          string styleId,
+          CustomInstruction instruction,
+          string label,
+          string prompt,
+          string? sourceLanguage = null,
+          CancellationToken cancellationToken = default) =>
+          await UpdateStyleRuleCustomInstructionAsync(
+                      styleId,
+                      InstructionId(instruction),
+                      label,
+                      prompt,
+                      sourceLanguage,
+                      null,
+                      cancellationToken)
+                .ConfigureAwait(false);
+
+    /// <summary>
+    ///   Updates the given custom instruction of the given style rule, like
+    ///   <see cref="UpdateStyleRuleCustomInstructionAsync(string, string, string, string, string?, CancellationToken)" />.
+    /// </summary>
+    /// <param name="styleRule">The style rule.</param>
+    /// <param name="instruction">The custom instruction to update.</param>
+    /// <param name="label">New label for the custom instruction.</param>
+    /// <param name="prompt">New prompt text for the custom instruction.</param>
+    /// <param name="sourceLanguage">Optional source language code.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>A <see cref="CustomInstruction" /> object for the updated instruction.</returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="NotFoundException">If the specified style rule or custom instruction was not found.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<CustomInstruction> UpdateStyleRuleCustomInstructionAsync(
+          StyleRuleInfo styleRule,
+          CustomInstruction instruction,
+          string label,
+          string prompt,
+          string? sourceLanguage = null,
+          CancellationToken cancellationToken = default) =>
+          await UpdateStyleRuleCustomInstructionAsync(
+                      StyleRuleId(styleRule),
+                      InstructionId(instruction),
+                      label,
+                      prompt,
+                      sourceLanguage,
+                      null,
+                      cancellationToken)
+                .ConfigureAwait(false);
+
+    /// <summary>
+    ///   Updates a custom instruction of the given style rule, like
+    ///   <see cref="UpdateStyleRuleCustomInstructionAsync(string, string, string, string, string?, UpdateStyleRuleCustomInstructionOptions?, CancellationToken)" />
+    ///   .
+    /// </summary>
+    /// <param name="styleRule">The style rule.</param>
+    /// <param name="instructionId">The ID of the custom instruction to update.</param>
+    /// <param name="label">New label for the custom instruction.</param>
+    /// <param name="prompt">New prompt text for the custom instruction.</param>
+    /// <param name="sourceLanguage">Optional source language code.</param>
+    /// <param name="options">
+    ///   Optional <see cref="UpdateStyleRuleCustomInstructionOptions" />, whose <c>ExtraBodyParameters</c> are added last
+    ///   to the JSON request body.
+    /// </param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>A <see cref="CustomInstruction" /> object for the updated instruction.</returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="NotFoundException">If the specified style rule or custom instruction was not found.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<CustomInstruction> UpdateStyleRuleCustomInstructionAsync(
+          StyleRuleInfo styleRule,
+          string instructionId,
+          string label,
+          string prompt,
+          string? sourceLanguage,
+          UpdateStyleRuleCustomInstructionOptions? options,
+          CancellationToken cancellationToken = default) =>
+          await UpdateStyleRuleCustomInstructionAsync(
+                      StyleRuleId(styleRule),
+                      instructionId,
+                      label,
+                      prompt,
+                      sourceLanguage,
+                      options,
+                      cancellationToken)
+                .ConfigureAwait(false);
+
+    /// <summary>
+    ///   Updates the given custom instruction of a style rule, like
+    ///   <see cref="UpdateStyleRuleCustomInstructionAsync(string, string, string, string, string?, UpdateStyleRuleCustomInstructionOptions?, CancellationToken)" />
+    ///   .
+    /// </summary>
+    /// <param name="styleId">The ID of the style rule.</param>
+    /// <param name="instruction">The custom instruction to update.</param>
+    /// <param name="label">New label for the custom instruction.</param>
+    /// <param name="prompt">New prompt text for the custom instruction.</param>
+    /// <param name="sourceLanguage">Optional source language code.</param>
+    /// <param name="options">
+    ///   Optional <see cref="UpdateStyleRuleCustomInstructionOptions" />, whose <c>ExtraBodyParameters</c> are added last
+    ///   to the JSON request body.
+    /// </param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>A <see cref="CustomInstruction" /> object for the updated instruction.</returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="NotFoundException">If the specified style rule or custom instruction was not found.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<CustomInstruction> UpdateStyleRuleCustomInstructionAsync(
+          string styleId,
+          CustomInstruction instruction,
+          string label,
+          string prompt,
+          string? sourceLanguage,
+          UpdateStyleRuleCustomInstructionOptions? options,
+          CancellationToken cancellationToken = default) =>
+          await UpdateStyleRuleCustomInstructionAsync(
+                      styleId,
+                      InstructionId(instruction),
+                      label,
+                      prompt,
+                      sourceLanguage,
+                      options,
+                      cancellationToken)
+                .ConfigureAwait(false);
+
+    /// <summary>
+    ///   Updates the given custom instruction of the given style rule, like
+    ///   <see cref="UpdateStyleRuleCustomInstructionAsync(string, string, string, string, string?, UpdateStyleRuleCustomInstructionOptions?, CancellationToken)" />
+    ///   .
+    /// </summary>
+    /// <param name="styleRule">The style rule.</param>
+    /// <param name="instruction">The custom instruction to update.</param>
+    /// <param name="label">New label for the custom instruction.</param>
+    /// <param name="prompt">New prompt text for the custom instruction.</param>
+    /// <param name="sourceLanguage">Optional source language code.</param>
+    /// <param name="options">
+    ///   Optional <see cref="UpdateStyleRuleCustomInstructionOptions" />, whose <c>ExtraBodyParameters</c> are added last
+    ///   to the JSON request body.
+    /// </param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>A <see cref="CustomInstruction" /> object for the updated instruction.</returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="NotFoundException">If the specified style rule or custom instruction was not found.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<CustomInstruction> UpdateStyleRuleCustomInstructionAsync(
+          StyleRuleInfo styleRule,
+          CustomInstruction instruction,
+          string label,
+          string prompt,
+          string? sourceLanguage,
+          UpdateStyleRuleCustomInstructionOptions? options,
+          CancellationToken cancellationToken = default) =>
+          await UpdateStyleRuleCustomInstructionAsync(
+                      StyleRuleId(styleRule),
+                      InstructionId(instruction),
+                      label,
+                      prompt,
+                      sourceLanguage,
+                      options,
+                      cancellationToken)
+                .ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task DeleteStyleRuleCustomInstructionAsync(
@@ -829,6 +1566,66 @@ namespace DeepL {
 
       await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.StyleRule).ConfigureAwait(false);
     }
+
+    /// <summary>
+    ///   Deletes a custom instruction from the given style rule, like
+    ///   <see cref="DeleteStyleRuleCustomInstructionAsync(string, string, CancellationToken)" />.
+    /// </summary>
+    /// <param name="styleRule">The style rule.</param>
+    /// <param name="instructionId">The ID of the custom instruction to delete.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="NotFoundException">If the specified style rule or custom instruction was not found.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task DeleteStyleRuleCustomInstructionAsync(
+          StyleRuleInfo styleRule,
+          string instructionId,
+          CancellationToken cancellationToken = default) =>
+          await DeleteStyleRuleCustomInstructionAsync(StyleRuleId(styleRule), instructionId, cancellationToken)
+                .ConfigureAwait(false);
+
+    /// <summary>
+    ///   Deletes the given custom instruction from a style rule, like
+    ///   <see cref="DeleteStyleRuleCustomInstructionAsync(string, string, CancellationToken)" />.
+    /// </summary>
+    /// <param name="styleId">The ID of the style rule.</param>
+    /// <param name="instruction">The custom instruction to delete.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="NotFoundException">If the specified style rule or custom instruction was not found.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task DeleteStyleRuleCustomInstructionAsync(
+          string styleId,
+          CustomInstruction instruction,
+          CancellationToken cancellationToken = default) =>
+          await DeleteStyleRuleCustomInstructionAsync(styleId, InstructionId(instruction), cancellationToken)
+                .ConfigureAwait(false);
+
+    /// <summary>
+    ///   Deletes the given custom instruction from the given style rule, like
+    ///   <see cref="DeleteStyleRuleCustomInstructionAsync(string, string, CancellationToken)" />.
+    /// </summary>
+    /// <param name="styleRule">The style rule.</param>
+    /// <param name="instruction">The custom instruction to delete.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="NotFoundException">If the specified style rule or custom instruction was not found.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task DeleteStyleRuleCustomInstructionAsync(
+          StyleRuleInfo styleRule,
+          CustomInstruction instruction,
+          CancellationToken cancellationToken = default) =>
+          await DeleteStyleRuleCustomInstructionAsync(StyleRuleId(styleRule), InstructionId(instruction), cancellationToken)
+                .ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<StyleProfile[]> ListStyleProfilesAsync(
@@ -2330,6 +3127,12 @@ namespace DeepL {
         requestData[pair.Key] = pair.Value;
       }
     }
+
+    /// <summary>Returns the ID of the given style rule, or an empty string if it is <c>null</c>.</summary>
+    private static string StyleRuleId(StyleRuleInfo? styleRule) => styleRule?.StyleId ?? string.Empty;
+
+    /// <summary>Returns the ID of the given custom instruction, or an empty string if it or its ID is <c>null</c>.</summary>
+    private static string InstructionId(CustomInstruction? instruction) => instruction?.Id ?? string.Empty;
 
     /// <summary>Adds the extra body parameters of the options last to form fields, replacing fields with the same key.</summary>
     private static void AddExtraBodyParameters(List<(string Key, string Value)> bodyParams, BaseRequestOptions? options) {

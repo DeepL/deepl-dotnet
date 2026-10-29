@@ -6,6 +6,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Added `DeepLClient` overloads of all eight style rule methods that take a style rule ID (`GetStyleRuleAsync()`,
+  `UpdateStyleRuleNameAsync()`, `UpdateStyleRuleConfiguredRulesAsync()`, `DeleteStyleRuleAsync()`,
+  `CreateStyleRuleCustomInstructionAsync()`, `GetStyleRuleCustomInstructionAsync()`,
+  `UpdateStyleRuleCustomInstructionAsync()`, `DeleteStyleRuleCustomInstructionAsync()`) taking a `StyleRuleInfo`
+  instead, and overloads of the get, update and delete custom instruction methods taking a `CustomInstruction`
+  instead of the instruction ID. `CustomInstruction` converts implicitly to its ID. These and the following style rule
+  overloads are members of `DeepLClient`; the `IStyleRuleManager` interface is unchanged.
+- Added `DeepLClient` overloads of `CreateStyleRuleAsync()` and `UpdateStyleRuleConfiguredRulesAsync()` taking the
+  configured rules as a `Dictionary<string, Dictionary<string, string>>` (category to rule to value, keyed by the API
+  names), sent as given, so categories the `ConfiguredRules` class lacks can be sent. `ConfiguredRules` converts
+  implicitly to this map.
+- Added `DeepLClient` overloads of `CreateStyleRuleAsync()`, `UpdateStyleRuleNameAsync()`,
+  `UpdateStyleRuleConfiguredRulesAsync()`, `CreateStyleRuleCustomInstructionAsync()` and
+  `UpdateStyleRuleCustomInstructionAsync()` taking a `CreateStyleRuleOptions`, `UpdateStyleRuleNameOptions`,
+  `UpdateStyleRuleConfiguredRulesOptions`, `CreateStyleRuleCustomInstructionOptions` or
+  `UpdateStyleRuleCustomInstructionOptions`. The options classes derive from `BaseRequestOptions`: their
+  `ExtraBodyParameters` are added last to the JSON request body (for the configured rules, to the rules map as further
+  keys).
 - Added `DeepLClient.UpdateMultilingualGlossaryAsync()`, taking a glossary ID or `MultilingualGlossaryInfo` and an
   `UpdateMultilingualGlossaryOptions` object (`Name`, `Dictionaries`), to rename a glossary and merge entries into
   its dictionaries in one request. Only the set properties are sent; `ExtraBodyParameters` are added last to the
@@ -128,6 +146,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `string` overload, such as `Console.WriteLine(glossary)`, `"..." + glossary`, `StringBuilder.Append(glossary)` or
   `string.Join(", ", a, b)`, now gets the bare ID instead of `ToString()` (`Glossary "name" (id)`). Interpolation
   (`$"{glossary}"`) still uses `ToString()`. `ToString()` is for diagnostics only; `Language` already behaves this way.
+  `CustomInstruction` now also converts implicitly to `string`. It has no `ToString()` override, so these calls print
+  its ID, or an empty string if it has none, instead of the type name `DeepL.Model.CustomInstruction`.
 - Target languages `EN` and `PT` are no longer rejected client-side in text translation, document translation and
   rephrasing. The API translates them as `en-US` and `pt-PT` respectively.
 - `GetSourceLanguagesAsync()`, `GetTargetLanguagesAsync()`, and `GetGlossaryLanguagesAsync()` now
@@ -144,6 +164,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   carry the key given to the constructor.
 
 ### Deprecated
+- Deprecated the `DeepLClient.CreateStyleRuleAsync()` and `UpdateStyleRuleConfiguredRulesAsync()` overloads taking a
+  `ConfiguredRules` object with `[Obsolete]`; use the overloads taking a `Dictionary<string, Dictionary<string, string>>`
+  instead. They keep working until the next major version. A `CreateStyleRuleAsync()` call without configured rules
+  now uses the new overload and sends the same request; passing `null` for the configured rules still calls the
+  deprecated overload.
 - Deprecated `TextTranslateOptions.GlossaryId`, `StyleId` and `TranslationMemoryId` with `[Obsolete]`; use `Glossary`,
   `StyleRule` and `TranslationMemory` instead. They keep working until the next major version. Error messages of text
   translation name the new properties, e.g. "Glossary and GlossaryIds cannot be used together".

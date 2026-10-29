@@ -799,20 +799,53 @@ Style rules can be applied to both text and document translation by setting the
 (the ID or a `StyleRuleInfo`), or by passing a
 `StyleRuleInfo` to their constructor.
 
+Every `DeepLClient` method that takes a style rule ID also has an overload
+taking a `StyleRuleInfo` object instead, and every method that takes a custom
+instruction ID also has an overload taking a `CustomInstruction` object.
+`CustomInstruction` converts implicitly to its ID.
+
+The methods that send a request body (`CreateStyleRuleAsync()`,
+`UpdateStyleRuleNameAsync()`, `UpdateStyleRuleConfiguredRulesAsync()`,
+`CreateStyleRuleCustomInstructionAsync()` and
+`UpdateStyleRuleCustomInstructionAsync()`) each have an overload taking an
+options object (`CreateStyleRuleOptions`, `UpdateStyleRuleNameOptions`,
+`UpdateStyleRuleConfiguredRulesOptions`,
+`CreateStyleRuleCustomInstructionOptions`,
+`UpdateStyleRuleCustomInstructionOptions`) before the cancellation token. Its
+`ExtraBodyParameters` are added last to the JSON request body, replacing
+built-in parameters with the same key; for `UpdateStyleRuleConfiguredRulesAsync()`
+they are added to the configured rules map as further keys. These overloads and
+the object overloads are members of `DeepLClient`; the `IStyleRuleManager`
+interface is unchanged.
+
 #### Creating a style rule
 
 Use `CreateStyleRuleAsync()` to create a new style rule with a name and language
 code. You can optionally provide `configuredRules` and `customInstructions`.
+The configured rules are a `Dictionary<string, Dictionary<string, string>>`
+mapping each category to its rules and their values, keyed by the API names
+(for example `dates_and_times`), and are sent as given, so categories and rules
+this library does not know can be used. The overloads taking a
+`ConfiguredRules` object are deprecated; a `ConfiguredRules` object converts
+implicitly to this map.
 
 ```c#
 var rule = await client.CreateStyleRuleAsync("My Style Rule", "en");
 Console.WriteLine($"Created: {rule.Name} ({rule.StyleId})");
+
+var ruleWithRules = await client.CreateStyleRuleAsync(
+    "My Style Rule",
+    "en",
+    new Dictionary<string, Dictionary<string, string>> {
+      ["dates_and_times"] = new Dictionary<string, string> { ["calendar_era"] = "use_bc_and_ad" }
+    },
+    new[] { new CustomInstruction("Formal tone", "Always use formal language") });
 ```
 
 #### Retrieving and listing style rules
 
-Use `GetStyleRuleAsync()` to retrieve a single style rule by ID, or
-`GetAllStyleRulesAsync()` to list all style rules.
+Use `GetStyleRuleAsync()` to retrieve a single style rule by ID or
+`StyleRuleInfo` object, or `GetAllStyleRulesAsync()` to list all style rules.
 
 `GetAllStyleRulesAsync()` returns an array of `StyleRuleInfo` objects
 corresponding to all of your stored style rules. The method accepts optional
@@ -844,16 +877,19 @@ foreach (var r in styleRulesDetailed) {
 #### Updating a style rule
 
 Use `UpdateStyleRuleNameAsync()` to rename a style rule, and
-`UpdateStyleRuleConfiguredRulesAsync()` to update its configured rules.
+`UpdateStyleRuleConfiguredRulesAsync()` to replace its configured rules with a
+`Dictionary<string, Dictionary<string, string>>`, sent as given (the overloads
+taking a `ConfiguredRules` object are deprecated).
 
 ```c#
 // Update the name
 var updated = await client.UpdateStyleRuleNameAsync("YOUR_STYLE_ID", "New Name");
 
 // Update configured rules
-var configuredRules = new ConfiguredRules(
-    styleAndTone: new Dictionary<string, string> { ["formality"] = "formal" });
-var updatedRules = await client.UpdateStyleRuleConfiguredRulesAsync("YOUR_STYLE_ID", configuredRules);
+var configuredRules = new Dictionary<string, Dictionary<string, string>> {
+  ["style_and_tone"] = new Dictionary<string, string> { ["formality"] = "formal" }
+};
+var updatedRules = await client.UpdateStyleRuleConfiguredRulesAsync(updated, configuredRules);
 ```
 
 #### Managing custom instructions
@@ -877,14 +913,13 @@ var retrieved = await client.GetStyleRuleCustomInstructionAsync(
 var updated = await client.UpdateStyleRuleCustomInstructionAsync(
     "YOUR_STYLE_ID", instruction.Id, "Updated label", "Use very formal language");
 
-// Delete a custom instruction
-await client.DeleteStyleRuleCustomInstructionAsync(
-    "YOUR_STYLE_ID", instruction.Id);
+// Delete a custom instruction, passing the CustomInstruction object
+await client.DeleteStyleRuleCustomInstructionAsync("YOUR_STYLE_ID", instruction);
 ```
 
 #### Deleting a style rule
 
-Use `DeleteStyleRuleAsync()` to delete a style rule by ID.
+Use `DeleteStyleRuleAsync()` to delete a style rule by ID or `StyleRuleInfo` object.
 
 ```c#
 await client.DeleteStyleRuleAsync("YOUR_STYLE_ID");
