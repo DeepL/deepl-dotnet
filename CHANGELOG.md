@@ -141,6 +141,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `TranslateDocumentWaitUntilDoneAsync()` and `TranslateDocumentAsync()`. Before, it threw a `DeepLException`
   ("Failed to deserialize JSON in received response"); now `DocumentStatus.Status` is `StatusCode.Unknown` and the
   waiting methods keep polling.
+- The document ID is now URL-encoded in the paths of the document status and download requests. Before, an ID
+  containing characters such as `/` or `?` was inserted as is and addressed a different URL.
 - `ExtraBodyParameters` with a `text` key now replace the texts of `TranslateTextAsync()`, like any other parameter.
   Before, the extra `text` was sent in addition to the texts.
 - `TranslateTextAsync()` now throws a `DeepLException` when the response holds no `translations`, an empty list, or

@@ -791,7 +791,7 @@ namespace DeepL {
       var bodyParams = new (string Key, string Value)[] { ("document_key", handle.DocumentKey) };
       using var responseMessage =
             await _client.ApiPostAsync(
-                        $"v2/document/{handle.DocumentId}",
+                        $"v2/document/{Uri.EscapeDataString(handle.DocumentId)}",
                         cancellationToken,
                         bodyParams)
                   .ConfigureAwait(false);
@@ -871,7 +871,7 @@ namespace DeepL {
           CancellationToken cancellationToken = default) {
       var bodyParams = new (string Key, string Value)[] { ("document_key", handle.DocumentKey) };
       using var responseMessage = await _client.ApiPostAsync(
-                  $"v2/document/{handle.DocumentId}/result",
+                  $"v2/document/{Uri.EscapeDataString(handle.DocumentId)}/result",
                   cancellationToken,
                   bodyParams)
             .ConfigureAwait(false);

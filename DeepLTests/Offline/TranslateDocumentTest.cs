@@ -350,6 +350,17 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
+    public async Task EscapesDocumentIdInStatusAndDownloadPaths() {
+      var handle = new DocumentHandle("d/1?x", "k1");
+      ExpectForm(HttpMethod.Post, "v2/document/d%2F1%3Fx", ("document_key", "k1"))
+            .RespondJson("{\"document_id\":\"d/1?x\",\"status\":\"done\"}");
+      ExpectForm(HttpMethod.Post, "v2/document/d%2F1%3Fx/result", ("document_key", "k1")).Respond("text/plain", "hallo");
+      var client = CreateClient();
+      await client.TranslateDocumentGetStatusAsync(handle);
+      await client.TranslateDocumentDownloadAsync(handle, new MemoryStream());
+    }
+
+    [Fact]
     public async Task ThrowsDeepLExceptionWhenWaitTimeoutExpires() {
       ExpectForm(HttpMethod.Post, "v2/document/d1", ("document_key", "k1"))
             .RespondJson("{\"document_id\":\"d1\",\"status\":\"translating\"}");
