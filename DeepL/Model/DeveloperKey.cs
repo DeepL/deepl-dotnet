@@ -19,11 +19,11 @@ namespace DeepL.Model {
           bool isDeactivated,
           DeveloperKeyUsageLimits? usageLimits) {
       KeyId = keyId ?? "";
-      Label = label ?? "";
+      Label = label;
       CreationTime = creationTime;
       DeactivatedTime = deactivatedTime;
       IsDeactivated = isDeactivated;
-      UsageLimits = usageLimits ?? new DeveloperKeyUsageLimits(null, null);
+      UsageLimits = usageLimits;
     }
 
     /// <summary>Unique ID of the key.</summary>
@@ -31,10 +31,10 @@ namespace DeepL.Model {
     [JsonConverter(typeof(LenientStringConverter))]
     public string KeyId { get; }
 
-    /// <summary>Label assigned to the key, or an empty string if the API did not return one.</summary>
+    /// <summary>Label assigned to the key, or null if the API did not return one.</summary>
     [JsonPropertyName("label")]
     [JsonConverter(typeof(LenientStringConverter))]
-    public string Label { get; }
+    public string? Label { get; }
 
     /// <summary>Time when the key was created, or null if unknown.</summary>
     [JsonPropertyName("creation_time")]
@@ -51,10 +51,10 @@ namespace DeepL.Model {
     [JsonConverter(typeof(LenientBoolConverter))]
     public bool IsDeactivated { get; }
 
-    /// <summary>Usage limits configured for the key; all limits are null if the API did not return them.</summary>
+    /// <summary>Usage limits configured for the key, or null if the API did not return them.</summary>
     [JsonPropertyName("usage_limits")]
     [JsonConverter(typeof(LenientObjectConverter<DeveloperKeyUsageLimits>))]
-    public DeveloperKeyUsageLimits UsageLimits { get; }
+    public DeveloperKeyUsageLimits? UsageLimits { get; }
 
     /// <summary>Returns a string describing the developer key.</summary>
     public override string ToString() => $"DeveloperKey \"{Label}\" ({KeyId})";

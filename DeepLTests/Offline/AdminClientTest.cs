@@ -118,9 +118,9 @@ namespace DeepLTests.Offline {
       Assert.Equal(2025, key.CreationTime!.Value.Year);
       Assert.Null(key.DeactivatedTime);
       Assert.False(key.IsDeactivated);
-      Assert.Equal(5000, key.UsageLimits.Characters);
-      Assert.Null(key.UsageLimits.SpeechToTextMilliseconds);
-      Assert.Equal(60000, key.UsageLimits.SpeechToSpeechMilliseconds);
+      Assert.Equal(5000, key.UsageLimits!.Characters);
+      Assert.Null(key.UsageLimits!.SpeechToTextMilliseconds);
+      Assert.Equal(60000, key.UsageLimits!.SpeechToSpeechMilliseconds);
     }
 
     [Fact]
@@ -295,10 +295,10 @@ namespace DeepLTests.Offline {
       Assert.Null(keys[0].CreationTime);
       Assert.Null(keys[0].DeactivatedTime);
       Assert.True(keys[0].IsDeactivated);
-      Assert.Equal(5000, keys[0].UsageLimits.Characters);
-      Assert.Equal(60000, keys[0].UsageLimits.SpeechToTextMilliseconds);
-      Assert.Null(keys[0].UsageLimits.SpeechToSpeechMilliseconds);
-      Assert.Null(keys[1].UsageLimits.Characters);
+      Assert.Equal(5000, keys[0].UsageLimits!.Characters);
+      Assert.Equal(60000, keys[0].UsageLimits!.SpeechToTextMilliseconds);
+      Assert.Null(keys[0].UsageLimits!.SpeechToSpeechMilliseconds);
+      Assert.Null(keys[1].UsageLimits);
 
       var report = await client.GetUsageAnalyticsAsync(new DateTime(2025, 9, 29), new DateTime(2025, 10, 1));
 
@@ -326,6 +326,24 @@ namespace DeepLTests.Offline {
       Assert.Null(tagReport.Usage[1].UsageDate);
       Assert.Equal(5, tagReport.Usage[1].Breakdown.TotalCharacters);
       Assert.Equal(1.5, tagReport.Usage[1].Breakdown.SpeechToSpeechMinutes);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(@",""label"": null, ""usage_limits"": null")]
+    public async Task TestMissingLabelAndUsageLimitsAreNull(string fields) {
+      ExpectNoBody(HttpMethod.Get, "v2/admin/developer-keys").RespondJson($@"[{{""key_id"": ""id-1""{fields}}}]");
+      ExpectNoBody(HttpMethod.Get, "v2/admin/analytics?start_date=2025-09-29&end_date=2025-10-01")
+            .RespondJson(
+                  $@"{{""usage_report"": {{""key_usages"": [{{""api_key"": ""k***1""{fields.Replace("label", "api_key_label")}}}]}}}}");
+      var client = CreateAdminClient();
+
+      var key = Assert.Single(await client.GetDeveloperKeysAsync());
+      var report = await client.GetUsageAnalyticsAsync(new DateTime(2025, 9, 29), new DateTime(2025, 10, 1));
+
+      Assert.Null(key.Label);
+      Assert.Null(key.UsageLimits);
+      Assert.Null(Assert.Single(report.KeyUsages).ApiKeyLabel);
     }
 
     [Theory]

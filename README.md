@@ -1318,6 +1318,8 @@ await adminClient.DeactivateDeveloperKeyAsync(key);
 `DeactivateDeveloperKeyAsync()`, `RenameDeveloperKeyAsync()` and
 `SetDeveloperKeyUsageLimitsAsync()` accept either a key ID or a `DeveloperKey`
 object. All functions that change a key return the updated `DeveloperKey`.
+`DeveloperKey.Label` and `DeveloperKey.UsageLimits` are `null` if the API does
+not return them; within `UsageLimits`, a `null` limit means unlimited.
 
 `SetDeveloperKeyUsageLimitsAsync()` changes only the limits you assign in the
 `DeveloperKeyUsageLimitsUpdate`: `Characters`, `SpeechToTextMilliseconds` and
@@ -1349,6 +1351,7 @@ Use
 `report.GroupBy` is the raw grouping string returned by the API (`key` or
 `keyAndDay` at the time of writing). The usage breakdowns contain the
 characters per product, `SpeechToTextMinutes` and `SpeechToSpeechMinutes`.
+`KeyUsage.ApiKeyLabel` is `null` if the API does not return a label.
 
 ```c#
 var report = await adminClient.GetUsageAnalyticsAsync(

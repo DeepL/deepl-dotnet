@@ -70,8 +70,8 @@ namespace DeepLTests.RealApi {
         var limited = await client.SetDeveloperKeyUsageLimitsAsync(
               key,
               new DeveloperKeyUsageLimitsUpdate { Characters = 5000, SpeechToTextMilliseconds = null });
-        Assert.Equal(5000, limited.UsageLimits.Characters);
-        Assert.Null(limited.UsageLimits.SpeechToTextMilliseconds);
+        Assert.Equal(5000, limited.UsageLimits!.Characters);
+        Assert.Null(limited.UsageLimits!.SpeechToTextMilliseconds);
 
         Assert.True((await client.DeactivateDeveloperKeyAsync(key)).IsDeactivated);
         deactivated = true;

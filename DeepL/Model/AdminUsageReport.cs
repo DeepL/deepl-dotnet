@@ -125,7 +125,7 @@ namespace DeepL.Model {
     [JsonConstructor]
     public KeyUsage(string? apiKey, string? apiKeyLabel, DateTime? usageDate, AdminUsageBreakdown? usage) {
       ApiKey = apiKey ?? "";
-      ApiKeyLabel = apiKeyLabel ?? "";
+      ApiKeyLabel = apiKeyLabel;
       UsageDate = usageDate;
       Usage = usage ?? new AdminUsageBreakdown(0, 0, 0, 0, 0);
     }
@@ -135,10 +135,10 @@ namespace DeepL.Model {
     [JsonConverter(typeof(LenientStringConverter))]
     public string ApiKey { get; }
 
-    /// <summary>Label of the API key, or an empty string if the API did not return one.</summary>
+    /// <summary>Label of the API key, or null if the API did not return one.</summary>
     [JsonPropertyName("api_key_label")]
     [JsonConverter(typeof(LenientStringConverter))]
-    public string ApiKeyLabel { get; }
+    public string? ApiKeyLabel { get; }
 
     /// <summary>Day of the usage, in UTC. Null unless the report is grouped by key and day.</summary>
     [JsonPropertyName("usage_date")]

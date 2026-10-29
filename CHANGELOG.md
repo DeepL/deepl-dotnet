@@ -68,7 +68,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Results use the new types `DeveloperKey`, `DeveloperKeyUsageLimits`, `AdminUsageReport`, `AdminUsageBreakdown`
   (including `SpeechToSpeechMinutes`), `KeyUsage`, `CustomTagUsageReport`, `CustomTagUsage` and
   `CustomTagUsageBreakdown`, and requests the enums `AdminUsageGroupBy` and `CustomTagUsageAggregateBy`.
-  Unexpected values in Admin API responses are skipped or replaced by defaults instead of failing the call;
+  `DeveloperKey.Label`, `DeveloperKey.UsageLimits` and `KeyUsage.ApiKeyLabel` are `null` when the API does not return
+  them. Unexpected values in Admin API responses are skipped or replaced by defaults instead of failing the call;
   a response that is not a JSON object or array as expected, or a developer key response without `key_id`, throws a
   `DeepLException`. The SDK passes labels and limit values to the API unchanged.
   The analytics methods accept `DateTime` values, sent as their UTC date (`Local` values are converted to UTC,
