@@ -232,6 +232,18 @@ namespace DeepL.Internal {
       return false;
     }
 
+    /// <summary>Whether the request failed because the server refused the connection, so it was never sent.</summary>
+    private static bool IsConnectionRefused(HttpRequestException exception) {
+      for (Exception? inner = exception; inner != null; inner = inner.InnerException) {
+        if (inner is SocketException socketException &&
+            socketException.SocketErrorCode == SocketError.ConnectionRefused) {
+          return true;
+        }
+      }
+
+      return false;
+    }
+
     /// <summary>
     ///   Creates a default HttpClient with exponential-backoff policy for retrying failed requests, configured from the
     ///   given client options.
@@ -339,7 +351,8 @@ namespace DeepL.Internal {
     internal static async Task CheckStatusCodeAsync(
           HttpResponseMessage responseMessage,
           ResourceType? resourceType = null,
-          bool downloadingDocument = false) {
+          bool downloadingDocument = false,
+          bool retryOnlyUnprocessed = false) {
       var statusCode = responseMessage.StatusCode;
       if (statusCode >= HttpStatusCode.OK && statusCode < HttpStatusCode.BadRequest) {
         return;
@@ -356,8 +369,9 @@ namespace DeepL.Internal {
 
       var exception = CreateStatusException(statusCode, message, resourceType, downloadingDocument);
       exception.HttpStatusCode = (int)statusCode;
+      // A request that is unsafe to repeat may have been processed despite a 5xx; only a 429 shows it was not.
       exception.ShouldRetry = statusCode == HttpStatusCodeTooManyRequests ||
-                              statusCode >= HttpStatusCode.InternalServerError;
+                              (!retryOnlyUnprocessed && statusCode >= HttpStatusCode.InternalServerError);
       throw exception;
     }
 
@@ -662,6 +676,8 @@ namespace DeepL.Internal {
           HttpRequestMessage requestMessage,
           CancellationToken cancellationToken,
           KeyValuePair<string, string?>[]? headers = null) {
+      var retryOnlyUnprocessed =
+            requestMessage.GetPolicyExecutionContext()?.OperationKey == RetryOnlyUnprocessedOperationKey;
       try {
         foreach (var header in headers ?? _headers) {
           requestMessage.Headers.Add(header.Key, header.Value);
@@ -672,11 +688,13 @@ namespace DeepL.Internal {
       } catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) {
         throw;
       } catch (TaskCanceledException ex) {
-        throw new ConnectionException($"Request timed out: {ex.Message}", ex) { ShouldRetry = true };
+        throw new ConnectionException($"Request timed out: {ex.Message}", ex) { ShouldRetry = !retryOnlyUnprocessed };
       } catch (TimeoutRejectedException ex) {
-        throw new ConnectionException($"Request timed out: {ex.Message}", ex) { ShouldRetry = true };
+        throw new ConnectionException($"Request timed out: {ex.Message}", ex) { ShouldRetry = !retryOnlyUnprocessed };
       } catch (HttpRequestException ex) {
-        throw new ConnectionException($"Request failed: {ex.Message}", ex) { ShouldRetry = true };
+        throw new ConnectionException($"Request failed: {ex.Message}", ex) {
+          ShouldRetry = !retryOnlyUnprocessed || IsNameResolutionFailure(ex) || IsConnectionRefused(ex)
+        };
       } catch (Exception ex) {
         throw new ConnectionException($"Unexpected request failure: {ex.Message}", ex);
       }

@@ -1320,6 +1320,10 @@ invalid arguments are provided, they may raise the standard exceptions
 `null` if there was no response. `DeepLException.ShouldRetry` is `true` if
 repeating the request could succeed (HTTP 429, 5xx, timeouts and failed
 connections), `false` for other HTTP statuses, and `null` if unknown.
+`DeepLAdminClient.CreateDeveloperKeyAsync()` is not safe to repeat after a
+server error or a timeout, because the key may already exist; for it,
+`ShouldRetry` is `true` only for HTTP 429, name resolution failures and refused
+connections.
 
 ```c#
 try {

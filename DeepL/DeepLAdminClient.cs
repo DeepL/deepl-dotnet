@@ -143,7 +143,7 @@ namespace DeepL {
       using var responseMessage = await _client
             .ApiPostJsonAsync("v2/admin/developer-keys", cancellationToken, requestData, retryOnlyUnprocessed: true)
             .ConfigureAwait(false);
-      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage).ConfigureAwait(false);
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, retryOnlyUnprocessed: true).ConfigureAwait(false);
       return await ReadKeyAsync(responseMessage).ConfigureAwait(false);
     }
 

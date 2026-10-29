@@ -438,7 +438,18 @@ namespace DeepLTests.Offline {
       ExpectJson(HttpMethod.Post, "v2/admin/developer-keys", "{}")
             .RespondJson("{}", HttpStatusCode.ServiceUnavailable);
 
-      await Assert.ThrowsAsync<DeepLException>(() => CreateAdminClientWithRetries(1).CreateDeveloperKeyAsync());
+      var exception = await Assert.ThrowsAsync<DeepLException>(
+            () => CreateAdminClientWithRetries(1).CreateDeveloperKeyAsync());
+      Assert.Equal(503, exception.HttpStatusCode);
+      Assert.False(exception.ShouldRetry);
+    }
+
+    [Fact]
+    public async Task TestCreateDeveloperKeyServerErrorIsNotMarkedRetryable() {
+      ExpectJson(HttpMethod.Post, "v2/admin/developer-keys", "{}").RespondJson("{}", HttpStatusCode.InternalServerError);
+
+      var exception = await Assert.ThrowsAsync<DeepLException>(() => CreateAdminClient().CreateDeveloperKeyAsync());
+      Assert.False(exception.ShouldRetry);
     }
 
     [Fact]
@@ -449,6 +460,7 @@ namespace DeepLTests.Offline {
       var exception = await Assert.ThrowsAsync<ConnectionException>(
             () => CreateAdminClientWithRetries(1).CreateDeveloperKeyAsync());
       Assert.Equal("Request failed: reset", exception.Message);
+      Assert.False(exception.ShouldRetry);
     }
 
     [Fact]
