@@ -4,6 +4,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
@@ -572,6 +574,37 @@ namespace DeepLTests.Offline {
       ExpectJson(HttpMethod.Post, "v2/admin/developer-keys", "{}").RespondJson(DeveloperKeyJson);
 
       await CreateAdminClientWithRetries(1).CreateDeveloperKeyAsync();
+    }
+
+    [Fact]
+    public async Task CreateDeveloperKeyRetriesRefusedConnection() {
+      var listener = new TcpListener(IPAddress.Loopback, 0);
+      listener.Start();
+      var port = ((IPEndPoint)listener.LocalEndpoint).Port;
+      listener.Stop();
+      var client = new DeepLAdminClient(
+            AuthKey,
+            new DeepLAdminClientOptions { ServerUrl = $"http://127.0.0.1:{port}", MaximumNetworkRetries = 1 });
+
+      var stopwatch = Stopwatch.StartNew();
+      var exception = await Assert.ThrowsAsync<ConnectionException>(() => client.CreateDeveloperKeyAsync());
+      // The first backoff is 1 s ± 23 %; without a retry the refused connection fails at once.
+      Assert.True(stopwatch.Elapsed >= TimeSpan.FromSeconds(0.7), $"Failed after {stopwatch.Elapsed}");
+      Assert.True(exception.ShouldRetry);
+    }
+
+    [Fact]
+    public async Task CreateDeveloperKeyDoesNotRetryAfterRequestSent() {
+      // A socket timeout while reading the response is wrapped in an IOException, unlike a connect timeout.
+      ExpectJson(HttpMethod.Post, "v2/admin/developer-keys", "{}")
+            .Throw(
+                  new HttpRequestException(
+                        "read timeout",
+                        new IOException("read", new SocketException((int)SocketError.TimedOut))));
+
+      var exception = await Assert.ThrowsAsync<ConnectionException>(
+            () => CreateAdminClientWithRetries(1).CreateDeveloperKeyAsync());
+      Assert.False(exception.ShouldRetry);
     }
 
     [Fact]

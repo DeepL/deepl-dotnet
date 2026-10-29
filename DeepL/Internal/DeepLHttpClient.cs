@@ -203,7 +203,7 @@ namespace DeepL.Internal {
                                      responseMessage.StatusCode >= HttpStatusCode.InternalServerError)
             .WaitAndRetryAsync(maximumNetworkRetries, getSleepDuration, onRetry);
       IAsyncPolicy<HttpResponseMessage> policy = Policy.WrapAsync(waitAndRetry, timeout);
-      var waitAndRetryUnprocessed = Policy.Handle<HttpRequestException>(IsNameResolutionFailure)
+      var waitAndRetryUnprocessed = Policy.Handle<HttpRequestException>(IsCertainlyNotSent)
             .OrResult<HttpResponseMessage>(
                   responseMessage => responseMessage.StatusCode == HttpStatusCodeTooManyRequests)
             .WaitAndRetryAsync(maximumNetworkRetries, getSleepDuration, onRetry);
@@ -213,6 +213,13 @@ namespace DeepL.Internal {
                   ? unprocessedPolicy
                   : policy) { InnerHandler = innerHandler };
     }
+
+    /// <summary>
+    ///   Whether the request failed before it was sent: the server name could not be resolved, the connection was
+    ///   refused or connecting timed out.
+    /// </summary>
+    private static bool IsCertainlyNotSent(HttpRequestException exception) =>
+          IsNameResolutionFailure(exception) || IsConnectionRefused(exception) || IsConnectTimeout(exception);
 
     /// <summary>
     ///   Whether the request failed because the server name could not be resolved, so it was never sent.
@@ -238,6 +245,21 @@ namespace DeepL.Internal {
         if (inner is SocketException socketException &&
             socketException.SocketErrorCode == SocketError.ConnectionRefused) {
           return true;
+        }
+      }
+
+      return false;
+    }
+
+    /// <summary>Whether connecting to the server timed out, so the request was never sent.</summary>
+    private static bool IsConnectTimeout(HttpRequestException exception) {
+      for (Exception? inner = exception; inner != null; inner = inner.InnerException) {
+        switch (inner) {
+          // Socket errors while sending or receiving are wrapped in an IOException; connect errors are not.
+          case IOException _:
+            return false;
+          case SocketException socketException when socketException.SocketErrorCode == SocketError.TimedOut:
+            return true;
         }
       }
 
@@ -485,8 +507,8 @@ namespace DeepL.Internal {
     /// <param name="body">Object to serialize as JSON for the request body.</param>
     /// <param name="jsonOptions">Optional JSON serializer options.</param>
     /// <param name="retryOnlyUnprocessed">
-    ///   <c>true</c> for requests that are unsafe to repeat: they are retried only after HTTP 429 or a name resolution
-    ///   failure, not after server errors or timeouts.
+    ///   <c>true</c> for requests that are unsafe to repeat: they are retried only after HTTP 429, a name resolution
+    ///   failure, a refused connection or a connect timeout, not after server errors or other timeouts.
     /// </param>
     /// <returns><see cref="HttpResponseMessage" /> received from DeepL API.</returns>
     /// <exception cref="ConnectionException">If any failure occurs while sending the request.</exception>
@@ -697,7 +719,7 @@ namespace DeepL.Internal {
         throw new ConnectionException($"Request timed out: {ex.Message}", ex) { ShouldRetry = !retryOnlyUnprocessed };
       } catch (HttpRequestException ex) {
         throw new ConnectionException($"Request failed: {ex.Message}", ex) {
-          ShouldRetry = !retryOnlyUnprocessed || IsNameResolutionFailure(ex) || IsConnectionRefused(ex)
+          ShouldRetry = !retryOnlyUnprocessed || IsCertainlyNotSent(ex)
         };
       } catch (Exception ex) {
         throw new ConnectionException($"Unexpected request failure: {ex.Message}", ex);

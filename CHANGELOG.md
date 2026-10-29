@@ -220,6 +220,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Its default is now no overall timeout.
 
 ### Fixed
+- `CreateDeveloperKeyAsync` retries refused connections and connect timeouts, as its documentation says.
 - Fixed `GetTranslationMemoryJobAsync()` failing on a job status this library does not know: it is now parsed as
   `TranslationMemoryJobStatus.Unknown`, and `WaitUntilTranslationMemoryJobDoneAsync()` keeps polling on it.
 - Fixed `GetTranslationMemoryJobAsync()` and `CreateTranslationMemoryExportAsync()` failing when the job's

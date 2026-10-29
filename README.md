@@ -1446,9 +1446,9 @@ not return them; within `UsageLimits`, a `null` limit means unlimited.
 `null` removes a limit and `0` blocks that usage.
 
 To avoid duplicate keys, `CreateDeveloperKeyAsync()` is retried only when the
-API cannot have processed the request: after HTTP 429 or a failure to resolve
-the server name. Server errors, timeouts and broken connections are not
-retried. If it throws, check `ListDeveloperKeysAsync()` before trying again.
+API cannot have processed the request: after HTTP 429, a failure to resolve
+the server name, a refused connection or a connect timeout. Server errors, other
+timeouts and broken connections are not retried. If it throws, check `ListDeveloperKeysAsync()` before trying again.
 
 #### Retrieving usage analytics
 
@@ -1528,8 +1528,8 @@ repeating the request could succeed (HTTP 429, 5xx, timeouts and failed
 connections), `false` for other HTTP statuses, and `null` if unknown.
 `DeepLAdminClient.CreateDeveloperKeyAsync()` is not safe to repeat after a
 server error or a timeout, because the key may already exist; for it,
-`ShouldRetry` is `true` only for HTTP 429, name resolution failures and refused
-connections.
+`ShouldRetry` is `true` only for HTTP 429, name resolution failures, refused
+connections and connect timeouts.
 
 ```c#
 try {
