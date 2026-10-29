@@ -56,6 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added the `Proxy` option to `DeepLClientOptions` and `DeepLAdminClientOptions`: the URL of an HTTP(S) proxy for all
   requests, with optional credentials in the URL. Unlike a custom `ClientFactory`, it keeps the built-in retries and
   timeouts.
+- Added the static method `DeepLClient.IsFreeAccountAuthKey()`, replacing `Translator.AuthKeyIsFreeAccount()`.
 
 ### Changed
 - Target languages `EN` and `PT` are no longer rejected client-side in text translation, document translation and
@@ -84,6 +85,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Deprecated public types that are implementation details with `[Obsolete]`: `DeepL.Internal.LargeFormUrlEncodedContent`,
   `MultilingualGlossaryDictionaryEntriesResult`, and the `MultilingualGlossaryDictionaryEntries` constructor that takes a
   `MultilingualGlossaryDictionaryEntriesResult`. They keep working and will be made internal in the next major version.
+- Deprecated `Translator`, `ITranslator` and `TranslatorOptions` with `[Obsolete]`; use `DeepLClient` and
+  `DeepLClientOptions` instead. They keep working and will be removed in the next major version.
+- Deprecated `Translator.AuthKeyIsFreeAccount()` with `[Obsolete]`; use `DeepLClient.IsFreeAccountAuthKey()` instead.
+- Deprecated `OverallConnectionTimeout` with `[Obsolete]`; each attempt is limited by `PerRetryConnectionTimeout`.
+  Its default is now no overall timeout.
 
 ### Fixed
 - A request that exceeds `PerRetryConnectionTimeout` now throws a `ConnectionException` with a "Request timed out"

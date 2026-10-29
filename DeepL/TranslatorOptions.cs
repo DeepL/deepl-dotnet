@@ -2,6 +2,7 @@
 // Use of this source code is governed by an MIT
 // license that can be found in the LICENSE file.
 
+using System;
 using System.Net.Http;
 
 namespace DeepL {
@@ -9,6 +10,7 @@ namespace DeepL {
   ///   Class containing containing options controlling <see cref="Translator" /> behaviour.
   ///   Please use <see cref="DeepLClient" /> and <see cref="DeepLClientOptions" /> instead.
   /// </summary>
+  [Obsolete("Use DeepLClientOptions instead. Will be removed in the next major version.")]
   public class TranslatorOptions : BaseClientOptions { }
 
   /// <summary>

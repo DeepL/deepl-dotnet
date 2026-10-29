@@ -235,9 +235,12 @@ namespace DeepL.Internal {
             innerHandler ?? CreateHttpClientHandler(options.Proxy),
             options.PerRetryConnectionTimeout,
             options.MaximumNetworkRetries);
+#pragma warning disable CS0618 // the deprecated overall timeout keeps working until it is removed
+      var overallTimeout = options.OverallConnectionTimeout;
+#pragma warning restore CS0618
       return new HttpClientAndDisposeFlag {
         DisposeClient = true,
-        HttpClient = new HttpClient(handler) { Timeout = options.OverallConnectionTimeout }
+        HttpClient = new HttpClient(handler) { Timeout = overallTimeout }
       };
     }
 
@@ -298,7 +301,7 @@ namespace DeepL.Internal {
     /// </param>
     /// <returns>The user-agent string.</returns>
     private static string ConstructUserAgentString(bool sendPlatformInfo, AppInfo? appInfo) {
-      var platformInfoString = $"deepl-dotnet/{Translator.Version()}";
+      var platformInfoString = $"deepl-dotnet/{DeepLClient.Version()}";
       if (sendPlatformInfo) {
         var osDescription = RuntimeInformation.OSDescription;
         var clrVersion = Environment.Version.ToString();

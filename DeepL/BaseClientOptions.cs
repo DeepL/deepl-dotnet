@@ -8,8 +8,7 @@ using System.Net.Http;
 
 namespace DeepL {
   /// <summary>
-  ///   Connection options shared by <see cref="TranslatorOptions" />, <see cref="DeepLClientOptions" /> and
-  ///   <see cref="DeepLAdminClientOptions" />.
+  ///   Connection options shared by <see cref="DeepLClientOptions" /> and <see cref="DeepLAdminClientOptions" />.
   /// </summary>
   public abstract class BaseClientOptions {
     internal BaseClientOptions() { }
@@ -32,6 +31,7 @@ namespace DeepL {
     ///   timeout (<see cref="System.Threading.Timeout.InfiniteTimeSpan" />): each attempt is limited by
     ///   <see cref="PerRetryConnectionTimeout" />. Only used if <see cref="ClientFactory" /> is unset.
     /// </summary>
+    [Obsolete("Use PerRetryConnectionTimeout instead. Will be removed in the next major version.")]
     public TimeSpan OverallConnectionTimeout { get; set; } = System.Threading.Timeout.InfiniteTimeSpan;
 
     /// <summary>
@@ -49,8 +49,8 @@ namespace DeepL {
     public Uri? Proxy { get; set; }
 
     /// <summary>
-    ///   The base URL for DeepL's API that may be overridden for testing purposes. By default <see cref="Translator" />
-    ///   and <see cref="DeepLClient" /> select the correct DeepL API URL based on the user account type (free or paid),
+    ///   The base URL for DeepL's API that may be overridden for testing purposes. By default
+    ///   <see cref="DeepLClient" /> selects the correct DeepL API URL based on the user account type (free or paid),
     ///   and <see cref="DeepLAdminClient" /> uses <c>https://api.deepl.com</c>.
     /// </summary>
     public string? ServerUrl { get; set; }

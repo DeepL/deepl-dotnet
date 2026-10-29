@@ -10,6 +10,9 @@ using DeepL;
 using RichardSzalay.MockHttp;
 using Xunit;
 
+// Translator, TranslatorOptions and AuthKeyIsFreeAccount are deprecated; their existing tests stay until removal.
+#pragma warning disable CS0618
+
 namespace DeepLTests.Offline {
   public sealed class TranslatorOptionsTest : OfflineTest {
     private const string UsageReply = "{\"character_count\":1,\"character_limit\":2}";
@@ -148,6 +151,12 @@ namespace DeepLTests.Offline {
     public void ReportsAuthKeyOfFreeAccount() {
       Assert.True(DeepL.Translator.AuthKeyIsFreeAccount("ABCD:fx "));
       Assert.False(DeepL.Translator.AuthKeyIsFreeAccount("ABCD "));
+    }
+
+    [Fact]
+    public void ReportsFreeAccountAuthKey() {
+      Assert.True(DeepLClient.IsFreeAccountAuthKey("ABCD:fx "));
+      Assert.False(DeepLClient.IsFreeAccountAuthKey("ABCD "));
     }
 
     [Fact]

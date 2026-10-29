@@ -15,6 +15,8 @@ using DeepL.Internal;
 using DeepL.Model;
 
 namespace DeepL {
+  /// <summary>Deprecated interface of <see cref="Translator" />. Please use <see cref="DeepLClient" /> instead.</summary>
+  [Obsolete("Use DeepLClient instead. Will be removed in the next major version.")]
   public interface ITranslator : IDisposable {
     /// <summary>Retrieves the usage in the current billing period for this DeepL account.</summary>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
@@ -405,6 +407,7 @@ namespace DeepL {
   ///   Deprecated client for the DeepL library. Please use <see cref="DeepLClient" /> instead.
   ///   Do not derive from this class, this class might undergo backward-incompatible changes.
   /// </summary>
+  [Obsolete("Use DeepLClient instead. Will be removed in the next major version.")]
   public class Translator : ITranslator {
     /// <summary>Base URL for DeepL API Pro accounts.</summary>
     private const string DeepLServerUrl = "https://api.deepl.com";
@@ -441,7 +444,7 @@ namespace DeepL {
       }
 
       var serverUrl = new Uri(
-            options.ServerUrl ?? (AuthKeyIsFreeAccount(authKey) ? DeepLServerUrlFree : DeepLServerUrl));
+            options.ServerUrl ?? (IsFreeAccountKey(authKey) ? DeepLServerUrlFree : DeepLServerUrl));
 
       _client = DeepLHttpClient.Create(authKey, serverUrl, options);
     }
@@ -468,7 +471,11 @@ namespace DeepL {
     ///   <c>true</c> if the Authentication Key belongs to an API Free account, <c>false</c> if it belongs to an API Pro
     ///   account.
     /// </returns>
-    public static bool AuthKeyIsFreeAccount(string authKey) => authKey.TrimEnd().EndsWith(":fx");
+    [Obsolete("Use DeepLClient.IsFreeAccountAuthKey instead. Will be removed in the next major version.")]
+    public static bool AuthKeyIsFreeAccount(string authKey) => IsFreeAccountKey(authKey);
+
+    /// <summary>Whether the given key belongs to an API Free account (ends with <c>:fx</c>).</summary>
+    internal static bool IsFreeAccountKey(string authKey) => authKey.TrimEnd().EndsWith(":fx");
 
     /// <inheritdoc />
     public async Task<Usage> GetUsageAsync(CancellationToken cancellationToken = default) {

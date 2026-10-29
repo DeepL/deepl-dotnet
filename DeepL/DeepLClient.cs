@@ -87,11 +87,26 @@ namespace DeepL {
   ///   Client for the DeepL API. To use the DeepL API, initialize an instance of this class using your DeepL
   ///   Authentication Key. All functions are thread-safe, aside from <see cref="DeepLClient.Dispose" />.
   /// </summary>
+#pragma warning disable CS0618 // derives from the deprecated Translator until the next major version
   public sealed class DeepLClient : Translator, IWriter, IGlossaryManager, IStyleRuleManager, IStyleProfileManager,
         ITranslationMemoryManager, ISpokenTermsManager {
+#pragma warning restore CS0618
     /// <summary>Initializes a new instance of the <see cref="AuthorizationException" /> class.</summary>
     /// <param name="message">The message that describes the error.</param>
     public DeepLClient(string authKey, DeepLClientOptions? options = null) : base(authKey, options) { }
+
+    /// <summary>
+    ///   Determines if the given DeepL Authentication Key belongs to an API Free account or an API Pro account.
+    /// </summary>
+    /// <param name="authKey">
+    ///   DeepL Authentication Key as found in your
+    ///   <a href="https://www.deepl.com/pro-account/">DeepL API account</a>.
+    /// </param>
+    /// <returns>
+    ///   <c>true</c> if the Authentication Key belongs to an API Free account (ends with <c>:fx</c>), <c>false</c> if it
+    ///   belongs to an API Pro account.
+    /// </returns>
+    public static bool IsFreeAccountAuthKey(string authKey) => IsFreeAccountKey(authKey);
 
     /// <inheritdoc />
     public async Task<WriteResult> RephraseTextAsync(

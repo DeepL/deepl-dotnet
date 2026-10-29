@@ -8,5 +8,7 @@ using System.Net.Http;
 
 namespace DeepL {
   /// <summary>Class containing containing options controlling <see cref="DeepLClient" /> behaviour.</summary>
+#pragma warning disable CS0618 // derives from the deprecated TranslatorOptions until the next major version
   public sealed class DeepLClientOptions : TranslatorOptions { }
+#pragma warning restore CS0618
 }

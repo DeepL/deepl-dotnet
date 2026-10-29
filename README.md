@@ -56,6 +56,10 @@ but instead fetched from a configuration file or environment variable.
 
 `DeepLClient` accepts options as the second argument, see [Configuration](#configuration) for more information.
 
+`DeepLClient.IsFreeAccountAuthKey(authKey)` returns `true` if the key belongs to a DeepL API Free account (it ends
+with `:fx`). The client uses this to choose the server URL. `Translator` and `TranslatorOptions` are deprecated: use
+`DeepLClient` and `DeepLClientOptions`.
+
 ### Translating text
 
 To translate text, call `TranslateTextAsync()`. The first argument is a string containing the text to translate, or
@@ -412,7 +416,7 @@ editing functionality plus support for multilingual glossaries. New methods and
 objects have been created to support interacting with these new glossaries.
 Due to this new functionality, users are recommended to utilize these
 multilingual glossary methods. However, to continue using the `v2` glossary API
-endpoints, please continue to use the existing endpoints in the `Translator.cs`
+endpoints, please continue to use the existing v2 glossary methods of `DeepLClient`
 (e.g. `CreateGlossaryAsync()`, `GetGlossaryAsync()`, etc).
 
 To migrate to use the new multilingual glossary methods from the current
@@ -1363,8 +1367,8 @@ The available options:
 - `PerRetryConnectionTimeout`: the timeout of each attempt, by default 10
   seconds. An attempt may run longer, until the time the client would wait
   before retrying it (the backoff delay), when that is longer.
-- `OverallConnectionTimeout`: a timeout for the request including all retries.
-  By default there is none.
+- `OverallConnectionTimeout`: deprecated; a timeout for the request including all
+  retries. By default there is none.
 - `ServerUrl`: overrides the DeepL API server URL.
 - `Headers`: extra HTTP headers sent with every request to the DeepL API. A
   `User-Agent` header replaces the default one; an `Authorization` header is
