@@ -173,8 +173,9 @@ namespace DeepLTests.Offline {
       var glossary = new GlossaryInfo("g2", "n", true, "en", "de", DateTime.UtcNow, 1);
       var multilingualGlossary =
             new MultilingualGlossaryInfo("g3", "n", new MultilingualGlossaryDictionaryInfo[0], DateTime.UtcNow);
-      var options = new TextTranslateOptions { GlossaryIds = { "g1", glossary } };
-      options.GlossaryIds.Add(multilingualGlossary);
+      // The C# 8 compiler of the .NET Core 3.1 SDK ignores [NotNullIfNotNull] on the conversion, hence the "!".
+      var options = new TextTranslateOptions { GlossaryIds = { "g1", ((string)glossary)! } };
+      options.GlossaryIds.Add(((string)multilingualGlossary)!);
       return Translate(options, ("glossary_ids", "g1,g2,g3"));
     }
 
