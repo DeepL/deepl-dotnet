@@ -309,25 +309,55 @@ namespace DeepL {
           string? pageCursor = null,
           string? filterText = null,
           bool? filterCaseSensitive = null,
+          CancellationToken cancellationToken = default) =>
+          await ListTranslationMemorySegmentsAsync(
+                      translationMemoryId,
+                      new TranslationMemorySegmentsOptions {
+                        PageSize = pageSize,
+                        PageCursor = pageCursor,
+                        FilterText = filterText,
+                        FilterCaseSensitive = filterCaseSensitive
+                      },
+                      cancellationToken)
+                .ConfigureAwait(false);
+
+    /// <summary>Retrieves one page of the segments stored in a translation memory.</summary>
+    /// <remarks>
+    ///   Pagination is cursor-based: leave <see cref="TranslationMemorySegmentsOptions.PageCursor" /> unset on the first
+    ///   call, then set it to the <see cref="TranslationMemorySegments.NextPageCursor" /> of the previous response to
+    ///   fetch the next page. An absent next page cursor means the last page has been returned.
+    /// </remarks>
+    /// <param name="translationMemoryId">The ID of the translation memory to read segments from.</param>
+    /// <param name="options">Optional <see cref="TranslationMemorySegmentsOptions" /> for paging and filtering.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>A <see cref="TranslationMemorySegments" /> object holding the requested page.</returns>
+    /// <exception cref="NotFoundException">If the specified translation memory was not found.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<TranslationMemorySegments> ListTranslationMemorySegmentsAsync(
+          string translationMemoryId,
+          TranslationMemorySegmentsOptions? options,
           CancellationToken cancellationToken = default) {
       CheckTranslationMemoryId(translationMemoryId);
 
       var queryParams = new List<(string Key, string Value)>();
 
-      if (pageSize != null) {
-        queryParams.Add(("page_size", pageSize.Value.ToString()));
+      if (options?.PageSize != null) {
+        queryParams.Add(("page_size", options.PageSize.Value.ToString()));
       }
 
-      if (pageCursor != null) {
-        queryParams.Add(("page_cursor", pageCursor));
+      if (options?.PageCursor != null) {
+        queryParams.Add(("page_cursor", options.PageCursor));
       }
 
-      if (filterText != null) {
-        queryParams.Add(("filter_text", filterText));
+      if (options?.FilterText != null) {
+        queryParams.Add(("filter_text", options.FilterText));
       }
 
-      if (filterCaseSensitive != null) {
-        queryParams.Add(("filter_case_sensitive", filterCaseSensitive.Value.ToString().ToLower()));
+      if (options?.FilterCaseSensitive != null) {
+        queryParams.Add(("filter_case_sensitive", options.FilterCaseSensitive.Value ? "true" : "false"));
       }
 
       using var responseMessage = await _client
@@ -359,6 +389,23 @@ namespace DeepL {
                       cancellationToken)
                 .ConfigureAwait(false);
 
+    /// <summary>Retrieves one page of the segments stored in the given translation memory.</summary>
+    /// <param name="translationMemory">The translation memory to read segments from.</param>
+    /// <param name="options">Optional <see cref="TranslationMemorySegmentsOptions" /> for paging and filtering.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>A <see cref="TranslationMemorySegments" /> object holding the requested page.</returns>
+    /// <exception cref="NotFoundException">If the specified translation memory was not found.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<TranslationMemorySegments> ListTranslationMemorySegmentsAsync(
+          TranslationMemoryInfo translationMemory,
+          TranslationMemorySegmentsOptions? options,
+          CancellationToken cancellationToken = default) =>
+          await ListTranslationMemorySegmentsAsync(translationMemory.TranslationMemoryId, options, cancellationToken)
+                .ConfigureAwait(false);
+
     /// <inheritdoc />
     public async Task DeleteTranslationMemoryAsync(
           string translationMemoryId,
@@ -386,6 +433,39 @@ namespace DeepL {
           long contentLength,
           string? contentType = null,
           string? displayName = null,
+          CancellationToken cancellationToken = default) =>
+          await CreateTranslationMemoryImportAsync(
+                      fileName,
+                      contentLength,
+                      new CreateTranslationMemoryImportOptions { ContentType = contentType, DisplayName = displayName },
+                      cancellationToken)
+                .ConfigureAwait(false);
+
+    /// <summary>Creates an import job for a new translation memory.</summary>
+    /// <remarks>
+    ///   The job only declares the file; upload the TMX file itself to the returned upload URL with
+    ///   <see cref="UploadTranslationMemoryFileAsync(TranslationMemoryImport, Stream, string, CancellationToken)" />,
+    ///   then poll <see cref="GetTranslationMemoryJobAsync(string, CancellationToken)" /> for the outcome. Use
+    ///   <see cref="ImportTranslationMemoryFromFilepathAsync(string, ImportTranslationMemoryOptions, CancellationToken)" />
+    ///   to do all three steps at once.
+    /// </remarks>
+    /// <param name="fileName">Name of the TMX file to import, for example "legal.tmx".</param>
+    /// <param name="contentLength">Size of the TMX file in bytes.</param>
+    /// <param name="options">
+    ///   Optional <see cref="CreateTranslationMemoryImportOptions" />, whose <c>ExtraBodyParameters</c> are added last to
+    ///   the JSON request body.
+    /// </param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>A <see cref="TranslationMemoryImport" /> object with the job ID and upload URL.</returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<TranslationMemoryImport> CreateTranslationMemoryImportAsync(
+          string fileName,
+          long contentLength,
+          CreateTranslationMemoryImportOptions? options,
           CancellationToken cancellationToken = default) {
       if (string.IsNullOrWhiteSpace(fileName)) {
         throw new ArgumentException($"Parameter {nameof(fileName)} must not be empty");
@@ -399,11 +479,13 @@ namespace DeepL {
         ["file_name"] = fileName,
         ["content_length"] = contentLength
       };
-      if (contentType != null) sourceFile["content_type"] = contentType;
+      if (options?.ContentType != null) sourceFile["content_type"] = options.ContentType;
       var requestData = new Dictionary<string, object> { ["source_file"] = sourceFile };
-      if (displayName != null) {
-        requestData["parameters"] = new Dictionary<string, object> { ["display_name"] = displayName };
+      if (options?.DisplayName != null) {
+        requestData["parameters"] = new Dictionary<string, object> { ["display_name"] = options.DisplayName };
       }
+
+      AddExtraBodyParameters(requestData, options);
 
       using var responseMessage = await _client
             .ApiPostJsonAsync("v3/translation_memories/import", cancellationToken, requestData, SerializationOptions)
@@ -502,17 +584,65 @@ namespace DeepL {
       return CreateTranslationMemoryJob(jobResult);
     }
 
+    /// <summary>Retrieves the current status of the given translation memory import or export job.</summary>
+    /// <param name="job">The job to query.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>A <see cref="TranslationMemoryJob" /> object with the current status.</returns>
+    /// <exception cref="NotFoundException">If the specified job was not found.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<TranslationMemoryJob> GetTranslationMemoryJobAsync(
+          TranslationMemoryJob job,
+          CancellationToken cancellationToken = default) =>
+          await GetTranslationMemoryJobAsync(job.JobId, cancellationToken).ConfigureAwait(false);
+
     /// <inheritdoc />
+    public Task<TranslationMemoryJob> WaitUntilTranslationMemoryJobDoneAsync(
+          string jobId,
+          CancellationToken cancellationToken = default) =>
+          WaitUntilTranslationMemoryJobDoneAsync(jobId, null, cancellationToken);
+
+    /// <summary>Polls a translation memory job until it finishes, for at most the given time.</summary>
+    /// <remarks>
+    ///   An import job keeps reporting <see cref="TranslationMemoryJobStatus.AwaitingInput" /> for a while after its
+    ///   file has been uploaded, and a status this library does not know is treated as in progress; both are polled
+    ///   through. A job whose file is never uploaded does not finish on its own, so pass a timeout when that is a
+    ///   possibility.
+    /// </remarks>
+    /// <param name="jobId">The ID of the job to wait for.</param>
+    /// <param name="timeout">Maximum time to wait, or <c>null</c> to wait without a limit.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>A <see cref="TranslationMemoryJob" /> object holding the status once the job has finished.</returns>
+    /// <exception cref="DeepLException">
+    ///   If the job failed or expired, the <paramref name="timeout" /> expires before it finishes, or any error occurs
+    ///   while communicating with the DeepL API.
+    /// </exception>
     public async Task<TranslationMemoryJob> WaitUntilTranslationMemoryJobDoneAsync(
           string jobId,
+          TimeSpan? timeout,
           CancellationToken cancellationToken = default) {
+      var deadline = timeout == null ? (DateTime?)null : DateTime.UtcNow + timeout.Value;
       var job = await GetTranslationMemoryJobAsync(jobId, cancellationToken).ConfigureAwait(false);
       while (!job.Done) {
         if (job.Result == null) {
           throw new DeepLException("Translation memory job status contained no result");
         }
 
-        await Task.Delay(TranslationMemoryJobPollInterval, cancellationToken).ConfigureAwait(false);
+        var wait = TranslationMemoryJobPollInterval;
+        if (deadline != null) {
+          var remaining = deadline.Value - DateTime.UtcNow;
+          if (remaining <= TimeSpan.Zero) {
+            throw new DeepLException($"Translation memory job did not finish within the timeout of {timeout}");
+          }
+
+          if (remaining < wait) {
+            wait = remaining;
+          }
+        }
+
+        await Task.Delay(wait, cancellationToken).ConfigureAwait(false);
         job = await GetTranslationMemoryJobAsync(jobId, cancellationToken).ConfigureAwait(false);
       }
 
@@ -522,6 +652,33 @@ namespace DeepL {
 
       return job;
     }
+
+    /// <summary>Polls the given translation memory job until it finishes, and returns its final status.</summary>
+    /// <param name="job">The job to wait for.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>A <see cref="TranslationMemoryJob" /> object holding the status once the job has finished.</returns>
+    /// <exception cref="DeepLException">
+    ///   If the job failed or expired, or if any error occurs while communicating with the DeepL API.
+    /// </exception>
+    public Task<TranslationMemoryJob> WaitUntilTranslationMemoryJobDoneAsync(
+          TranslationMemoryJob job,
+          CancellationToken cancellationToken = default) =>
+          WaitUntilTranslationMemoryJobDoneAsync(job.JobId, null, cancellationToken);
+
+    /// <summary>Polls the given translation memory job until it finishes, for at most the given time.</summary>
+    /// <param name="job">The job to wait for.</param>
+    /// <param name="timeout">Maximum time to wait, or <c>null</c> to wait without a limit.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>A <see cref="TranslationMemoryJob" /> object holding the status once the job has finished.</returns>
+    /// <exception cref="DeepLException">
+    ///   If the job failed or expired, the <paramref name="timeout" /> expires before it finishes, or any error occurs
+    ///   while communicating with the DeepL API.
+    /// </exception>
+    public Task<TranslationMemoryJob> WaitUntilTranslationMemoryJobDoneAsync(
+          TranslationMemoryJob job,
+          TimeSpan? timeout,
+          CancellationToken cancellationToken = default) =>
+          WaitUntilTranslationMemoryJobDoneAsync(job.JobId, timeout, cancellationToken);
 
     /// <inheritdoc />
     public async Task DownloadTranslationMemoryExportAsync(
@@ -576,36 +733,96 @@ namespace DeepL {
     public async Task<TranslationMemoryJob> ImportTranslationMemoryFromFilepathAsync(
           string inputFilePath,
           string? displayName = null,
+          CancellationToken cancellationToken = default) =>
+          await ImportTranslationMemoryFromFilepathAsync(
+                      inputFilePath,
+                      new ImportTranslationMemoryOptions { DisplayName = displayName },
+                      cancellationToken)
+                .ConfigureAwait(false);
+
+    /// <summary>
+    ///   Imports a TMX file as a new translation memory: creates the import job, uploads the file, and waits for
+    ///   processing to finish.
+    /// </summary>
+    /// <param name="inputFilePath">Path of the TMX file to import.</param>
+    /// <param name="options">
+    ///   Optional <see cref="ImportTranslationMemoryOptions" />: display name, content type (declared on the import job
+    ///   and sent with the upload), wait timeout, and <c>ExtraBodyParameters</c> added last to the import job request.
+    /// </param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>
+    ///   A <see cref="TranslationMemoryJob" /> object for the completed import; its result carries the ID of the
+    ///   new translation memory.
+    /// </returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="DeepLException">
+    ///   If the import failed, the timeout expired, or any error occurs while communicating with the DeepL API.
+    /// </exception>
+    public async Task<TranslationMemoryJob> ImportTranslationMemoryFromFilepathAsync(
+          string inputFilePath,
+          ImportTranslationMemoryOptions? options,
           CancellationToken cancellationToken = default) {
       var inputFileInfo = new FileInfo(inputFilePath);
       if (!inputFileInfo.Exists) {
         throw new ArgumentException($"File does not exist: {inputFilePath}");
       }
 
+      var createOptions = new CreateTranslationMemoryImportOptions {
+        ContentType = options?.ContentType,
+        DisplayName = options?.DisplayName,
+        ExtraBodyParameters = options?.ExtraBodyParameters
+      };
       var created = await CreateTranslationMemoryImportAsync(
                   inputFileInfo.Name,
                   inputFileInfo.Length,
-                  displayName: displayName,
-                  cancellationToken: cancellationToken)
+                  createOptions,
+                  cancellationToken)
             .ConfigureAwait(false);
 
       using (var inputFileStream = inputFileInfo.OpenRead()) {
-        await UploadTranslationMemoryFileAsync(created, inputFileStream, cancellationToken: cancellationToken)
+        await UploadTranslationMemoryFileAsync(
+                    created,
+                    inputFileStream,
+                    options?.ContentType ?? "application/xml",
+                    cancellationToken)
               .ConfigureAwait(false);
       }
 
-      var job = await WaitUntilTranslationMemoryJobDoneAsync(created.JobId, cancellationToken).ConfigureAwait(false);
-      return job;
+      return await WaitUntilTranslationMemoryJobDoneAsync(created.JobId, options?.Timeout, cancellationToken)
+            .ConfigureAwait(false);
     }
 
     /// <inheritdoc />
     public async Task<TranslationMemoryJob> ExportTranslationMemoryToFilepathAsync(
           string translationMemoryId,
           string outputFilePath,
+          CancellationToken cancellationToken = default) =>
+          await ExportTranslationMemoryToFilepathAsync(translationMemoryId, outputFilePath, null, cancellationToken)
+                .ConfigureAwait(false);
+
+    /// <summary>
+    ///   Exports a translation memory to a TMX file: creates the export job, waits for it to finish for at most the
+    ///   given time, and writes the result to the given path.
+    /// </summary>
+    /// <param name="translationMemoryId">The ID of the translation memory to export.</param>
+    /// <param name="outputFilePath">Path of the file to write the exported TMX file to.</param>
+    /// <param name="timeout">Maximum time to wait for the export job, or <c>null</c> to wait without a limit.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>A <see cref="TranslationMemoryJob" /> object for the completed export.</returns>
+    /// <exception cref="NotFoundException">If the specified translation memory was not found.</exception>
+    /// <exception cref="DeepLException">
+    ///   If the export failed, the <paramref name="timeout" /> expired, or any error occurs while communicating with
+    ///   the DeepL API.
+    /// </exception>
+    public async Task<TranslationMemoryJob> ExportTranslationMemoryToFilepathAsync(
+          string translationMemoryId,
+          string outputFilePath,
+          TimeSpan? timeout,
           CancellationToken cancellationToken = default) {
       var created = await CreateTranslationMemoryExportAsync(translationMemoryId, cancellationToken)
             .ConfigureAwait(false);
-      var job = await WaitUntilTranslationMemoryJobDoneAsync(created.JobId, cancellationToken).ConfigureAwait(false);
+      var job = await WaitUntilTranslationMemoryJobDoneAsync(created.JobId, timeout, cancellationToken)
+            .ConfigureAwait(false);
       await DownloadTranslationMemoryExportAsync(job, outputFilePath, cancellationToken).ConfigureAwait(false);
       return job;
     }
@@ -618,6 +835,33 @@ namespace DeepL {
           await ExportTranslationMemoryToFilepathAsync(
                       translationMemory.TranslationMemoryId,
                       outputFilePath,
+                      null,
+                      cancellationToken)
+                .ConfigureAwait(false);
+
+    /// <summary>
+    ///   Exports the given translation memory to a TMX file: creates the export job, waits for it to finish for at most
+    ///   the given time, and writes the result to the given path.
+    /// </summary>
+    /// <param name="translationMemory">The translation memory to export.</param>
+    /// <param name="outputFilePath">Path of the file to write the exported TMX file to.</param>
+    /// <param name="timeout">Maximum time to wait for the export job, or <c>null</c> to wait without a limit.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>A <see cref="TranslationMemoryJob" /> object for the completed export.</returns>
+    /// <exception cref="NotFoundException">If the specified translation memory was not found.</exception>
+    /// <exception cref="DeepLException">
+    ///   If the export failed, the <paramref name="timeout" /> expired, or any error occurs while communicating with
+    ///   the DeepL API.
+    /// </exception>
+    public async Task<TranslationMemoryJob> ExportTranslationMemoryToFilepathAsync(
+          TranslationMemoryInfo translationMemory,
+          string outputFilePath,
+          TimeSpan? timeout,
+          CancellationToken cancellationToken = default) =>
+          await ExportTranslationMemoryToFilepathAsync(
+                      translationMemory.TranslationMemoryId,
+                      outputFilePath,
+                      timeout,
                       cancellationToken)
                 .ConfigureAwait(false);
 

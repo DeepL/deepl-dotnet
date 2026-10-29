@@ -3,6 +3,7 @@
 // license that can be found in the LICENSE file.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -416,5 +417,141 @@ namespace DeepLTests.Offline {
       Assert.Equal("tm1", export.TranslationMemoryId);
     }
 
+    [Fact]
+    public async Task GetsAndWaitsForJobGivenAsObject() {
+      ExpectNoBody(HttpMethod.Get, "v3/translation_memories/jobs/j1").RespondJson(JobReply(CompletedResult));
+      ExpectNoBody(HttpMethod.Get, "v3/translation_memories/jobs/j1").RespondJson(JobReply(CompletedResult));
+      ExpectNoBody(HttpMethod.Get, "v3/translation_memories/jobs/j1").RespondJson(JobReply(CompletedResult));
+      var client = CreateClient();
+      var job = await client.GetTranslationMemoryJobAsync(CompletedJob());
+      Assert.Equal("j1", job.JobId);
+      Assert.True((await client.WaitUntilTranslationMemoryJobDoneAsync(job)).Done);
+      Assert.True((await client.WaitUntilTranslationMemoryJobDoneAsync(job, TimeSpan.FromMinutes(1))).Done);
+    }
+
+    [Fact]
+    public async Task ThrowsDeepLExceptionWhenWaitTimeoutExpires() {
+      ExpectNoBody(HttpMethod.Get, "v3/translation_memories/jobs/j1")
+            .RespondJson(JobReply("{\"status\":\"processing\"}"));
+      var exception = await Assert.ThrowsAsync<DeepLException>(
+            () => CreateClient().WaitUntilTranslationMemoryJobDoneAsync("j1", TimeSpan.Zero));
+      Assert.Equal("Translation memory job did not finish within the timeout of 00:00:00", exception.Message);
+    }
+
+    [Fact]
+    public async Task ThrowsDeepLExceptionWhenExportTimeoutExpires() {
+      ExpectNoBody(HttpMethod.Post, "v3/translation_memories/tm1/export")
+            .RespondJson("{\"job_id\":\"j1\"}", HttpStatusCode.Accepted);
+      ExpectNoBody(HttpMethod.Get, "v3/translation_memories/jobs/j1")
+            .RespondJson(JobReply("{\"status\":\"processing\"}", "export"));
+      var path = Path.Combine(Fixtures.TempDir(), "export.tmx");
+      await Assert.ThrowsAsync<DeepLException>(
+            () => CreateClient().ExportTranslationMemoryToFilepathAsync("tm1", path, TimeSpan.Zero));
+      Assert.False(File.Exists(path));
+    }
+
+    [Fact]
+    public async Task ExportsTranslationMemoryGivenAsObjectWithTimeout() {
+      ExpectNoBody(HttpMethod.Post, "v3/translation_memories/tm1/export")
+            .RespondJson("{\"job_id\":\"j1\"}", HttpStatusCode.Accepted);
+      ExpectNoBody(HttpMethod.Get, "v3/translation_memories/jobs/j1")
+            .RespondJson(JobReply(CompletedResult, "export"));
+      Http.Expect(HttpMethod.Get, DownloadUrl).Respond("application/xml", Tmx);
+      var path = Path.Combine(Fixtures.TempDir(), "export.tmx");
+      var memory = new TranslationMemoryInfo("tm1", "My TM", "en", new[] { "de" }, 0);
+      await CreateClient().ExportTranslationMemoryToFilepathAsync(memory, path, TimeSpan.FromMinutes(1));
+      Assert.Equal(Tmx, File.ReadAllText(path));
+    }
+
+    [Fact]
+    public async Task SendsSegmentsOptionsInQueryForIdAndInfo() {
+      for (var i = 0; i < 2; i++) {
+        ExpectNoBody(HttpMethod.Get, "v3/translation_memories/tm1/segments")
+              .WithExactQueryString("page_size=5&page_cursor=c1&filter_text=a b&filter_case_sensitive=false")
+              .RespondJson("{\"segment_count\":0,\"segments\":[]}");
+      }
+
+      var options = new TranslationMemorySegmentsOptions {
+        PageSize = 5, PageCursor = "c1", FilterText = "a b", FilterCaseSensitive = false
+      };
+      var client = CreateClient();
+      await client.ListTranslationMemorySegmentsAsync("tm1", options);
+      await client.ListTranslationMemorySegmentsAsync(
+            new TranslationMemoryInfo("tm1", "My TM", "en", new[] { "de" }, 0),
+            options);
+    }
+
+    [Fact]
+    public async Task SendsCreateImportOptionsWithExtraBodyParametersLast() {
+      ExpectJson(
+                  HttpMethod.Post,
+                  "v3/translation_memories/import",
+                  "{\"source_file\":{\"file_name\":\"a.tmx\",\"content_length\":5,\"content_type\":\"text/xml\"}," +
+                  "\"parameters\":\"replaced\",\"beta\":\"on\"}")
+            .RespondJson("{\"job_id\":\"j1\",\"upload_url\":\"" + UploadUrl + "\"}");
+      var options = new CreateTranslationMemoryImportOptions {
+        ContentType = "text/xml",
+        DisplayName = "My TM",
+        ExtraBodyParameters = new Dictionary<string, string> { ["parameters"] = "replaced", ["beta"] = "on" }
+      };
+      var created = await CreateClient().CreateTranslationMemoryImportAsync("a.tmx", 5, options);
+      Assert.Equal("j1", created.JobId);
+    }
+
+    [Fact]
+    public async Task SendsCreateImportOptionsDisplayName() {
+      ExpectJson(
+                  HttpMethod.Post,
+                  "v3/translation_memories/import",
+                  "{\"source_file\":{\"file_name\":\"a.tmx\",\"content_length\":5},\"parameters\":{\"display_name\":\"My TM\"}}")
+            .RespondJson("{\"job_id\":\"j1\",\"upload_url\":\"" + UploadUrl + "\"}");
+      await CreateClient().CreateTranslationMemoryImportAsync(
+            "a.tmx",
+            5,
+            new CreateTranslationMemoryImportOptions { DisplayName = "My TM" });
+    }
+
+    [Fact]
+    public async Task ImportsFromFilepathWithOptions() {
+      var path = TmxFile();
+      ExpectJson(
+                  HttpMethod.Post,
+                  "v3/translation_memories/import",
+                  "{\"source_file\":{\"file_name\":\"example.tmx\",\"content_length\":" + Tmx.Length +
+                  ",\"content_type\":\"text/xml\"},\"parameters\":{\"display_name\":\"My TM\"},\"beta\":\"on\"}")
+            .RespondJson("{\"job_id\":\"j1\",\"upload_url\":\"" + UploadUrl + "\"}");
+      Http.Expect(HttpMethod.Put, UploadUrl)
+            .WithHeaders("Content-Type", "text/xml")
+            .WithContent(Tmx)
+            .Respond(HttpStatusCode.OK);
+      ExpectNoBody(HttpMethod.Get, "v3/translation_memories/jobs/j1").RespondJson(JobReply(CompletedResult));
+      var options = new ImportTranslationMemoryOptions {
+        DisplayName = "My TM",
+        ContentType = "text/xml",
+        Timeout = TimeSpan.FromMinutes(1),
+        ExtraBodyParameters = new Dictionary<string, string> { ["beta"] = "on" }
+      };
+      var job = await CreateClient().ImportTranslationMemoryFromFilepathAsync(path, options);
+      Assert.Equal("tm1", job.Result!.TranslationMemoryId);
+    }
+
+    [Fact]
+    public async Task UploadsAsApplicationXmlWhenImportOptionsSetNoContentType() {
+      var path = TmxFile();
+      ExpectJson(
+                  HttpMethod.Post,
+                  "v3/translation_memories/import",
+                  "{\"source_file\":{\"file_name\":\"example.tmx\",\"content_length\":" + Tmx.Length + "}}")
+            .RespondJson("{\"job_id\":\"j1\",\"upload_url\":\"" + UploadUrl + "\"}");
+      Http.Expect(HttpMethod.Put, UploadUrl)
+            .WithHeaders("Content-Type", "application/xml")
+            .Respond(HttpStatusCode.OK);
+      ExpectNoBody(HttpMethod.Get, "v3/translation_memories/jobs/j1")
+            .RespondJson(JobReply("{\"status\":\"processing\"}"));
+      await Assert.ThrowsAsync<DeepLException>(
+            () => CreateClient().ImportTranslationMemoryFromFilepathAsync(
+                  path,
+                  new ImportTranslationMemoryOptions { Timeout = TimeSpan.Zero }));
+    }
   }
 }

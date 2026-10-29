@@ -1072,13 +1072,14 @@ characters, matched against both source and target text) and
 `filterCaseSensitive`. Note that `SegmentCount` is the total number of segments
 in the translation memory, and is not reduced by the filter.
 
+The same four values can be passed as a `TranslationMemorySegmentsOptions`
+object (`PageSize`, `PageCursor`, `FilterText`, `FilterCaseSensitive`); options
+left `null` are not sent:
+
 ```c#
-string? pageCursor = null;
+var options = new TranslationMemorySegmentsOptions { PageSize = 50 };
 do {
-  var page = await client.ListTranslationMemorySegmentsAsync(
-      "YOUR_TM_ID",
-      pageSize: 50,
-      pageCursor: pageCursor);
+  var page = await client.ListTranslationMemorySegmentsAsync("YOUR_TM_ID", options);
   foreach (var segment in page.Segments) {
     Console.WriteLine(segment.SourceText);
     foreach (var target in segment.Targets) {
@@ -1086,8 +1087,8 @@ do {
     }
   }
 
-  pageCursor = page.NextPageCursor;
-} while (pageCursor != null);
+  options.PageCursor = page.NextPageCursor;
+} while (options.PageCursor != null);
 ```
 
 #### Importing a translation memory
@@ -1105,6 +1106,25 @@ Console.WriteLine($"Imported translation memory: {job.Result!.TranslationMemoryI
 Console.WriteLine($"Skipped segments: {job.Result!.SkippedSegmentCount}");
 ```
 
+To set more than the display name, pass an `ImportTranslationMemoryOptions`
+object:
+
+- `DisplayName`: name for the new translation memory, defaults to the file name.
+- `ContentType`: MIME type of the file, declared on the import job and sent
+  with the upload. When not set, the file is uploaded as `application/xml`.
+- `Timeout`: maximum time to wait for the import job to finish; a
+  `DeepLException` is thrown when it expires. When not set, waits without limit.
+- `ExtraBodyParameters`: added last to the JSON body of the import job request.
+
+```c#
+var job = await client.ImportTranslationMemoryFromFilepathAsync(
+    "legal.tmx",
+    new ImportTranslationMemoryOptions {
+      DisplayName = "Legal",
+      Timeout = TimeSpan.FromMinutes(5)
+    });
+```
+
 If you need more control, the three steps are also available separately. Note
 that the upload URL is a pre-signed storage URL outside the DeepL API, so your
 authentication key is not sent to it:
@@ -1114,7 +1134,7 @@ var fileInfo = new FileInfo("legal.tmx");
 var created = await client.CreateTranslationMemoryImportAsync(
     fileInfo.Name,
     fileInfo.Length,
-    displayName: "Legal");
+    new CreateTranslationMemoryImportOptions { DisplayName = "Legal" });
 
 using (var fileStream = fileInfo.OpenRead()) {
   await client.UploadTranslationMemoryFileAsync(created, fileStream);
@@ -1122,6 +1142,11 @@ using (var fileStream = fileInfo.OpenRead()) {
 
 var job = await client.WaitUntilTranslationMemoryJobDoneAsync(created.JobId);
 ```
+
+`CreateTranslationMemoryImportAsync()` takes the content type and display name
+either as positional parameters or as a `CreateTranslationMemoryImportOptions`
+object (`ContentType`, `DisplayName`, and `ExtraBodyParameters`, added last to
+the JSON request body).
 
 #### Exporting a translation memory
 
@@ -1131,6 +1156,9 @@ result to the given path:
 
 ```c#
 await client.ExportTranslationMemoryToFilepathAsync("YOUR_TM_ID", "exported.tmx");
+
+// Throws a DeepLException if the export job has not finished within 5 minutes.
+await client.ExportTranslationMemoryToFilepathAsync("YOUR_TM_ID", "exported.tmx", TimeSpan.FromMinutes(5));
 ```
 
 The individual steps are available as `CreateTranslationMemoryExportAsync()`,
@@ -1156,16 +1184,24 @@ API detects the upload asynchronously; that status is polled through like any
 other non-terminal one. A status this library does not know is reported as
 `TranslationMemoryJobStatus.Unknown`, with the API's value in `StatusValue`, and
 is also polled through. A job whose file is never uploaded does not finish on
-its own, so pass a `CancellationToken` carrying a timeout when that is a
-possibility:
+its own, so pass a timeout (a `TimeSpan`, after which a `DeepLException` is
+thrown) or a `CancellationToken` when that is a possibility. Both methods take
+the job ID or a `TranslationMemoryJob`:
 
 ```c#
 var job = await client.GetTranslationMemoryJobAsync("YOUR_JOB_ID");
-Console.WriteLine($"{job.Operation} job is {job.Status}");
+Console.WriteLine($"{job.Operation} job is {job.StatusValue}");
 if (job.Status == TranslationMemoryJobStatus.AwaitingInput) {
   Console.WriteLine($"Required action: {job.Result!.RequiredAction}");
 }
+
+job = await client.WaitUntilTranslationMemoryJobDoneAsync(job, TimeSpan.FromMinutes(5));
 ```
+
+The overloads taking `TranslationMemorySegmentsOptions`,
+`CreateTranslationMemoryImportOptions`, `ImportTranslationMemoryOptions`, a
+timeout or a `TranslationMemoryJob` are members of `DeepLClient`; the
+`ITranslationMemoryManager` interface is unchanged.
 
 #### Deleting a translation memory
 

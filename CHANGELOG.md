@@ -6,8 +6,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Added `DeepLClient` overloads of `ListTranslationMemorySegmentsAsync()` (translation memory ID or
+  `TranslationMemoryInfo`) taking a `TranslationMemorySegmentsOptions` (`PageSize`, `PageCursor`, `FilterText`,
+  `FilterCaseSensitive`); options left `null` are not sent.
+- Added a `DeepLClient` overload of `CreateTranslationMemoryImportAsync()` taking a
+  `CreateTranslationMemoryImportOptions` (`ContentType`, `DisplayName`); its `ExtraBodyParameters` are added last to
+  the JSON request body.
+- Added a `DeepLClient` overload of `ImportTranslationMemoryFromFilepathAsync()` taking an
+  `ImportTranslationMemoryOptions` (`DisplayName`, `ContentType`, `Timeout`). `ContentType` is declared on the import
+  job and sent with the upload (default `application/xml`); `ExtraBodyParameters` are added last to the import job
+  request body.
+- Added `DeepLClient` overloads of `WaitUntilTranslationMemoryJobDoneAsync()` and
+  `ExportTranslationMemoryToFilepathAsync()` taking a `TimeSpan? timeout`; a `DeepLException` is thrown when it
+  expires before the job finishes.
+- Added `DeepLClient` overloads of `GetTranslationMemoryJobAsync()` and `WaitUntilTranslationMemoryJobDoneAsync()`
+  taking a `TranslationMemoryJob` instead of the job ID.
 - Added `TranslationMemoryJobStatus.Unknown` and `StatusValue` on `TranslationMemoryJobResult` and
   `TranslationMemoryJob`, holding the job status as returned by the API.
+- The new translation memory overloads are members of `DeepLClient`; the `ITranslationMemoryManager` interface is
+  unchanged.
+- Note: with the new options overloads, source code that passes a bare `null` as the first optional argument of these
+  calls no longer compiles (CS0121, ambiguous call): `ListTranslationMemorySegmentsAsync(id, null)`,
+  `ListTranslationMemorySegmentsAsync(translationMemory, null)`, `CreateTranslationMemoryImportAsync(fileName,
+  contentLength, null)` and `ImportTranslationMemoryFromFilepathAsync(path, null)`. Drop the `null`, or pass it as a
+  named argument (for example `displayName: null`). Already-compiled callers are unaffected.
 - Added `DeepLClient` overloads of all eight style rule methods that take a style rule ID (`GetStyleRuleAsync()`,
   `UpdateStyleRuleNameAsync()`, `UpdateStyleRuleConfiguredRulesAsync()`, `DeleteStyleRuleAsync()`,
   `CreateStyleRuleCustomInstructionAsync()`, `GetStyleRuleCustomInstructionAsync()`,
