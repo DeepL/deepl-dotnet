@@ -2,6 +2,7 @@
 // Use of this source code is governed by an MIT
 // license that can be found in the LICENSE file.
 
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using DeepL;
@@ -26,7 +27,8 @@ namespace DeepLTests.RealApi {
         var fetched = await RealApiHelpers.RetryWhileNotFound(() => client.GetGlossaryAsync(glossary.GlossaryId));
         Assert.Equal(glossary.GlossaryId, fetched.GlossaryId);
         Assert.Equal(name, fetched.Name);
-        Assert.Equal(glossary.CreationTime, fetched.CreationTime);
+        // The create response has 7 fractional digits, the get response 6; compare at millisecond precision.
+        Assert.Equal(TruncateToMilliseconds(glossary.CreationTime), TruncateToMilliseconds(fetched.CreationTime));
 
         var listed = await client.ListGlossariesAsync();
         Assert.Contains(listed, info => info.GlossaryId == glossary.GlossaryId);
@@ -37,5 +39,8 @@ namespace DeepLTests.RealApi {
         await client.DeleteGlossaryAsync(glossary.GlossaryId);
       }
     }
+
+    private static DateTime TruncateToMilliseconds(DateTime time) =>
+          new DateTime(time.Ticks - (time.Ticks % TimeSpan.TicksPerMillisecond), time.Kind);
   }
 }
