@@ -367,7 +367,9 @@ namespace DeepLTests.Offline {
     [Fact]
     public async Task ThrowsArgumentExceptionWhenGlossaryAndGlossaryIdsAreCombined() {
       var options = new TextTranslateOptions { Glossary = "g1", GlossaryIds = { "g2" } };
-      await Assert.ThrowsAsync<ArgumentException>(() => CreateClient().TranslateTextAsync("a", null, "DE", options));
+      var exception = await Assert.ThrowsAsync<ArgumentException>(
+            () => CreateClient().TranslateTextAsync("a", null, "DE", options));
+      Assert.Equal("Glossary and GlossaryIds cannot be used together", exception.Message);
     }
 
     [Fact]

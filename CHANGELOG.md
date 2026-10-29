@@ -91,7 +91,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Deprecated
 - Deprecated `TextTranslateOptions.GlossaryId`, `StyleId` and `TranslationMemoryId` with `[Obsolete]`; use `Glossary`,
-  `StyleRule` and `TranslationMemory` instead. They keep working until the next major version.
+  `StyleRule` and `TranslationMemory` instead. They keep working until the next major version. Error messages of text
+  translation name the new properties, e.g. "Glossary and GlossaryIds cannot be used together".
 - Deprecated the language code constants of the `LanguageCode` class (for example `LanguageCode.German`) with
   `[Obsolete]`; they will be removed in the next major version. Pass the language code as a string, for example
   `"de"`, and use `GetSourceLanguagesAsync()` and `GetTargetLanguagesAsync()` to retrieve the supported languages.

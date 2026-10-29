@@ -930,7 +930,8 @@ namespace DeepL {
             options?.StyleRule,
             options?.TranslationMemory,
             options?.GlossaryIds,
-            options?.StyleProfile);
+            options?.StyleProfile,
+            nameof(TextTranslateOptions.Glossary));
 
       if (options?.FormalityValue != null) {
         bodyParams.Add(("formality", options.FormalityValue));
@@ -1030,6 +1031,7 @@ namespace DeepL {
     ///   <paramref name="glossaryId" />.
     /// </param>
     /// <param name="styleProfileId">Optional ID of style profile to use for translation.</param>
+    /// <param name="glossaryOptionName">Name of the caller's single-glossary option, used in error messages.</param>
     /// <returns>List of tuples containing the parameters to include in HTTP request.</returns>
     /// <exception cref="ArgumentException">If the specified languages or options are invalid.</exception>
     private static List<(string Key, string Value)> CreateCommonHttpParams(
@@ -1040,7 +1042,8 @@ namespace DeepL {
           string? styleId = null,
           string? translationMemoryId = null,
           ICollection<string>? glossaryIds = null,
-          string? styleProfileId = null) {
+          string? styleProfileId = null,
+          string glossaryOptionName = "GlossaryId") {
       targetLanguageCode = LanguageCode.Standardize(targetLanguageCode);
       sourceLanguageCode = sourceLanguageCode == null ? null : LanguageCode.Standardize(sourceLanguageCode);
 
@@ -1054,7 +1057,7 @@ namespace DeepL {
       var hasGlossaryIds = glossaryIds != null && glossaryIds.Count > 0;
 
       if (glossaryId != null && hasGlossaryIds) {
-        throw new ArgumentException("GlossaryId and GlossaryIds cannot be used together");
+        throw new ArgumentException($"{glossaryOptionName} and GlossaryIds cannot be used together");
       }
 
       if (glossaryId != null) {
