@@ -329,6 +329,41 @@ namespace DeepLTests.Offline {
                       Path.Combine(Fixtures.TempDir(), "missing.tmx")));
 
     [Fact]
+    public async Task ImportFromFilepathThrowsDeepLExceptionForUnreadableFileBeforeCreatingJob() {
+      var path = TmxFile();
+      // No request is declared: creating the import job would fail the test with a ConnectionException.
+      using (new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None)) {
+        var exception = await Assert.ThrowsAsync<DeepLException>(
+              () => CreateClient().ImportTranslationMemoryFromFilepathAsync(path));
+        Assert.IsAssignableFrom<IOException>(exception.InnerException);
+      }
+    }
+
+    [Fact]
+    public async Task ExportToFilepathThrowsDeepLExceptionForExistingFileBeforeCreatingJob() {
+      var path = Path.Combine(Fixtures.TempDir(), "export.tmx");
+      File.WriteAllText(path, "keep");
+      // No request is declared: creating the export job would fail the test with a ConnectionException.
+      var exception = await Assert.ThrowsAsync<DeepLException>(
+            () => CreateClient().ExportTranslationMemoryToFilepathAsync("tm1", path));
+      Assert.IsAssignableFrom<IOException>(exception.InnerException);
+      Assert.Equal("keep", File.ReadAllText(path));
+    }
+
+    [Fact]
+    public async Task ExportToFilepathThrowsDeepLExceptionWhenCompletedJobHasNoDownloadUrl() {
+      ExpectNoBody(HttpMethod.Post, "v3/translation_memories/tm1/export")
+            .RespondJson("{\"job_id\":\"j1\"}", HttpStatusCode.Accepted);
+      ExpectNoBody(HttpMethod.Get, "v3/translation_memories/jobs/j1")
+            .RespondJson(JobReply("{\"status\":\"completed\"}", "export"));
+      var path = Path.Combine(Fixtures.TempDir(), "export.tmx");
+      var exception = await Assert.ThrowsAsync<DeepLException>(
+            () => CreateClient().ExportTranslationMemoryToFilepathAsync("tm1", path));
+      Assert.Equal("Translation memory export job completed without a download URL", exception.Message);
+      Assert.False(File.Exists(path));
+    }
+
+    [Fact]
     public async Task ExportsToFilepathByCreatingWaitingAndDownloading() {
       ExpectNoBody(HttpMethod.Post, "v3/translation_memories/tm1/export")
             .RespondJson("{\"job_id\":\"j1\"}", HttpStatusCode.Accepted);

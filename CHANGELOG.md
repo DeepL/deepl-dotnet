@@ -244,6 +244,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Document uploads from a non-seekable `Stream` (e.g. a network stream) are now buffered before sending, so a retry
   after HTTP 429, 5xx or a network failure resends the full document instead of failing.
 - `CreateDeveloperKeyAsync` retries refused connections and connect timeouts, as its documentation says.
+- `ImportTranslationMemoryFromFilepathAsync` reads the input file before creating the import job, and throws a
+  `DeepLException` (with the original exception as `InnerException`) if it cannot be read, instead of an
+  `IOException` or `UnauthorizedAccessException` after the job was created.
+- `ExportTranslationMemoryToFilepathAsync` creates the output file before creating the export job, and throws a
+  `DeepLException` (with the original exception as `InnerException`) if it already exists or cannot be created or
+  written, instead of an `IOException` after the export ran. A completed export job without a download URL also
+  throws a `DeepLException` instead of an `ArgumentException`. The output file is deleted if the export fails.
 - Fixed `GetTranslationMemoryJobAsync()` failing on a job status this library does not know: it is now parsed as
   `TranslationMemoryJobStatus.Unknown`, and `WaitUntilTranslationMemoryJobDoneAsync()` keeps polling on it.
 - Fixed `GetTranslationMemoryJobAsync()` and `CreateTranslationMemoryExportAsync()` failing when the job's

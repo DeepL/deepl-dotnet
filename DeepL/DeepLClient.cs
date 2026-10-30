@@ -741,8 +741,8 @@ namespace DeepL {
                 .ConfigureAwait(false);
 
     /// <summary>
-    ///   Imports a TMX file as a new translation memory: creates the import job, uploads the file, and waits for
-    ///   processing to finish.
+    ///   Imports a TMX file as a new translation memory: reads the file, creates the import job, uploads the file, and
+    ///   waits for processing to finish.
     /// </summary>
     /// <param name="inputFilePath">Path of the TMX file to import.</param>
     /// <param name="options">
@@ -754,9 +754,10 @@ namespace DeepL {
     ///   A <see cref="TranslationMemoryJob" /> object for the completed import; its result carries the ID of the
     ///   new translation memory.
     /// </returns>
-    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="ArgumentException">If any argument is invalid, or the input file does not exist.</exception>
     /// <exception cref="DeepLException">
-    ///   If the import failed, the timeout expired, or any error occurs while communicating with the DeepL API.
+    ///   If the input file cannot be read (before any job is created), the import failed, the timeout expired, or any
+    ///   error occurs while communicating with the DeepL API.
     /// </exception>
     public async Task<TranslationMemoryJob> ImportTranslationMemoryFromFilepathAsync(
           string inputFilePath,
@@ -767,6 +768,18 @@ namespace DeepL {
         throw new ArgumentException($"File does not exist: {inputFilePath}");
       }
 
+      // Read the file before creating the job, so that a file that cannot be read leaves no job awaiting input. The
+      // upload buffers the whole file anyway.
+      byte[] fileContent;
+      try {
+        using var inputFileStream = inputFileInfo.OpenRead();
+        using var buffer = new MemoryStream();
+        await inputFileStream.CopyToAsync(buffer, 81920, cancellationToken).ConfigureAwait(false);
+        fileContent = buffer.ToArray();
+      } catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException) {
+        throw new DeepLException($"Failed to read input file {inputFilePath}: {exception.Message}", exception);
+      }
+
       var createOptions = new CreateTranslationMemoryImportOptions {
         ContentType = options?.ContentType,
         DisplayName = options?.DisplayName,
@@ -774,15 +787,15 @@ namespace DeepL {
       };
       var created = await CreateTranslationMemoryImportAsync(
                   inputFileInfo.Name,
-                  inputFileInfo.Length,
+                  fileContent.Length,
                   createOptions,
                   cancellationToken)
             .ConfigureAwait(false);
 
-      using (var inputFileStream = inputFileInfo.OpenRead()) {
+      using (var contentStream = new MemoryStream(fileContent, false)) {
         await UploadTranslationMemoryFileAsync(
                     created,
-                    inputFileStream,
+                    contentStream,
                     options?.ContentType ?? "application/xml",
                     cancellationToken)
               .ConfigureAwait(false);
@@ -801,30 +814,67 @@ namespace DeepL {
                 .ConfigureAwait(false);
 
     /// <summary>
-    ///   Exports a translation memory to a TMX file: creates the export job, waits for it to finish for at most the
-    ///   given time, and writes the result to the given path.
+    ///   Exports a translation memory to a TMX file: creates the output file, creates the export job, waits for it to
+    ///   finish for at most the given time, and writes the result to the file.
     /// </summary>
     /// <param name="translationMemoryId">The ID of the translation memory to export.</param>
-    /// <param name="outputFilePath">Path of the file to write the exported TMX file to.</param>
+    /// <param name="outputFilePath">
+    ///   Path of the file to write the exported TMX file to. The file must not exist yet; it is deleted again if the
+    ///   export fails.
+    /// </param>
     /// <param name="timeout">Maximum time to wait for the export job, or <c>null</c> to wait without a limit.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="TranslationMemoryJob" /> object for the completed export.</returns>
     /// <exception cref="NotFoundException">If the specified translation memory was not found.</exception>
     /// <exception cref="DeepLException">
-    ///   If the export failed, the <paramref name="timeout" /> expired, or any error occurs while communicating with
-    ///   the DeepL API.
+    ///   If the output file cannot be created (it already exists, its directory does not exist or is not writable;
+    ///   checked before any job is created), writing it fails, the export failed, the <paramref name="timeout" />
+    ///   expired, or any error occurs while communicating with the DeepL API.
     /// </exception>
     public async Task<TranslationMemoryJob> ExportTranslationMemoryToFilepathAsync(
           string translationMemoryId,
           string outputFilePath,
           TimeSpan? timeout,
           CancellationToken cancellationToken = default) {
-      var created = await CreateTranslationMemoryExportAsync(translationMemoryId, cancellationToken)
-            .ConfigureAwait(false);
-      var job = await WaitUntilTranslationMemoryJobDoneAsync(created.JobId, timeout, cancellationToken)
-            .ConfigureAwait(false);
-      await DownloadTranslationMemoryExportAsync(job, outputFilePath, cancellationToken).ConfigureAwait(false);
-      return job;
+      CheckTranslationMemoryId(translationMemoryId);
+      // Create the output file before creating the job, so that an existing file or an unwritable path fails before
+      // the export runs. CreateNew rather than Create: the file is deleted again if the export fails, so truncating
+      // an existing one would destroy the caller's data.
+      var outputFileInfo = new FileInfo(outputFilePath);
+      FileStream outputFileStream;
+      try {
+        outputFileStream = outputFileInfo.Open(FileMode.CreateNew, FileAccess.Write);
+      } catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException) {
+        throw new DeepLException($"Failed to create output file {outputFilePath}: {exception.Message}", exception);
+      }
+
+      try {
+        using (outputFileStream) {
+          var created = await CreateTranslationMemoryExportAsync(translationMemoryId, cancellationToken)
+                .ConfigureAwait(false);
+          var job = await WaitUntilTranslationMemoryJobDoneAsync(created.JobId, timeout, cancellationToken)
+                .ConfigureAwait(false);
+          if (string.IsNullOrEmpty(job.Result?.DownloadUrl)) {
+            throw new DeepLException("Translation memory export job completed without a download URL");
+          }
+
+          try {
+            await DownloadTranslationMemoryExportAsync(job, outputFileStream, cancellationToken).ConfigureAwait(false);
+          } catch (IOException exception) {
+            throw new DeepLException($"Failed to write output file {outputFilePath}: {exception.Message}", exception);
+          }
+
+          return job;
+        }
+      } catch {
+        try {
+          outputFileInfo.Delete();
+        } catch {
+          // ignored
+        }
+
+        throw;
+      }
     }
 
     /// <inheritdoc />
@@ -840,18 +890,22 @@ namespace DeepL {
                 .ConfigureAwait(false);
 
     /// <summary>
-    ///   Exports the given translation memory to a TMX file: creates the export job, waits for it to finish for at most
-    ///   the given time, and writes the result to the given path.
+    ///   Exports the given translation memory to a TMX file: creates the output file, creates the export job, waits for
+    ///   it to finish for at most the given time, and writes the result to the file.
     /// </summary>
     /// <param name="translationMemory">The translation memory to export.</param>
-    /// <param name="outputFilePath">Path of the file to write the exported TMX file to.</param>
+    /// <param name="outputFilePath">
+    ///   Path of the file to write the exported TMX file to. The file must not exist yet; it is deleted again if the
+    ///   export fails.
+    /// </param>
     /// <param name="timeout">Maximum time to wait for the export job, or <c>null</c> to wait without a limit.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="TranslationMemoryJob" /> object for the completed export.</returns>
     /// <exception cref="NotFoundException">If the specified translation memory was not found.</exception>
     /// <exception cref="DeepLException">
-    ///   If the export failed, the <paramref name="timeout" /> expired, or any error occurs while communicating with
-    ///   the DeepL API.
+    ///   If the output file cannot be created (it already exists, its directory does not exist or is not writable;
+    ///   checked before any job is created), writing it fails, the export failed, the <paramref name="timeout" />
+    ///   expired, or any error occurs while communicating with the DeepL API.
     /// </exception>
     public async Task<TranslationMemoryJob> ExportTranslationMemoryToFilepathAsync(
           TranslationMemoryInfo translationMemory,

@@ -1095,9 +1095,11 @@ do {
 #### Importing a translation memory
 
 Use `ImportTranslationMemoryFromFilepathAsync()` to create a new translation
-memory from a TMX file. It creates the import job, uploads the file, and waits
-for processing to finish. The returned job carries the ID of the new translation
-memory:
+memory from a TMX file. It reads the file, creates the import job, uploads the
+file, and waits for processing to finish. The returned job carries the ID of the
+new translation memory. A missing file throws an `ArgumentException`; a file
+that cannot be read throws a `DeepLException` carrying the original exception as
+`InnerException`. Both are thrown before the import job is created:
 
 ```c#
 var job = await client.ImportTranslationMemoryFromFilepathAsync(
@@ -1152,8 +1154,12 @@ the JSON request body).
 #### Exporting a translation memory
 
 Use `ExportTranslationMemoryToFilepathAsync()` to export a translation memory as
-a TMX file. It creates the export job, waits for it to finish, and writes the
-result to the given path:
+a TMX file. It creates the output file, creates the export job, waits for it to
+finish, and writes the result to the file. The output file must not exist yet.
+If it exists, or its directory does not exist or is not writable, a
+`DeepLException` is thrown before the export job is created. If the export
+fails, the file is deleted again. Errors writing the file are also thrown as a
+`DeepLException`, with the original exception as `InnerException`:
 
 ```c#
 await client.ExportTranslationMemoryToFilepathAsync("YOUR_TM_ID", "exported.tmx");

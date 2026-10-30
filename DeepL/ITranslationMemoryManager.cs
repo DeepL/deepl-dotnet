@@ -282,8 +282,8 @@ namespace DeepL {
           CancellationToken cancellationToken = default);
 
     /// <summary>
-    ///   Imports a TMX file as a new translation memory: creates the import job, uploads the file, and waits for
-    ///   processing to finish.
+    ///   Imports a TMX file as a new translation memory: reads the file, creates the import job, uploads the file, and
+    ///   waits for processing to finish.
     /// </summary>
     /// <param name="inputFilePath">Path of the TMX file to import.</param>
     /// <param name="displayName">
@@ -294,9 +294,10 @@ namespace DeepL {
     ///   A <see cref="TranslationMemoryJob" /> object for the completed import; its result carries the ID of the
     ///   new translation memory.
     /// </returns>
-    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="ArgumentException">If any argument is invalid, or the input file does not exist.</exception>
     /// <exception cref="DeepLException">
-    ///   If the import failed, or if any error occurs while communicating with the DeepL API.
+    ///   If the input file cannot be read (before any job is created), the import failed, or any error occurs while
+    ///   communicating with the DeepL API.
     /// </exception>
     Task<TranslationMemoryJob> ImportTranslationMemoryFromFilepathAsync(
           string inputFilePath,
@@ -304,16 +305,21 @@ namespace DeepL {
           CancellationToken cancellationToken = default);
 
     /// <summary>
-    ///   Exports a translation memory to a TMX file: creates the export job, waits for it to finish, and writes the
-    ///   result to the given path.
+    ///   Exports a translation memory to a TMX file: creates the output file, creates the export job, waits for it to
+    ///   finish, and writes the result to the file.
     /// </summary>
     /// <param name="translationMemoryId">The ID of the translation memory to export.</param>
-    /// <param name="outputFilePath">Path of the file to write the exported TMX file to.</param>
+    /// <param name="outputFilePath">
+    ///   Path of the file to write the exported TMX file to. The file must not exist yet; it is deleted again if the
+    ///   export fails.
+    /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="TranslationMemoryJob" /> object for the completed export.</returns>
     /// <exception cref="NotFoundException">If the specified translation memory was not found.</exception>
     /// <exception cref="DeepLException">
-    ///   If the export failed, or if any error occurs while communicating with the DeepL API.
+    ///   If the output file cannot be created (it already exists, its directory does not exist or is not writable;
+    ///   checked before any job is created), writing it fails, the export failed, or any error occurs while
+    ///   communicating with the DeepL API.
     /// </exception>
     Task<TranslationMemoryJob> ExportTranslationMemoryToFilepathAsync(
           string translationMemoryId,
@@ -321,16 +327,21 @@ namespace DeepL {
           CancellationToken cancellationToken = default);
 
     /// <summary>
-    ///   Exports the given translation memory to a TMX file: creates the export job, waits for it to finish, and
-    ///   writes the result to the given path.
+    ///   Exports the given translation memory to a TMX file: creates the output file, creates the export job, waits for
+    ///   it to finish, and writes the result to the file.
     /// </summary>
     /// <param name="translationMemory">The translation memory to export.</param>
-    /// <param name="outputFilePath">Path of the file to write the exported TMX file to.</param>
+    /// <param name="outputFilePath">
+    ///   Path of the file to write the exported TMX file to. The file must not exist yet; it is deleted again if the
+    ///   export fails.
+    /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="TranslationMemoryJob" /> object for the completed export.</returns>
     /// <exception cref="NotFoundException">If the specified translation memory was not found.</exception>
     /// <exception cref="DeepLException">
-    ///   If the export failed, or if any error occurs while communicating with the DeepL API.
+    ///   If the output file cannot be created (it already exists, its directory does not exist or is not writable;
+    ///   checked before any job is created), writing it fails, the export failed, or any error occurs while
+    ///   communicating with the DeepL API.
     /// </exception>
     Task<TranslationMemoryJob> ExportTranslationMemoryToFilepathAsync(
           TranslationMemoryInfo translationMemory,
