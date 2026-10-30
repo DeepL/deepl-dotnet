@@ -222,7 +222,9 @@ namespace DeepL {
           CancellationToken cancellationToken = default);
 
     /// <summary>Retrieves the status of a translation memory import or export job.</summary>
-    /// <param name="jobId">The ID of the job to query.</param>
+    /// <param name="jobId">
+    ///   The ID of the job to query; a <see cref="TranslationMemoryJob" /> converts implicitly to its ID.
+    /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="TranslationMemoryJob" /> object with the current status.</returns>
     /// <exception cref="NotFoundException">If the specified job was not found.</exception>
@@ -242,7 +244,9 @@ namespace DeepL {
     ///   finish on its own, so pass a <paramref name="cancellationToken" /> carrying a timeout when that is a
     ///   possibility.
     /// </remarks>
-    /// <param name="jobId">The ID of the job to wait for.</param>
+    /// <param name="jobId">
+    ///   The ID of the job to wait for; a <see cref="TranslationMemoryJob" /> converts implicitly to its ID.
+    /// </param>
     /// <param name="cancellationToken">
     ///   The cancellation token to cancel operation. Note that cancellation is not accurate to the second, but only
     ///   observed every 5 seconds between polls.

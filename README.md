@@ -1202,7 +1202,9 @@ job = await client.WaitUntilTranslationMemoryJobDoneAsync(job, TimeSpan.FromMinu
 The overloads taking `TranslationMemorySegmentsOptions`,
 `CreateTranslationMemoryImportOptions`, `ImportTranslationMemoryOptions`, a
 timeout or a `TranslationMemoryJob` are members of `DeepLClient`; the
-`ITranslationMemoryManager` interface is unchanged.
+`ITranslationMemoryManager` interface is unchanged. A `TranslationMemoryJob`
+converts implicitly to its job ID, so code using the interface can pass a job
+object wherever it takes a job ID.
 
 #### Deleting a translation memory
 

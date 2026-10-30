@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   expires before the job finishes.
 - Added `DeepLClient` overloads of `GetTranslationMemoryJobAsync()` and `WaitUntilTranslationMemoryJobDoneAsync()`
   taking a `TranslationMemoryJob` instead of the job ID.
+- `TranslationMemoryJob` converts implicitly to its job ID, so a job object can also be passed to the
+  `ITranslationMemoryManager` methods taking a job ID.
 - Added `TranslationMemoryJobStatus.Unknown` and `StatusValue` on `TranslationMemoryJobResult` and
   `TranslationMemoryJob`, holding the job status as returned by the API.
 - The new translation memory overloads are members of `DeepLClient`; the `ITranslationMemoryManager` interface is

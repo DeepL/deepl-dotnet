@@ -3,6 +3,7 @@
 // license that can be found in the LICENSE file.
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -257,6 +258,15 @@ namespace DeepL.Model {
 
     /// <summary>Returns a string describing the job.</summary>
     public override string ToString() => $"TranslationMemoryJob {Operation} ({JobId}): {Status}";
+
+    /// <summary>
+    ///   Implicitly converts the <see cref="TranslationMemoryJob" /> to its ID, so it can be passed wherever the job ID
+    ///   is accepted, for example to <see cref="ITranslationMemoryManager.GetTranslationMemoryJobAsync(string, System.Threading.CancellationToken)" />.
+    /// </summary>
+    /// <param name="job"><see cref="TranslationMemoryJob" /> object to convert.</param>
+    /// <returns>The value of <see cref="JobId" />, or <c>null</c> if <paramref name="job" /> is <c>null</c>.</returns>
+    [return: NotNullIfNotNull("job")]
+    public static implicit operator string?(TranslationMemoryJob? job) => job?.JobId;
   }
 
   /// <summary>A newly created translation memory import job.</summary>
