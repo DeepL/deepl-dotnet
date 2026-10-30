@@ -486,6 +486,47 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
+    public async Task RetriesUploadOfNonSeekableStreamWithTheFullBody() {
+      // Reads the body without buffering it, as a real handler does, so a consumed stream cannot be read again.
+      static bool SendsHello(HttpRequestMessage request) {
+        using var body = new MemoryStream();
+        request.Content!.CopyToAsync(body).Wait();
+        return Encoding.UTF8.GetString(body.ToArray()).Contains("\r\n\r\nhello\r\n");
+      }
+
+      Expect(HttpMethod.Post, "v2/document").With(SendsHello).RespondJson("{}", HttpStatusCode.ServiceUnavailable);
+      Expect(HttpMethod.Post, "v2/document").With(SendsHello).RespondJson(HandleReply);
+      var handle = await CreateClientWithRetries(1, TimeSpan.FromSeconds(10))
+            .TranslateDocumentUploadAsync(new NonSeekableStream(Text("hello")), "a.txt", null, "DE");
+      Assert.Equal("d1", handle.DocumentId);
+    }
+
+    /// <summary>Read-only stream that cannot seek, like a network stream.</summary>
+    private sealed class NonSeekableStream : Stream {
+      private readonly Stream _inner;
+
+      public NonSeekableStream(Stream inner) {
+        _inner = inner;
+      }
+
+      public override bool CanRead => true;
+      public override bool CanSeek => false;
+      public override bool CanWrite => false;
+      public override long Length => throw new NotSupportedException();
+
+      public override long Position {
+        get => throw new NotSupportedException();
+        set => throw new NotSupportedException();
+      }
+
+      public override int Read(byte[] buffer, int offset, int count) => _inner.Read(buffer, offset, count);
+      public override void Flush() { }
+      public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+      public override void SetLength(long value) => throw new NotSupportedException();
+      public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+    }
+
+    [Fact]
     public async Task WrapsCancellationInDocumentTranslationException() {
       using var cancellation = new CancellationTokenSource();
       Expect(HttpMethod.Post, "v2/document")

@@ -689,7 +689,15 @@ namespace DeepL.Internal {
         content.Add(new StringContent(value), key);
       }
 
-      content.Add(new StreamContent(file), "file", fileName);
+      if (file.CanSeek) {
+        // StreamContent seeks back to the start position when the retry handler resends the request.
+        content.Add(new StreamContent(file), "file", fileName);
+      } else {
+        // A non-seekable stream cannot be read again, so a retried request would fail; buffer it first.
+        var buffer = new MemoryStream();
+        await file.CopyToAsync(buffer, 81920, cancellationToken).ConfigureAwait(false);
+        content.Add(new ByteArrayContent(buffer.GetBuffer(), 0, (int)buffer.Length), "file", fileName);
+      }
 
       using var requestMessage = new HttpRequestMessage {
         RequestUri = new Uri(_serverUrl, relativeUri),
