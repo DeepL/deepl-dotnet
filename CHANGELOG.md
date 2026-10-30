@@ -166,6 +166,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added the static method `DeepLClient.IsFreeAccountAuthKey()`, replacing `Translator.AuthKeyIsFreeAccount()`.
 
 ### Changed
+- `TranslateDocumentAsync()` with `FileInfo` arguments throws an `ArgumentException` before any request if the input
+  file does not exist (was a `FileNotFoundException`), and wraps the other local failures (an existing output file,
+  opening the input, document minification) in a `DocumentTranslationException` with the original exception as
+  `InnerException` (was a raw `IOException` or `DocumentMinificationException`). An existing output file is still
+  kept unchanged.
 - The README documents source language detection with glossaries in text translation: with a `null` source language,
   DeepL detects it and applies the glossary's dictionary for the detected language pair.
 - Because `GlossaryInfo`, `MultilingualGlossaryInfo`, `StyleRuleInfo`, `StyleProfile` and `TranslationMemoryInfo` now

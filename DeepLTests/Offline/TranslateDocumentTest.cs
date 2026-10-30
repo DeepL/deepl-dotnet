@@ -451,13 +451,28 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
-    public async Task ThrowsIOExceptionAndKeepsFileWhenTranslatingToExistingFile() {
+    public async Task WrapsOccupiedOutputPathInDocumentTranslationExceptionAndKeepsFile() {
       var input = Fixtures.CreateTextDocument();
       var output = Path.Combine(Fixtures.TempDir(), "out.txt");
       File.WriteAllText(output, "keep");
-      await Assert.ThrowsAsync<IOException>(
+      var exception = await Assert.ThrowsAsync<DocumentTranslationException>(
             () => CreateClient().TranslateDocumentAsync(new FileInfo(input), new FileInfo(output), null, "DE"));
+      Assert.IsAssignableFrom<IOException>(exception.InnerException);
+      Assert.Null(exception.DocumentHandle);
       Assert.Equal("keep", File.ReadAllText(output));
+    }
+
+    [Fact]
+    public async Task ThrowsArgumentExceptionBeforeAnyRequestWhenInputFileIsMissing() {
+      var directory = Fixtures.TempDir();
+      var output = Path.Combine(directory, "out.txt");
+      await Assert.ThrowsAsync<ArgumentException>(
+            () => CreateClient().TranslateDocumentAsync(
+                  new FileInfo(Path.Combine(directory, "missing.txt")),
+                  new FileInfo(output),
+                  null,
+                  "DE"));
+      Assert.False(File.Exists(output));
     }
 
     [Fact]

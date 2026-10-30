@@ -304,6 +304,9 @@ objects, and provide the source and target language as above.
 Additional `DocumentTranslateOptions` are also available,
 see [Document translation options](#document-translation-options) below.
 Note that file paths are not accepted as strings, to avoid mixing up the file and language arguments.
+A missing input file throws an `ArgumentException` before any request is sent. Every other failure,
+including local file errors such as an existing output file, throws a `DocumentTranslationException`.
+An existing output file is never overwritten or deleted.
 
 ```c#
 // Translate a formal document from English to German
