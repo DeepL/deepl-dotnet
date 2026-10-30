@@ -366,9 +366,12 @@ namespace DeepL.Internal {
     /// <param name="downloadingDocument"><c>true</c> if document download function is used, otherwise <c>false</c>.</param>
     /// <exception cref="AuthorizationException">If authorization failed.</exception>
     /// <exception cref="QuotaExceededException">If the translation quota has been exceeded.</exception>
-    /// <exception cref="GlossaryNotFoundException">If the specified glossary was not found.</exception>
-    /// <exception cref="GlossaryDictionaryNotFoundException">If the specified glossary dictionary was not found.</exception>
+    /// <exception cref="NotFoundException">
+    ///   If the specified resource was not found; on glossary endpoints the deprecated subclass
+    ///   <see cref="GlossaryNotFoundException" />.
+    /// </exception>
     /// <exception cref="TooManyRequestsException">If the DeepL servers are currently receiving too many requests.</exception>
+    /// <exception cref="DocumentNotReadyException">If a document download returns HTTP 503.</exception>
     /// <exception cref="DeepLException">If some other error occurred.</exception>
     internal static async Task CheckStatusCodeAsync(
           HttpResponseMessage responseMessage,
@@ -413,9 +416,11 @@ namespace DeepL.Internal {
           var notFoundMessage = resourceType != null
                 ? $"{resourceType.Value.ToDisplayString()} not found" + message
                 : "Not found" + message;
+#pragma warning disable CS0618 // glossary endpoints keep throwing the deprecated subclass until the next major
           return resourceType == ResourceType.Glossary
                 ? new GlossaryNotFoundException(notFoundMessage)
                 : new NotFoundException(notFoundMessage);
+#pragma warning restore CS0618
         case HttpStatusCode.BadRequest:
           return new DeepLException("Bad request" + message);
         case HttpStatusCodeTooManyRequests:

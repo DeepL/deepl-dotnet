@@ -208,6 +208,7 @@ namespace DeepLTests.Offline {
       await client.CreateMultilingualGlossaryFromCsvAsync("n", "en", "de", CsvStream(), options);
     }
 
+#pragma warning disable CS0618 // glossary endpoints still throw the deprecated GlossaryNotFoundException
     [Fact]
     public async Task ThrowsGlossaryNotFoundExceptionWhenCreateReturns404() {
       ExpectForm(
@@ -236,6 +237,7 @@ namespace DeepLTests.Offline {
       await Assert.ThrowsAsync<GlossaryNotFoundException>(
             () => client.CreateMultilingualGlossaryFromCsvAsync("n", "en", "de", CsvStream()));
     }
+#pragma warning restore CS0618
 
     [Fact]
     public async Task SendsOnlySetFieldsAsJsonWhenUpdating() {
@@ -341,11 +343,13 @@ namespace DeepLTests.Offline {
             () => CreateClient().GetMultilingualGlossaryDictionaryEntriesAsync("g1", "en", "de"));
     }
 
+#pragma warning disable CS0618 // glossary endpoints still throw the deprecated GlossaryNotFoundException
     [Fact]
     public async Task ThrowsGlossaryNotFoundExceptionWhenStatusIs404() {
       ExpectNoBody(HttpMethod.Get, "v3/glossaries/x").RespondJson("{}", HttpStatusCode.NotFound);
       await Assert.ThrowsAsync<GlossaryNotFoundException>(() => CreateClient().GetMultilingualGlossaryAsync("x"));
     }
+#pragma warning restore CS0618
 
     [Fact]
     public async Task ThrowsArgumentExceptionWhenArgumentsAreEmpty() {

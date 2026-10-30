@@ -191,6 +191,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   carry the key given to the constructor.
 
 ### Deprecated
+- `GlossaryNotFoundException` is deprecated; catch `NotFoundException`, its base class. Glossary endpoints
+  still throw it on HTTP 404 until the next major version, which throws `NotFoundException`.
 - Deprecated the `DeepLClient.CreateStyleRuleAsync()` and `UpdateStyleRuleConfiguredRulesAsync()` overloads taking a
   `ConfiguredRules` object with `[Obsolete]`; use the overloads taking a `Dictionary<string, Dictionary<string, string>>`
   instead. They keep working until the next major version. A `CreateStyleRuleAsync()` call without configured rules

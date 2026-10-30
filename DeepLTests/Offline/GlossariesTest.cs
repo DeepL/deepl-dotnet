@@ -125,6 +125,7 @@ namespace DeepLTests.Offline {
       await CreateClient().WaitUntilGlossaryReadyAsync("g1");
     }
 
+#pragma warning disable CS0618 // glossary endpoints still throw the deprecated GlossaryNotFoundException
     [Fact]
     public async Task ThrowsGlossaryNotFoundExceptionWhenStatusIs404() {
       var client = CreateClient();
@@ -136,6 +137,7 @@ namespace DeepLTests.Offline {
       await Assert.ThrowsAsync<GlossaryNotFoundException>(() => client.DeleteGlossaryAsync("x"));
       await Assert.ThrowsAsync<GlossaryNotFoundException>(() => client.GetGlossaryEntriesAsync("x"));
     }
+#pragma warning restore CS0618
 
     [Fact]
     public async Task ThrowsArgumentExceptionWhenNameIsEmpty() =>

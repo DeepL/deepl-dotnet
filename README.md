@@ -1512,7 +1512,7 @@ invalid arguments are provided, they may raise the standard exceptions
 | Exception | Raised when |
 |---|---|
 | `AuthorizationException` | HTTP 401 or 403: the key is invalid or not authorized |
-| `NotFoundException` | HTTP 404 (`GlossaryNotFoundException` on glossary endpoints) |
+| `NotFoundException` | HTTP 404 (on glossary endpoints the deprecated subclass `GlossaryNotFoundException`; catch `NotFoundException`) |
 | `TooManyRequestsException` | HTTP 429 after all retries |
 | `QuotaExceededException` | HTTP 456: the quota is exceeded |
 | `DocumentNotReadyException` | HTTP 503 while downloading a document |

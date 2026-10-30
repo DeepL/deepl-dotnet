@@ -51,7 +51,11 @@ namespace DeepL {
     }
   }
 
-  /// <summary>Exception thrown when no glossary could be found with the specified ID.</summary>
+  /// <summary>
+  ///   Exception thrown when no glossary could be found with the specified ID. Deprecated: catch
+  ///   <see cref="NotFoundException" />, which glossary endpoints will throw from the next major version on.
+  /// </summary>
+  [Obsolete("Catch NotFoundException instead. Glossary endpoints will throw NotFoundException in the next major version.")]
   public sealed class GlossaryNotFoundException : NotFoundException {
     /// <summary>Initializes a new instance of the <see cref="GlossaryNotFoundException" /> class.</summary>
     /// <param name="message">The message that describes the error.</param>
