@@ -130,7 +130,7 @@ namespace DeepL {
     /// <param name="options"><see cref="DocumentTranslateOptions" /> influencing translation.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="DocumentHandle" /> object associated with the in-progress document translation.</returns>
-    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="ArgumentException">If any argument is invalid, or the input file does not exist.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -689,6 +689,11 @@ namespace DeepL {
           string targetLanguageCode,
           DocumentTranslateOptions? options = null,
           CancellationToken cancellationToken = default) {
+      inputFileInfo.Refresh();
+      if (!inputFileInfo.Exists) {
+        throw new ArgumentException($"File does not exist: {inputFileInfo.FullName}", nameof(inputFileInfo));
+      }
+
       using var inputFileStream = inputFileInfo.OpenRead();
       return await TranslateDocumentUploadAsync(
             inputFileStream,

@@ -355,7 +355,8 @@ determine the file type. Pass it as the `inputFileName` argument, or set the
 `TranslateDocumentAsync()` manages the upload, wait until translation is complete, and download steps. If your
 application needs to execute these steps individually, you can instead use the following functions directly:
 
-- `TranslateDocumentUploadAsync()`,
+- `TranslateDocumentUploadAsync()` (given a `FileInfo` of a missing file, it throws an `ArgumentException` before
+  any request is sent),
 - `TranslateDocumentGetStatusAsync()` (or `TranslateDocumentWaitUntilDoneAsync()`), and
 - `TranslateDocumentDownloadAsync()`
 

@@ -235,6 +235,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - The first retry now waits exactly 1 second, and the first attempt's backoff deadline is exactly 1 second; the ±23 %
   jitter applies only from the second backoff on.
+- `TranslateDocumentUploadAsync(FileInfo, ...)` throws an `ArgumentException` before any request when the input file
+  does not exist, like `TranslateDocumentAsync(FileInfo, ...)`. Before, it threw a `FileNotFoundException`.
 - A 3xx response the HTTP client does not follow (for example 304, or a redirect without a `Location` header) now
   throws `DeepLException` with `HttpStatusCode` set instead of being treated as a success.
 - TLS and certificate failures and proxy tunnel rejections are no longer retried, and their `ConnectionException`

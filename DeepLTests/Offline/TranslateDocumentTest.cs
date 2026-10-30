@@ -476,6 +476,14 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
+    public async Task ThrowsArgumentExceptionBeforeAnyRequestWhenUploadInputFileIsMissing() =>
+          await Assert.ThrowsAsync<ArgumentException>(
+                () => CreateClient().TranslateDocumentUploadAsync(
+                      new FileInfo(Path.Combine(Fixtures.TempDir(), "missing.txt")),
+                      null,
+                      "DE"));
+
+    [Fact]
     public async Task CopiesHttpStatusCodeAndShouldRetryFromCause() {
       Expect(HttpMethod.Post, "v2/document").RespondJson("{\"message\":\"quota\"}", (HttpStatusCode)456);
       var exception = await Assert.ThrowsAsync<DocumentTranslationException>(
