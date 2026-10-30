@@ -1584,8 +1584,9 @@ The available options:
 - `MaximumNetworkRetries`: the number of retries after the first attempt, by
   default 5. Only HTTP 429, 5xx responses and transient network failures
   (timeouts, failed and reset connections, name resolution failures) are
-  retried, with exponential backoff. TLS, certificate and proxy failures are not
-  retried.
+  retried, with exponential backoff: the first wait is 1 second, each next one
+  1.6 times the previous, at most 120 seconds, with ±23 % jitter. TLS,
+  certificate and proxy failures are not retried.
 - `PerRetryConnectionTimeout`: the timeout of each attempt, by default 10
   seconds. An attempt may run longer, until the time the client would wait
   before retrying it (the backoff delay), when that is longer. On .NET 5 and

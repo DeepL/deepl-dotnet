@@ -131,6 +131,30 @@ namespace DeepL.Internal {
     private const string BackoffContextKey = "DeepL.Backoff";
 
     /// <summary>
+    ///   Returns the backoff of the given attempt: 1 s without jitter for the first attempt; for each later attempt the
+    ///   previous backoff times 1.6, at most 120 s, with ±23 % jitter.
+    /// </summary>
+    /// <param name="attempt">Zero-based number of the attempt.</param>
+    /// <param name="rnd">Source of the jitter; locked while it is used.</param>
+    /// <returns>The deadline of the attempt and the wait before the next one.</returns>
+    internal static TimeSpan ComputeBackoff(int attempt, Random rnd) {
+      const double backoffInitial = 1.0;
+      const double backoffMaximum = 120.0;
+      const double backoffJitter = 0.23;
+      const double backoffMultiplier = 1.6;
+      if (attempt == 0) {
+        return TimeSpan.FromSeconds(backoffInitial);
+      }
+
+      var backoff = Math.Min(backoffInitial * Math.Pow(backoffMultiplier, attempt), backoffMaximum);
+      lock (rnd) {
+        backoff *= 1.0 + (backoffJitter * ((rnd.NextDouble() * 2.0) - 1.0));
+      }
+
+      return TimeSpan.FromSeconds(backoff);
+    }
+
+    /// <summary>
     ///   Creates a policy to retry failed HTTP requests wrapping the given handler.
     /// </summary>
     /// <param name="innerHandler"><see cref="HttpMessageHandler" /> on which requests should be retried.</param>
@@ -149,20 +173,7 @@ namespace DeepL.Internal {
       }
 
       var rnd = new Random();
-      var computeBackoff = new Func<int, TimeSpan>(
-            attempt => {
-              const double backoffInitial = 1.0;
-              const double backoffMaximum = 120.0;
-              const double backoffJitter = 0.23;
-              const double backoffMultiplier = 1.6;
-              var backoff = backoffInitial * Math.Pow(backoffMultiplier, attempt);
-              backoff = Math.Min(backoff, backoffMaximum);
-              lock (rnd) {
-                backoff *= 1.0 + (backoffJitter * ((rnd.NextDouble() * 2.0) - 1.0));
-              }
-
-              return TimeSpan.FromSeconds(backoff);
-            });
+      var computeBackoff = new Func<int, TimeSpan>(attempt => ComputeBackoff(attempt, rnd));
 
       // The backoff of an attempt is both its deadline and the wait before the next attempt; the attempt may run
       // until that deadline even if it is longer than the configured timeout.

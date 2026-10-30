@@ -69,7 +69,7 @@ namespace DeepLTests.Offline {
 
     [Fact]
     public async Task RunsAttemptUntilBackoffDeadlineWhenLongerThanTimeout() {
-      // The first backoff is 1 s ± 23 %, so a 100 ms timeout is extended and the 300 ms reply arrives in time.
+      // The first backoff is 1 s, so a 100 ms timeout is extended and the 300 ms reply arrives in time.
       ExpectNoBody(HttpMethod.Get, "v2/usage")
             .Respond(
                   async () => {
@@ -78,6 +78,21 @@ namespace DeepLTests.Offline {
                   });
       await CreateClientWithRetries(1, TimeSpan.FromMilliseconds(100)).GetUsageAsync();
     }
+
+    /// <summary>Returns a fixed value from <see cref="Random.NextDouble" />.</summary>
+    private sealed class FixedRandom : Random {
+      private readonly double _value;
+      public FixedRandom(double value) => _value = value;
+      public override double NextDouble() => _value;
+    }
+
+    [Theory]
+    [InlineData(0.0)]
+    [InlineData(0.999)]
+    public void FirstBackoffIsOneSecondWithoutJitter(double random) =>
+          Assert.Equal(
+                TimeSpan.FromSeconds(1),
+                DeepL.Internal.DeepLHttpClient.ComputeBackoff(0, new FixedRandom(random)));
 
     [Fact]
     public async Task KeepsInfinitePerRetryTimeoutInfinite() {
