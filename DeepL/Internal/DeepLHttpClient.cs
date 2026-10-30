@@ -320,7 +320,7 @@ namespace DeepL.Internal {
           BaseClientOptions options,
           HttpMessageHandler? innerHandler = null) {
       var handler = CreateHttpMessageHandlerWithRetryPolicy(
-            innerHandler ?? CreateHttpClientHandler(options.Proxy),
+            innerHandler ?? CreateHttpClientHandler(options.Proxy, options.PerRetryConnectionTimeout),
             options.PerRetryConnectionTimeout,
             options.MaximumNetworkRetries);
 #pragma warning disable CS0618 // the deprecated overall timeout keeps working until it is removed
@@ -332,9 +332,24 @@ namespace DeepL.Internal {
       };
     }
 
-    /// <summary>Creates the handler sending requests, using the given proxy if set.</summary>
-    private static HttpClientHandler CreateHttpClientHandler(Uri? proxy) {
+    /// <summary>
+    ///   Creates the handler sending requests, using the given proxy if set. On .NET 5 and later, connecting is limited
+    ///   to half of the per-attempt timeout, so that a hanging connect fails as a connect timeout before the attempt
+    ///   times out: unlike a per-attempt timeout, a connect timeout shows that the request was not sent.
+    /// </summary>
+    /// <param name="proxy">URL of the proxy, or <c>null</c> to use the system proxy settings.</param>
+    /// <param name="perRetryConnectionTimeout">Timeout of each attempt, or an infinite timeout.</param>
+    private static HttpMessageHandler CreateHttpClientHandler(Uri? proxy, TimeSpan perRetryConnectionTimeout) {
+#if NET5_0_OR_GREATER
+      var handler = new SocketsHttpHandler();
+      if (perRetryConnectionTimeout > TimeSpan.Zero) {
+        var connectTimeout = TimeSpan.FromTicks(perRetryConnectionTimeout.Ticks / 2);
+        handler.ConnectCallback = (context, cancellationToken) =>
+              ConnectAsync(context.DnsEndPoint, connectTimeout, cancellationToken);
+      }
+#else
       var handler = new HttpClientHandler();
+#endif
       if (proxy != null) {
         var webProxy = new WebProxy(proxy);
         if (!string.IsNullOrEmpty(proxy.UserInfo)) {
@@ -350,6 +365,32 @@ namespace DeepL.Internal {
 
       return handler;
     }
+
+#if NET5_0_OR_GREATER
+    /// <summary>
+    ///   Opens a TCP connection to the given server or proxy like <see cref="SocketsHttpHandler" /> does by default, but
+    ///   within the given time. A connect timeout is thrown as a <see cref="SocketException" /> with
+    ///   <see cref="SocketError.TimedOut" />, which the handler wraps in an <see cref="HttpRequestException" />.
+    /// </summary>
+    private static async ValueTask<Stream> ConnectAsync(
+          DnsEndPoint endPoint,
+          TimeSpan connectTimeout,
+          CancellationToken cancellationToken) {
+      var socket = new Socket(SocketType.Stream, ProtocolType.Tcp) { NoDelay = true };
+      using var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+      timeoutSource.CancelAfter(connectTimeout);
+      try {
+        await socket.ConnectAsync(endPoint, timeoutSource.Token).ConfigureAwait(false);
+        return new NetworkStream(socket, true);
+      } catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested) {
+        socket.Dispose();
+        throw new SocketException((int)SocketError.TimedOut);
+      } catch {
+        socket.Dispose();
+        throw;
+      }
+    }
+#endif
 
     /// <summary>
     ///   Creates a <see cref="DeepLHttpClient" /> configured from the given client options: the HTTP client from

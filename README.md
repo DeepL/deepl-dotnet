@@ -1588,7 +1588,11 @@ The available options:
   retried.
 - `PerRetryConnectionTimeout`: the timeout of each attempt, by default 10
   seconds. An attempt may run longer, until the time the client would wait
-  before retrying it (the backoff delay), when that is longer.
+  before retrying it (the backoff delay), when that is longer. On .NET 5 and
+  later, connecting to the server (or proxy) is limited to half of this timeout,
+  so that a connect timeout is detected as such and `CreateDeveloperKeyAsync()`
+  can retry it. On .NET Framework and .NET Core 3.1, only the operating system's
+  connect timeout counts as a connect timeout.
 - `OverallConnectionTimeout`: deprecated; a timeout for the request including all
   retries. By default there is none.
 - `ServerUrl`: overrides the DeepL API server URL.

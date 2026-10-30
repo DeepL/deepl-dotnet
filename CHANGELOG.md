@@ -244,6 +244,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Document uploads from a non-seekable `Stream` (e.g. a network stream) are now buffered before sending, so a retry
   after HTTP 429, 5xx or a network failure resends the full document instead of failing.
 - `CreateDeveloperKeyAsync` retries refused connections and connect timeouts, as its documentation says.
+- On .NET 5 and later, connecting is limited to half of `PerRetryConnectionTimeout`, so that a hanging connect fails
+  as a connect timeout instead of a per-attempt timeout, and `CreateDeveloperKeyAsync` retries it. Before, a hanging
+  connect was cut by the per-attempt timeout, which `CreateDeveloperKeyAsync` does not retry.
 - `ImportTranslationMemoryFromFilepathAsync` reads the input file before creating the import job, and throws a
   `DeepLException` (with the original exception as `InnerException`) if it cannot be read, instead of an
   `IOException` or `UnauthorizedAccessException` after the job was created.

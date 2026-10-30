@@ -9,6 +9,7 @@ using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Threading.Tasks;
 using DeepL;
@@ -592,6 +593,51 @@ namespace DeepLTests.Offline {
       Assert.True(stopwatch.Elapsed >= TimeSpan.FromSeconds(0.7), $"Failed after {stopwatch.Elapsed}");
       Assert.True(exception.ShouldRetry);
     }
+
+#if NET5_0_OR_GREATER
+    [Fact]
+    public async Task CreateDeveloperKeyRetriesConnectTimeout() {
+      // Relies on Linux dropping connection attempts while a listener's accept queue is full.
+      if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+        return;
+      }
+
+      using var listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+      listener.Bind(new IPEndPoint(IPAddress.Loopback, 0));
+      listener.Listen(0);
+      var port = ((IPEndPoint)listener.LocalEndPoint!).Port;
+      var fillers = new List<Socket>();
+      try {
+        var connectHangs = false;
+        while (!connectHangs && fillers.Count < 10) {
+          var filler = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+          fillers.Add(filler);
+          var connect = filler.ConnectAsync(IPAddress.Loopback, port);
+          connectHangs = await Task.WhenAny(connect, Task.Delay(500)) != connect;
+        }
+
+        Assert.True(connectHangs, "The accept queue did not fill up");
+        var client = new DeepLAdminClient(
+              AuthKey,
+              new DeepLAdminClientOptions {
+                ServerUrl = $"http://127.0.0.1:{port}",
+                MaximumNetworkRetries = 1,
+                PerRetryConnectionTimeout = TimeSpan.FromSeconds(1)
+              });
+
+        var stopwatch = Stopwatch.StartNew();
+        var exception = await Assert.ThrowsAsync<ConnectionException>(() => client.CreateDeveloperKeyAsync());
+        // Each connect gives up after 0.5 s and the first backoff is 1 s ± 23 %; a per-attempt timeout instead
+        // fails after about 1 s without a retry.
+        Assert.True(stopwatch.Elapsed >= TimeSpan.FromSeconds(1.7), $"Failed after {stopwatch.Elapsed}");
+        Assert.True(exception.ShouldRetry);
+      } finally {
+        foreach (var filler in fillers) {
+          filler.Dispose();
+        }
+      }
+    }
+#endif
 
     [Fact]
     public async Task CreateDeveloperKeyDoesNotRetryAfterRequestSent() {
