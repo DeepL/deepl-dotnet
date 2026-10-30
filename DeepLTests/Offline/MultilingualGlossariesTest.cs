@@ -64,6 +64,27 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
+    public async Task SendsTrimmedTsvTermsWhenCreatingFromTsv() {
+      ExpectForm(
+                  HttpMethod.Post,
+                  "v3/glossaries",
+                  ("name", "My glossary"),
+                  ("dictionaries[0].source_lang", "en"),
+                  ("dictionaries[0].target_lang", "de"),
+                  ("dictionaries[0].entries", "Apple\tApfel\nPear\tBirne"),
+                  ("dictionaries[0].entries_format", "tsv"))
+            .RespondJson(GlossaryReply);
+      await CreateClient().CreateMultilingualGlossaryAsync(
+            "My glossary",
+            new[] {
+              new MultilingualGlossaryDictionaryEntries(
+                    "en",
+                    "de",
+                    GlossaryEntries.FromTsv("  Apple \t Apfel  \r\n\r\n Pear\tBirne \r\n"))
+            });
+    }
+
+    [Fact]
     public async Task SendsCsvDictionaryWhenCreatingFromCsv() {
       ExpectForm(
                   HttpMethod.Post,

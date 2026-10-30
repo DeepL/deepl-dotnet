@@ -49,17 +49,17 @@ namespace DeepL {
     /// <returns><see cref="GlossaryEntries" /> containing the source-target entry pairs.</returns>
     /// <exception cref="ArgumentException">If the entries fail any validity check.</exception>
     private GlossaryEntries(string contentTsv, bool skipChecks = false) {
-      _contentTsv = contentTsv;
-      if (!skipChecks) {
-        // ToDictionary() validates the TSV string
-        var _ = ToDictionary(contentTsv);
-        // Result is intentionally ignored
-      }
+      // Without skipChecks, the validated, trimmed entries are stored (and sent), one per line separated by "\n".
+      _contentTsv = skipChecks
+            ? contentTsv
+            : string.Join("\n", ParseTsv(contentTsv).Select(entry => $"{entry.Source}{TermSeparator}{entry.Target}"));
     }
 
     /// <summary>
     ///   Converts the given tab-separated-value (TSV) string of glossary entries into a new <see cref="GlossaryEntries" />.
-    ///   Whitespace is trimmed from the start and end of each term.
+    ///   Whitespace is trimmed from the start and end of each term, then each term is validated. The trimmed entries
+    ///   are stored and sent, one per line separated by <c>\n</c>, without blank lines. With
+    ///   <paramref name="skipChecks" />, the string is stored and sent unchanged.
     /// </summary>
     /// <param name="contentTsv">String containing the entries in TSV format.</param>
     /// <param name="skipChecks">If <c>true</c>, validity checks on the entries are skipped, defaults to <c>false</c>.</param>
@@ -167,8 +167,21 @@ namespace DeepL {
     /// <returns>Dictionary containing the source-target entry pairs.</returns>
     private static Dictionary<string, string> ToDictionary(
           string contentTsv,
+          bool skipChecks = false) =>
+          ParseTsv(contentTsv, skipChecks).ToDictionary(entry => entry.Source, entry => entry.Target);
+
+    /// <summary>
+    ///   Parses the given TSV string into source-target entry pairs in input order, skipping blank lines. Whitespace is
+    ///   trimmed from the start and end of each term.
+    /// </summary>
+    /// <param name="contentTsv">String containing the entries in TSV format.</param>
+    /// <param name="skipChecks">If <c>true</c>, validity checks on the entries are skipped, defaults to <c>false</c>.</param>
+    /// <returns>List of the source-target entry pairs.</returns>
+    private static List<(string Source, string Target)> ParseTsv(
+          string contentTsv,
           bool skipChecks = false) {
-      var entries = new Dictionary<string, string>();
+      var entries = new List<(string Source, string Target)>();
+      var sourceTerms = new HashSet<string>();
       var lineNumber = 0;
       foreach (var line in contentTsv.Split(LineSeparators, StringSplitOptions.None)) {
         lineNumber += 1;
@@ -193,11 +206,11 @@ namespace DeepL {
           ValidateGlossaryTerm(target);
         }
 
-        try {
-          entries.Add(source, target);
-        } catch (ArgumentException exception) {
-          throw new ArgumentException($"Entry on line {lineNumber} duplicates source term \"{source}\"", exception);
+        if (!sourceTerms.Add(source)) {
+          throw new ArgumentException($"Entry on line {lineNumber} duplicates source term \"{source}\"");
         }
+
+        entries.Add((source, target));
       }
 
       if (!skipChecks && entries.Count == 0) {
