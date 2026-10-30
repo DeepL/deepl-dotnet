@@ -1521,8 +1521,9 @@ invalid arguments are provided, they may raise the standard exceptions
 
 `DeepLException.HttpStatusCode` holds the HTTP status of the failed response, or
 `null` if there was no response. `DeepLException.ShouldRetry` is `true` if
-repeating the request could succeed (HTTP 429, 5xx, timeouts and failed
-connections), `false` for other HTTP statuses, and `null` if unknown.
+repeating the request could succeed (HTTP 429, 5xx, timeouts, failed and reset
+connections), `false` for other HTTP statuses and for TLS, certificate and proxy
+failures, and `null` if unknown.
 `DeepLAdminClient.CreateDeveloperKeyAsync()` is not safe to repeat after a
 server error or a timeout, because the key may already exist; for it,
 `ShouldRetry` is `true` only for HTTP 429, name resolution failures, refused
@@ -1570,7 +1571,9 @@ The available options:
 
 - `MaximumNetworkRetries`: the number of retries after the first attempt, by
   default 5. Only HTTP 429, 5xx responses and transient network failures
-  (timeouts, failed connections) are retried, with exponential backoff.
+  (timeouts, failed and reset connections, name resolution failures) are
+  retried, with exponential backoff. TLS, certificate and proxy failures are not
+  retried.
 - `PerRetryConnectionTimeout`: the timeout of each attempt, by default 10
   seconds. An attempt may run longer, until the time the client would wait
   before retrying it (the backoff delay), when that is longer.

@@ -11,6 +11,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
+using System.Security.Authentication;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -197,7 +198,7 @@ namespace DeepL.Internal {
             });
       var waitAndRetry = Policy.Handle<TaskCanceledException>()
             .Or<TimeoutRejectedException>()
-            .Or<HttpRequestException>()
+            .Or<HttpRequestException>(IsTransientNetworkFailure)
             .OrResult<HttpResponseMessage>(
                   responseMessage => responseMessage.StatusCode == HttpStatusCodeTooManyRequests ||
                                      responseMessage.StatusCode >= HttpStatusCode.InternalServerError)
@@ -212,6 +213,48 @@ namespace DeepL.Internal {
             request => request.GetPolicyExecutionContext()?.OperationKey == RetryOnlyUnprocessedOperationKey
                   ? unprocessedPolicy
                   : policy) { InnerHandler = innerHandler };
+    }
+
+    /// <summary>
+    ///   Whether the request failed because of a transient network failure that a retry could overcome: a failed
+    ///   connect, a name resolution failure, a timeout, a reset or closed connection, an unreachable host or network.
+    ///   TLS and certificate failures are not transient, and neither are failures without a socket or I/O cause,
+    ///   such as a proxy rejecting the tunnel to the server.
+    /// </summary>
+    private static bool IsTransientNetworkFailure(HttpRequestException exception) {
+      for (Exception? inner = exception.InnerException; inner != null; inner = inner.InnerException) {
+        if (inner is AuthenticationException) {
+          return false;
+        }
+      }
+
+      for (Exception? inner = exception.InnerException; inner != null; inner = inner.InnerException) {
+        switch (inner) {
+          case SocketException _:
+          case IOException _:
+            return true;
+          case WebException webException:
+            switch (webException.Status) {
+              case WebExceptionStatus.ConnectFailure:
+              case WebExceptionStatus.NameResolutionFailure:
+              case WebExceptionStatus.Timeout:
+              case WebExceptionStatus.ConnectionClosed:
+              case WebExceptionStatus.KeepAliveFailure:
+              case WebExceptionStatus.ReceiveFailure:
+              case WebExceptionStatus.SendFailure:
+              case WebExceptionStatus.PipelineFailure:
+                return true;
+              case WebExceptionStatus.TrustFailure:
+              case WebExceptionStatus.SecureChannelFailure:
+              case WebExceptionStatus.ProxyNameResolutionFailure:
+                return false;
+            }
+
+            break;
+        }
+      }
+
+      return false;
     }
 
     /// <summary>
@@ -727,7 +770,7 @@ namespace DeepL.Internal {
         throw new ConnectionException($"Request timed out: {ex.Message}", ex) { ShouldRetry = !retryOnlyUnprocessed };
       } catch (HttpRequestException ex) {
         throw new ConnectionException($"Request failed: {ex.Message}", ex) {
-          ShouldRetry = !retryOnlyUnprocessed || IsCertainlyNotSent(ex)
+          ShouldRetry = retryOnlyUnprocessed ? IsCertainlyNotSent(ex) : IsTransientNetworkFailure(ex)
         };
       } catch (Exception ex) {
         throw new ConnectionException($"Unexpected request failure: {ex.Message}", ex);

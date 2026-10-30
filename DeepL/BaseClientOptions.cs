@@ -22,7 +22,9 @@ namespace DeepL {
 
     /// <summary>
     ///   The maximum number of failed attempts that the client will retry, per request. By default 5 retries are made.
-    ///   Note: only errors due to transient conditions are retried. Only used if <see cref="ClientFactory" /> is unset.
+    ///   Only HTTP 429, 5xx responses and transient network failures (connect, name resolution, timeout, connection
+    ///   reset) are retried; TLS, certificate and proxy failures are not. Only used if <see cref="ClientFactory" /> is
+    ///   unset.
     /// </summary>
     public int MaximumNetworkRetries { get; set; } = 5;
 

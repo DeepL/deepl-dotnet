@@ -226,6 +226,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - A 3xx response the HTTP client does not follow (for example 304, or a redirect without a `Location` header) now
   throws `DeepLException` with `HttpStatusCode` set instead of being treated as a success.
+- TLS and certificate failures and proxy tunnel rejections are no longer retried, and their `ConnectionException`
+  has `ShouldRetry` set to `false`. Connect, name resolution, timeout and connection reset failures are still
+  retried.
 - `CreateDeveloperKeyAsync` retries refused connections and connect timeouts, as its documentation says.
 - Fixed `GetTranslationMemoryJobAsync()` failing on a job status this library does not know: it is now parsed as
   `TranslationMemoryJobStatus.Unknown`, and `WaitUntilTranslationMemoryJobDoneAsync()` keeps polling on it.

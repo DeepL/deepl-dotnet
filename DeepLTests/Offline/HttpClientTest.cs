@@ -6,6 +6,8 @@ using System;
 using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Net.Sockets;
+using System.Security.Authentication;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -118,6 +120,55 @@ namespace DeepLTests.Offline {
             () => CreateClientWithRetries(2, PerRetryTimeout).GetUsageAsync());
       Assert.Equal(1, attempts);
       Assert.Null(exception.ShouldRetry);
+    }
+
+    /// <summary>Makes every GET of v2/usage throw the given exception and counts the attempts.</summary>
+    private Func<int> ThrowOnUsage(Exception exception) {
+      var attempts = 0;
+      Http.When(HttpMethod.Get, ApiUrl + "/v2/usage")
+            .With(
+                  _ => {
+                    attempts++;
+                    return true;
+                  })
+            .Throw(exception);
+      return () => attempts;
+    }
+
+    [Fact]
+    public async Task DoesNotRetryTlsFailure() {
+      var attempts = ThrowOnUsage(
+            new HttpRequestException(
+                  "The SSL connection could not be established",
+                  new AuthenticationException("The remote certificate is invalid")));
+      var exception = await Assert.ThrowsAsync<ConnectionException>(
+            () => CreateClientWithRetries(2, PerRetryTimeout).GetUsageAsync());
+      Assert.Equal(1, attempts());
+      Assert.False(exception.ShouldRetry);
+    }
+
+    [Fact]
+    public async Task DoesNotRetryProxyTunnelRejection() {
+      // SocketsHttpHandler reports a rejected CONNECT as an HttpRequestException without an inner exception.
+      var attempts = ThrowOnUsage(
+            new HttpRequestException(
+                  "The proxy tunnel request to proxy 'http://proxy:3128/' failed with status code '403'."));
+      var exception = await Assert.ThrowsAsync<ConnectionException>(
+            () => CreateClientWithRetries(2, PerRetryTimeout).GetUsageAsync());
+      Assert.Equal(1, attempts());
+      Assert.False(exception.ShouldRetry);
+    }
+
+    [Fact]
+    public async Task RetriesConnectionReset() {
+      var attempts = ThrowOnUsage(
+            new HttpRequestException(
+                  "reset",
+                  new IOException("read", new SocketException((int)SocketError.ConnectionReset))));
+      var exception = await Assert.ThrowsAsync<ConnectionException>(
+            () => CreateClientWithRetries(1, PerRetryTimeout).GetUsageAsync());
+      Assert.Equal(2, attempts());
+      Assert.True(exception.ShouldRetry);
     }
 
     [Fact]
