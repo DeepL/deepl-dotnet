@@ -600,6 +600,10 @@ Functions to edit stored glossaries are also provided:
   inserting new entires or replacing the target phrase for any existing
   entries) or will insert a new glossary dictionary if that language pair is
   not currently in the stored glossary.
+- Each overload of `UpdateMultilingualGlossaryDictionaryAsync()`,
+  `UpdateMultilingualGlossaryDictionaryFromCsvAsync()` and `UpdateMultilingualGlossaryNameAsync()`
+  has a `DeepLClient` variant taking a `BaseRequestOptions` object before the cancellation token; its
+  `ExtraBodyParameters` are added last to the request body.
 - `ReplaceMultilingualGlossaryDictionaryAsync()` takes a glossary ID or `MultilingualGlossaryInfo`
   object, plus a source language, target language, and a dictionary of entries.
   It will then either set the entries to the parameter value, completely

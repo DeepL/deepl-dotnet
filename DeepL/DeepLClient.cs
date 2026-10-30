@@ -2815,12 +2815,37 @@ namespace DeepL {
     public async Task<MultilingualGlossaryInfo> UpdateMultilingualGlossaryNameAsync(
           string glossaryId,
           string name,
+          CancellationToken cancellationToken = default) =>
+          await UpdateMultilingualGlossaryNameAsync(glossaryId, name, null, cancellationToken).ConfigureAwait(false);
+
+    /// <summary>
+    ///   Renames the glossary with the given ID, like
+    ///   <see cref="UpdateMultilingualGlossaryNameAsync(string, string, CancellationToken)" />.
+    /// </summary>
+    /// <param name="glossaryId">ID of the glossary to rename.</param>
+    /// <param name="name">The new name of the glossary; must not be empty.</param>
+    /// <param name="options">
+    ///   Optional <see cref="BaseRequestOptions" />, whose <c>ExtraBodyParameters</c> are added last to the request
+    ///   body, replacing fields with the same key.
+    /// </param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns><see cref="MultilingualGlossaryInfo" /> object with details about the renamed glossary.</returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<MultilingualGlossaryInfo> UpdateMultilingualGlossaryNameAsync(
+          string glossaryId,
+          string name,
+          BaseRequestOptions? options,
           CancellationToken cancellationToken = default) {
       if (string.IsNullOrWhiteSpace(name)) {
         throw new ArgumentException($"Parameter {nameof(name)} must not be empty");
       }
 
-      var bodyParams = new (string Key, string Value)[] { ("name", name) };
+      var bodyParams = new List<(string Key, string Value)> { ("name", name) };
+      AddExtraBodyParameters(bodyParams, options);
       using var responseMessage =
             await _client.ApiPatchAsync(MultilingualGlossaryPath(glossaryId), cancellationToken, bodyParams)
                   .ConfigureAwait(false);
@@ -2846,7 +2871,33 @@ namespace DeepL {
           MultilingualGlossaryInfo glossary,
           string name,
           CancellationToken cancellationToken = default) =>
-          await UpdateMultilingualGlossaryNameAsync(glossary.GlossaryId, name, cancellationToken).ConfigureAwait(false);
+          await UpdateMultilingualGlossaryNameAsync(glossary.GlossaryId, name, null, cancellationToken)
+                .ConfigureAwait(false);
+
+    /// <summary>
+    ///   Renames the given glossary, like
+    ///   <see cref="UpdateMultilingualGlossaryNameAsync(string, string, BaseRequestOptions?, CancellationToken)" />.
+    /// </summary>
+    /// <param name="glossary">The glossary to rename.</param>
+    /// <param name="name">The new name of the glossary; must not be empty.</param>
+    /// <param name="options">
+    ///   Optional <see cref="BaseRequestOptions" />, whose <c>ExtraBodyParameters</c> are added last to the request
+    ///   body, replacing fields with the same key.
+    /// </param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns><see cref="MultilingualGlossaryInfo" /> object with details about the renamed glossary.</returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<MultilingualGlossaryInfo> UpdateMultilingualGlossaryNameAsync(
+          MultilingualGlossaryInfo glossary,
+          string name,
+          BaseRequestOptions? options,
+          CancellationToken cancellationToken = default) =>
+          await UpdateMultilingualGlossaryNameAsync(glossary.GlossaryId, name, options, cancellationToken)
+                .ConfigureAwait(false);
 
     /// <summary>
     ///   Updates the name and/or dictionaries of a glossary in one request. Only the fields set in
@@ -2922,12 +2973,49 @@ namespace DeepL {
           string targetLanguageCode,
           GlossaryEntries entries,
           CancellationToken cancellationToken = default) =>
+          await UpdateMultilingualGlossaryDictionaryAsync(
+                glossaryId,
+                sourceLanguageCode,
+                targetLanguageCode,
+                entries,
+                null,
+                cancellationToken).ConfigureAwait(false);
+
+    /// <summary>
+    ///   Merges the given entries into the glossary dictionary for the language pair, creating it if needed, like
+    ///   <see cref="UpdateMultilingualGlossaryDictionaryAsync(string, string, string, GlossaryEntries, CancellationToken)" />.
+    /// </summary>
+    /// <param name="glossaryId">ID of the glossary that contains the dictionary to update or create.</param>
+    /// <param name="sourceLanguageCode">Language code of the source terms language.</param>
+    /// <param name="targetLanguageCode">Language code of the target terms language.</param>
+    /// <param name="entries">The source-target entry pairs to merge into the dictionary.</param>
+    /// <param name="options">
+    ///   Optional <see cref="BaseRequestOptions" />, whose <c>ExtraBodyParameters</c> are added last to the request
+    ///   body, replacing fields with the same key.
+    /// </param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>
+    ///   <see cref="MultilingualGlossaryInfo" /> object with details about the glossary with the updated dictionary.
+    /// </returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<MultilingualGlossaryInfo> UpdateMultilingualGlossaryDictionaryAsync(
+          string glossaryId,
+          string sourceLanguageCode,
+          string targetLanguageCode,
+          GlossaryEntries entries,
+          BaseRequestOptions? options,
+          CancellationToken cancellationToken = default) =>
           await UpdateMultilingualGlossaryDictionaryInternalAsync(
                 glossaryId,
                 sourceLanguageCode,
                 targetLanguageCode,
                 entries.ToTsv(),
                 "tsv",
+                options,
                 cancellationToken).ConfigureAwait(false);
 
     /// <inheritdoc />
@@ -2937,12 +3025,49 @@ namespace DeepL {
           string targetLanguageCode,
           GlossaryEntries entries,
           CancellationToken cancellationToken = default) =>
+          await UpdateMultilingualGlossaryDictionaryAsync(
+                glossary,
+                sourceLanguageCode,
+                targetLanguageCode,
+                entries,
+                null,
+                cancellationToken).ConfigureAwait(false);
+
+    /// <summary>
+    ///   Merges the given entries into the glossary dictionary for the language pair, creating it if needed, like
+    ///   <see cref="UpdateMultilingualGlossaryDictionaryAsync(MultilingualGlossaryInfo, string, string, GlossaryEntries, CancellationToken)" />.
+    /// </summary>
+    /// <param name="glossary">The glossary that contains the dictionary to update or create.</param>
+    /// <param name="sourceLanguageCode">Language code of the source terms language.</param>
+    /// <param name="targetLanguageCode">Language code of the target terms language.</param>
+    /// <param name="entries">The source-target entry pairs to merge into the dictionary.</param>
+    /// <param name="options">
+    ///   Optional <see cref="BaseRequestOptions" />, whose <c>ExtraBodyParameters</c> are added last to the request
+    ///   body, replacing fields with the same key.
+    /// </param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>
+    ///   <see cref="MultilingualGlossaryInfo" /> object with details about the glossary with the updated dictionary.
+    /// </returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<MultilingualGlossaryInfo> UpdateMultilingualGlossaryDictionaryAsync(
+          MultilingualGlossaryInfo glossary,
+          string sourceLanguageCode,
+          string targetLanguageCode,
+          GlossaryEntries entries,
+          BaseRequestOptions? options,
+          CancellationToken cancellationToken = default) =>
           await UpdateMultilingualGlossaryDictionaryInternalAsync(
                 glossary.GlossaryId,
                 sourceLanguageCode,
                 targetLanguageCode,
                 entries.ToTsv(),
                 "tsv",
+                options,
                 cancellationToken).ConfigureAwait(false);
 
     /// <inheritdoc />
@@ -2950,12 +3075,43 @@ namespace DeepL {
           MultilingualGlossaryInfo glossary,
           MultilingualGlossaryDictionaryEntries glossaryDict,
           CancellationToken cancellationToken = default) =>
+          await UpdateMultilingualGlossaryDictionaryAsync(
+                glossary,
+                glossaryDict,
+                null,
+                cancellationToken).ConfigureAwait(false);
+
+    /// <summary>
+    ///   Merges the given entries into the glossary dictionary for the language pair, creating it if needed, like
+    ///   <see cref="UpdateMultilingualGlossaryDictionaryAsync(MultilingualGlossaryInfo, MultilingualGlossaryDictionaryEntries, CancellationToken)" />.
+    /// </summary>
+    /// <param name="glossary">The glossary that contains the dictionary to update or create.</param>
+    /// <param name="glossaryDict">The dictionary to merge into the glossary.</param>
+    /// <param name="options">
+    ///   Optional <see cref="BaseRequestOptions" />, whose <c>ExtraBodyParameters</c> are added last to the request
+    ///   body, replacing fields with the same key.
+    /// </param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>
+    ///   <see cref="MultilingualGlossaryInfo" /> object with details about the glossary with the updated dictionary.
+    /// </returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<MultilingualGlossaryInfo> UpdateMultilingualGlossaryDictionaryAsync(
+          MultilingualGlossaryInfo glossary,
+          MultilingualGlossaryDictionaryEntries glossaryDict,
+          BaseRequestOptions? options,
+          CancellationToken cancellationToken = default) =>
           await UpdateMultilingualGlossaryDictionaryInternalAsync(
                 glossary.GlossaryId,
                 glossaryDict.SourceLanguageCode,
                 glossaryDict.TargetLanguageCode,
                 glossaryDict.Entries.ToTsv(),
                 "tsv",
+                options,
                 cancellationToken).ConfigureAwait(false);
 
     /// <inheritdoc />
@@ -2963,12 +3119,43 @@ namespace DeepL {
           string glossaryId,
           MultilingualGlossaryDictionaryEntries glossaryDict,
           CancellationToken cancellationToken = default) =>
+          await UpdateMultilingualGlossaryDictionaryAsync(
+                glossaryId,
+                glossaryDict,
+                null,
+                cancellationToken).ConfigureAwait(false);
+
+    /// <summary>
+    ///   Merges the given entries into the glossary dictionary for the language pair, creating it if needed, like
+    ///   <see cref="UpdateMultilingualGlossaryDictionaryAsync(string, MultilingualGlossaryDictionaryEntries, CancellationToken)" />.
+    /// </summary>
+    /// <param name="glossaryId">ID of the glossary that contains the dictionary to update or create.</param>
+    /// <param name="glossaryDict">The dictionary to merge into the glossary.</param>
+    /// <param name="options">
+    ///   Optional <see cref="BaseRequestOptions" />, whose <c>ExtraBodyParameters</c> are added last to the request
+    ///   body, replacing fields with the same key.
+    /// </param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>
+    ///   <see cref="MultilingualGlossaryInfo" /> object with details about the glossary with the updated dictionary.
+    /// </returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<MultilingualGlossaryInfo> UpdateMultilingualGlossaryDictionaryAsync(
+          string glossaryId,
+          MultilingualGlossaryDictionaryEntries glossaryDict,
+          BaseRequestOptions? options,
+          CancellationToken cancellationToken = default) =>
           await UpdateMultilingualGlossaryDictionaryInternalAsync(
                 glossaryId,
                 glossaryDict.SourceLanguageCode,
                 glossaryDict.TargetLanguageCode,
                 glossaryDict.Entries.ToTsv(),
                 "tsv",
+                options,
                 cancellationToken).ConfigureAwait(false);
 
     /// <inheritdoc />
@@ -2978,12 +3165,49 @@ namespace DeepL {
           string targetLanguageCode,
           Stream csvFile,
           CancellationToken cancellationToken = default) =>
+          await UpdateMultilingualGlossaryDictionaryFromCsvAsync(
+                glossaryId,
+                sourceLanguageCode,
+                targetLanguageCode,
+                csvFile,
+                null,
+                cancellationToken).ConfigureAwait(false);
+
+    /// <summary>
+    ///   Merges the CSV entries into the glossary dictionary for the language pair, creating it if needed, like
+    ///   <see cref="UpdateMultilingualGlossaryDictionaryFromCsvAsync(string, string, string, Stream, CancellationToken)" />.
+    /// </summary>
+    /// <param name="glossaryId">ID of the glossary that contains the dictionary to update or create.</param>
+    /// <param name="sourceLanguageCode">Language code of the source terms language.</param>
+    /// <param name="targetLanguageCode">Language code of the target terms language.</param>
+    /// <param name="csvFile"><see cref="Stream" /> containing CSV content.</param>
+    /// <param name="options">
+    ///   Optional <see cref="BaseRequestOptions" />, whose <c>ExtraBodyParameters</c> are added last to the request
+    ///   body, replacing fields with the same key.
+    /// </param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>
+    ///   <see cref="MultilingualGlossaryInfo" /> object with details about the glossary with the updated dictionary.
+    /// </returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<MultilingualGlossaryInfo> UpdateMultilingualGlossaryDictionaryFromCsvAsync(
+          string glossaryId,
+          string sourceLanguageCode,
+          string targetLanguageCode,
+          Stream csvFile,
+          BaseRequestOptions? options,
+          CancellationToken cancellationToken = default) =>
           await UpdateMultilingualGlossaryDictionaryInternalAsync(
                 glossaryId,
                 sourceLanguageCode,
                 targetLanguageCode,
                 await new StreamReader(csvFile).ReadToEndAsync().ConfigureAwait(false),
                 "csv",
+                options,
                 cancellationToken).ConfigureAwait(false);
 
     /// <inheritdoc />
@@ -2993,12 +3217,49 @@ namespace DeepL {
           string targetLanguageCode,
           Stream csvFile,
           CancellationToken cancellationToken = default) =>
+          await UpdateMultilingualGlossaryDictionaryFromCsvAsync(
+                glossary,
+                sourceLanguageCode,
+                targetLanguageCode,
+                csvFile,
+                null,
+                cancellationToken).ConfigureAwait(false);
+
+    /// <summary>
+    ///   Merges the CSV entries into the glossary dictionary for the language pair, creating it if needed, like
+    ///   <see cref="UpdateMultilingualGlossaryDictionaryFromCsvAsync(MultilingualGlossaryInfo, string, string, Stream, CancellationToken)" />.
+    /// </summary>
+    /// <param name="glossary">The glossary that contains the dictionary to update or create.</param>
+    /// <param name="sourceLanguageCode">Language code of the source terms language.</param>
+    /// <param name="targetLanguageCode">Language code of the target terms language.</param>
+    /// <param name="csvFile"><see cref="Stream" /> containing CSV content.</param>
+    /// <param name="options">
+    ///   Optional <see cref="BaseRequestOptions" />, whose <c>ExtraBodyParameters</c> are added last to the request
+    ///   body, replacing fields with the same key.
+    /// </param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>
+    ///   <see cref="MultilingualGlossaryInfo" /> object with details about the glossary with the updated dictionary.
+    /// </returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<MultilingualGlossaryInfo> UpdateMultilingualGlossaryDictionaryFromCsvAsync(
+          MultilingualGlossaryInfo glossary,
+          string sourceLanguageCode,
+          string targetLanguageCode,
+          Stream csvFile,
+          BaseRequestOptions? options,
+          CancellationToken cancellationToken = default) =>
           await UpdateMultilingualGlossaryDictionaryInternalAsync(
                 glossary.GlossaryId,
                 sourceLanguageCode,
                 targetLanguageCode,
                 await new StreamReader(csvFile).ReadToEndAsync().ConfigureAwait(false),
                 "csv",
+                options,
                 cancellationToken).ConfigureAwait(false);
 
     private async Task<MultilingualGlossaryInfo> UpdateMultilingualGlossaryDictionaryInternalAsync(
@@ -3007,7 +3268,8 @@ namespace DeepL {
           string targetLanguageCode,
           string entries,
           string entriesFormat,
-          CancellationToken cancellationToken = default) {
+          BaseRequestOptions? options,
+          CancellationToken cancellationToken) {
       if (string.IsNullOrWhiteSpace(glossaryId)) {
         throw new ArgumentException($"Parameter {nameof(glossaryId)} must not be empty");
       }
@@ -3025,6 +3287,7 @@ namespace DeepL {
             targetLanguageCode,
             entries,
             entriesFormat);
+      AddExtraBodyParameters(bodyParams, options);
       using var responseMessage =
             await _client.ApiPatchAsync(MultilingualGlossaryPath(glossaryId), cancellationToken, bodyParams)
                   .ConfigureAwait(false);

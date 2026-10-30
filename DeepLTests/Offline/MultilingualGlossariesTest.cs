@@ -144,6 +144,35 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
+    public async Task SendsExtraBodyParametersLastInPatchBodyWhenUpdatingWithOptions() {
+      ExpectForm(Patch, "v3/glossaries/g1", ("name", "New name"), ("extra", "1")).RespondJson(GlossaryReply);
+      ExpectForm(
+                  Patch,
+                  "v3/glossaries/g1",
+                  ("dictionaries[0].source_lang", "en"),
+                  ("dictionaries[0].target_lang", "de"),
+                  ("dictionaries[0].entries", "Apple\tApfel"),
+                  ("dictionaries[0].entries_format", "x"),
+                  ("extra", "1"))
+            .RespondJson(GlossaryReply);
+      var client = CreateClient();
+      await client.UpdateMultilingualGlossaryNameAsync(
+            "g1",
+            "New name",
+            new BaseRequestOptions { ExtraBodyParameters = new Dictionary<string, string> { ["extra"] = "1" } });
+      await client.UpdateMultilingualGlossaryDictionaryAsync(
+            "g1",
+            "en",
+            "de",
+            Apple,
+            new BaseRequestOptions {
+              ExtraBodyParameters = new Dictionary<string, string> {
+                ["dictionaries[0].entries_format"] = "x", ["extra"] = "1"
+              }
+            });
+    }
+
+    [Fact]
     public async Task SendsJsonPutWhenReplacingDictionary() {
       const string body =
             "{\"source_lang\":\"en\",\"target_lang\":\"de\",\"entries\":\"Apple\\tApfel\",\"entries_format\":\"tsv\"}";

@@ -168,6 +168,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   requests, with optional credentials in the URL. Unlike a custom `ClientFactory`, it keeps the built-in retries and
   timeouts.
 - Added the static method `DeepLClient.IsFreeAccountAuthKey()`, replacing `Translator.AuthKeyIsFreeAccount()`.
+- Added `DeepLClient` overloads of `UpdateMultilingualGlossaryNameAsync()`,
+  `UpdateMultilingualGlossaryDictionaryAsync()` and `UpdateMultilingualGlossaryDictionaryFromCsvAsync()` taking a
+  `BaseRequestOptions`; its `ExtraBodyParameters` are added last to the request body. The `IGlossaryManager` interface
+  is unchanged.
 
 ### Changed
 - `TranslateDocumentAsync()` with `FileInfo` arguments throws an `ArgumentException` before any request if the input
