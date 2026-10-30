@@ -45,6 +45,19 @@ namespace DeepLTests.Offline {
       Assert.Equal(shouldRetry, exception.ShouldRetry);
     }
 
+    [Theory]
+    [InlineData(300)]
+    [InlineData(302)]
+    [InlineData(304)]
+    public async Task ThrowsDeepLExceptionWithStatusForUnfollowedRedirect(int status) {
+      ExpectNoBody(HttpMethod.Get, "v2/usage")
+            .RespondJson("{\"character_count\":1,\"character_limit\":2}", (HttpStatusCode)status);
+      var exception = await Record.ExceptionAsync(() => CreateClient().GetUsageAsync());
+      Assert.Equal(typeof(DeepLException), exception?.GetType());
+      Assert.Equal(status, ((DeepLException)exception!).HttpStatusCode);
+      Assert.False(((DeepLException)exception).ShouldRetry);
+    }
+
     [Fact]
     public async Task ReportsShouldRetryForTimeoutWithoutHttpStatusCode() {
       ExpectNoBody(HttpMethod.Get, "v2/usage").Throw(new TaskCanceledException("timed out"));

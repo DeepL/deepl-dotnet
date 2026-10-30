@@ -1517,7 +1517,7 @@ invalid arguments are provided, they may raise the standard exceptions
 | `QuotaExceededException` | HTTP 456: the quota is exceeded |
 | `DocumentNotReadyException` | HTTP 503 while downloading a document |
 | `ConnectionException` | no HTTP response, for example a timeout or a failed connection |
-| `DeepLException` | any other HTTP status, or a malformed response |
+| `DeepLException` | any other status than 2xx (including a 3xx redirect that was not followed), or a malformed response |
 
 `DeepLException.HttpStatusCode` holds the HTTP status of the failed response, or
 `null` if there was no response. `DeepLException.ShouldRetry` is `true` if

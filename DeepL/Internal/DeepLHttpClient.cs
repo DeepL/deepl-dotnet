@@ -360,7 +360,7 @@ namespace DeepL.Internal {
       return platformInfoString;
     }
 
-    /// <summary>Checks the response HTTP status is OK, otherwise throws corresponding exception.</summary>
+    /// <summary>Checks the response HTTP status is 2xx, otherwise throws corresponding exception.</summary>
     /// <param name="responseMessage"><see cref="HttpResponseMessage" /> received from DeepL API.</param>
     /// <param name="usingGlossary"><c>true</c> if a glossary function is used, otherwise <c>false</c>.</param>
     /// <param name="downloadingDocument"><c>true</c> if document download function is used, otherwise <c>false</c>.</param>
@@ -372,16 +372,19 @@ namespace DeepL.Internal {
     /// </exception>
     /// <exception cref="TooManyRequestsException">If the DeepL servers are currently receiving too many requests.</exception>
     /// <exception cref="DocumentNotReadyException">If a document download returns HTTP 503.</exception>
-    /// <exception cref="DeepLException">If some other error occurred.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any other status than 2xx was returned, including a 3xx redirect the HTTP client did not follow.
+    /// </exception>
     internal static async Task CheckStatusCodeAsync(
           HttpResponseMessage responseMessage,
           ResourceType? resourceType = null,
           bool downloadingDocument = false,
           bool retryOnlyUnprocessed = false) {
-      var statusCode = responseMessage.StatusCode;
-      if (statusCode >= HttpStatusCode.OK && statusCode < HttpStatusCode.BadRequest) {
+      if (responseMessage.IsSuccessStatusCode) {
         return;
       }
+
+      var statusCode = responseMessage.StatusCode;
 
       string message;
       try {

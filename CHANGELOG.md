@@ -224,6 +224,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Its default is now no overall timeout.
 
 ### Fixed
+- A 3xx response the HTTP client does not follow (for example 304, or a redirect without a `Location` header) now
+  throws `DeepLException` with `HttpStatusCode` set instead of being treated as a success.
 - `CreateDeveloperKeyAsync` retries refused connections and connect timeouts, as its documentation says.
 - Fixed `GetTranslationMemoryJobAsync()` failing on a job status this library does not know: it is now parsed as
   `TranslationMemoryJobStatus.Unknown`, and `WaitUntilTranslationMemoryJobDoneAsync()` keeps polling on it.
