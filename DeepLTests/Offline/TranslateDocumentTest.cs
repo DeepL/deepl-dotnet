@@ -476,6 +476,16 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
+    public async Task CopiesHttpStatusCodeAndShouldRetryFromCause() {
+      Expect(HttpMethod.Post, "v2/document").RespondJson("{\"message\":\"quota\"}", (HttpStatusCode)456);
+      var exception = await Assert.ThrowsAsync<DocumentTranslationException>(
+            () => CreateClient().TranslateDocumentAsync(Text("hello"), "a.txt", new MemoryStream(), null, "DE"));
+      Assert.IsType<QuotaExceededException>(exception.InnerException);
+      Assert.Equal(456, exception.HttpStatusCode);
+      Assert.False(exception.ShouldRetry);
+    }
+
+    [Fact]
     public async Task WrapsCancellationInDocumentTranslationException() {
       using var cancellation = new CancellationTokenSource();
       Expect(HttpMethod.Post, "v2/document")

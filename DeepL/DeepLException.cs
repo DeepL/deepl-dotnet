@@ -106,7 +106,10 @@ namespace DeepL {
   public sealed class DocumentTranslationException : DeepLException {
     /// <summary>Initializes a new instance of the <see cref="DocumentTranslationException" /> class.</summary>
     /// <param name="message">The message that describes the error.</param>
-    /// <param name="innerException">The exception representing the connection error.</param>
+    /// <param name="innerException">
+    ///   The exception that caused this one. If it is a <see cref="DeepLException" />, its
+    ///   <see cref="DeepLException.HttpStatusCode" /> and <see cref="DeepLException.ShouldRetry" /> are copied.
+    /// </param>
     /// <param name="documentHandle">
     ///   Handle to the in-progress document translation, or null if an error occurred before
     ///   uploading the document.
@@ -114,6 +117,10 @@ namespace DeepL {
     public DocumentTranslationException(string message, Exception innerException, DocumentHandle? documentHandle) :
           base(message, innerException) {
       DocumentHandle = documentHandle;
+      if (innerException is DeepLException deepLException) {
+        HttpStatusCode = deepLException.HttpStatusCode;
+        ShouldRetry = deepLException.ShouldRetry;
+      }
     }
 
     /// <summary>Handle to the in-progress document translation, or null if an error occurred before uploading the document.</summary>

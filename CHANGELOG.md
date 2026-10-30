@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- `DocumentTranslationException` now copies `HttpStatusCode` and `ShouldRetry` from the `DeepLException` that
+  caused it; they were always `null` before.
 - Added `DeepLClient` overloads of `ListTranslationMemorySegmentsAsync()` (translation memory ID or
   `TranslationMemoryInfo`) taking a `TranslationMemorySegmentsOptions` (`PageSize`, `PageCursor`, `FilterText`,
   `FilterCaseSensitive`); options left `null` are not sent.

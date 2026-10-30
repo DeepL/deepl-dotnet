@@ -305,7 +305,8 @@ Additional `DocumentTranslateOptions` are also available,
 see [Document translation options](#document-translation-options) below.
 Note that file paths are not accepted as strings, to avoid mixing up the file and language arguments.
 A missing input file throws an `ArgumentException` before any request is sent. Every other failure,
-including local file errors such as an existing output file, throws a `DocumentTranslationException`.
+including local file errors such as an existing output file, throws a `DocumentTranslationException`;
+its `HttpStatusCode` and `ShouldRetry` are copied from the `DeepLException` that caused it, if any.
 An existing output file is never overwritten or deleted.
 
 ```c#
