@@ -822,7 +822,13 @@ namespace DeepL.Internal {
       var retryOnlyUnprocessed =
             requestMessage.GetPolicyExecutionContext()?.OperationKey == RetryOnlyUnprocessedOperationKey;
       try {
+        var sdkSetsAccept = requestMessage.Headers.Accept.Count > 0;
         foreach (var header in headers ?? _headers) {
+          // An Accept the request sets describes the response this client parses, so it keeps its value.
+          if (sdkSetsAccept && string.Equals(header.Key, "Accept", StringComparison.OrdinalIgnoreCase)) {
+            continue;
+          }
+
           requestMessage.Headers.Add(header.Key, header.Value);
         }
 

@@ -1614,7 +1614,8 @@ The available options:
   `User-Agent` or `Authorization` header (names compared case-insensitively)
   replaces the one the client sends by default. `Content-Type`,
   `Content-Length`, `Transfer-Encoding` and `Host` entries are ignored: the
-  client sets these for the request it builds. Requests to pre-signed storage
+  client sets these for the request it builds. An `Accept` entry is ignored on
+  requests for which the client sets its own. Requests to pre-signed storage
   URLs (translation memory upload and export download) carry no
   `Authorization` header and none of these headers except `User-Agent`.
 - `Proxy`: see [Proxy configuration](#proxy-configuration).

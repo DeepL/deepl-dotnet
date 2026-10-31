@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using DeepL;
@@ -100,6 +101,15 @@ namespace DeepLTests.Offline {
               { "Transfer-Encoding", "chunked" }
             });
       await client.TranslateTextAsync("a", null, "de");
+    }
+
+    [Fact]
+    public async Task KeepsTheSdksAcceptHeader() {
+      ExpectNoBody(HttpMethod.Get, "v2/usage")
+            .With(request => request.Headers.GetValues("Accept").SequenceEqual(new[] { "application/json" }))
+            .RespondJson(UsageReply);
+      await CreateClient(options => options.Headers = new Dictionary<string, string?> { { "accept", "text/plain" } })
+            .GetUsageAsync();
     }
 
     [Fact]

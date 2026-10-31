@@ -193,6 +193,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `OverallConnectionTimeout` (default 100 seconds) still limits a request including all retries.
 - `Content-Type`, `Content-Length`, `Transfer-Encoding` and `Host` entries in `Headers` are now ignored; previously the
   first two made every request fail with a `ConnectionException` and the others were sent.
+- An `Accept` entry in `Headers` is now ignored where the library sets its own; previously both were sent.
 - Calls that pass `null` or `default` as the first optional argument of the translation memory methods with new
   options overloads are now ambiguous and no longer compile when recompiled against this version (CS0121):
   `ListTranslationMemorySegmentsAsync(id, null)`, `ListTranslationMemorySegmentsAsync(id, default)`,
