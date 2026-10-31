@@ -403,11 +403,15 @@ namespace DeepL.Internal {
     }
 #endif
 
+    /// <summary>Headers describing the request the client builds, which configured headers cannot replace.</summary>
+    private static readonly string[] TechnicalHeaders = { "Content-Type", "Content-Length", "Transfer-Encoding", "Host" };
+
     /// <summary>
     ///   Creates a <see cref="DeepLHttpClient" /> configured from the given client options: the HTTP client from
     ///   <see cref="BaseClientOptions.ClientFactory" /> or a default client with retries, and the configured headers plus
-    ///   the User-Agent header unless the configured headers already contain one, and the Authorization header, which
-    ///   always carries the given key.
+    ///   the User-Agent and Authorization (carrying the given key) headers unless the configured headers already contain
+    ///   them. Configured Content-Type, Content-Length, Transfer-Encoding and Host headers are ignored: they describe the
+    ///   request the client builds.
     /// </summary>
     /// <param name="authKey">Authentication key sent in the Authorization header.</param>
     /// <param name="serverUrl">Base server URL to apply to all relative URLs in requests.</param>
@@ -415,12 +419,17 @@ namespace DeepL.Internal {
     /// <returns>Newly initialized <see cref="DeepLHttpClient" /> object.</returns>
     internal static DeepLHttpClient Create(string authKey, Uri serverUrl, BaseClientOptions options) {
       var headers = new Dictionary<string, string?>(options.Headers, StringComparer.OrdinalIgnoreCase);
+      foreach (var technicalHeader in TechnicalHeaders) {
+        headers.Remove(technicalHeader);
+      }
 
       if (!headers.ContainsKey("User-Agent")) {
         headers.Add("User-Agent", ConstructUserAgentString(options.sendPlatformInfo, options.appInfo));
       }
 
-      headers["Authorization"] = $"DeepL-Auth-Key {authKey}";
+      if (!headers.ContainsKey("Authorization")) {
+        headers.Add("Authorization", $"DeepL-Auth-Key {authKey}");
+      }
 
       var clientFactory = options.ClientFactory ?? (() => CreateDefaultHttpClient(options));
 

@@ -74,16 +74,32 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
-    public async Task SendsGivenUserAgentButAlwaysTheAuthKeyAsAuthorization() {
+    public async Task SendsGivenUserAgentAndAuthorizationInsteadOfDefaults() {
       Http.Expect(HttpMethod.Get, ApiUrl + "/v2/usage")
             .WithHeaders("User-Agent", "my-agent")
-            .WithHeaders("Authorization", "DeepL-Auth-Key " + AuthKey)
+            .WithHeaders("Authorization", "Bearer abc")
             .RespondJson(UsageReply);
       var client = CreateClient(
             options => options.Headers = new Dictionary<string, string?> {
               { "user-agent", "my-agent" }, { "AUTHORIZATION", "Bearer abc" }
             });
       await client.GetUsageAsync();
+    }
+
+    [Fact]
+    public async Task KeepsTechnicalHeadersOfTheRequest() {
+      ExpectForm(HttpMethod.Post, "v2/translate", ("text", "a"), ("target_lang", "de"), ("show_billed_characters", "1"))
+            .WithHeaders("Content-Type", "application/x-www-form-urlencoded")
+            .With(request => request.Headers.Host == null && request.Headers.TransferEncodingChunked != true)
+            .RespondJson("{\"translations\":[{\"detected_source_language\":\"EN\",\"text\":\"b\"}]}");
+      var client = CreateClient(
+            options => options.Headers = new Dictionary<string, string?> {
+              { "Host", "example.com" },
+              { "Content-Type", "text/plain" },
+              { "content-length", "1" },
+              { "Transfer-Encoding", "chunked" }
+            });
+      await client.TranslateTextAsync("a", null, "de");
     }
 
     [Fact]

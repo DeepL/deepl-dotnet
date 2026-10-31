@@ -201,8 +201,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   when that is longer than `PerRetryConnectionTimeout`; `Timeout.InfiniteTimeSpan` still disables it. The default
   client no longer limits a request including all retries to 100 seconds; `OverallConnectionTimeout` still applies
   when it is set.
-- An `Authorization` entry in `Headers` no longer replaces the authentication key: requests to the DeepL API always
-  carry the key given to the constructor.
+- `Content-Type`, `Content-Length`, `Transfer-Encoding` and `Host` entries in `Headers` are now ignored; previously the
+  first two made every request fail with a `ConnectionException` and the others were sent.
 
 ### Deprecated
 - `GlossaryNotFoundException` is deprecated; catch `NotFoundException`, its base class. Glossary endpoints

@@ -1605,8 +1605,12 @@ The available options:
   retries. By default there is none.
 - `ServerUrl`: overrides the DeepL API server URL.
 - `Headers`: extra HTTP headers sent with every request to the DeepL API. A
-  `User-Agent` header replaces the default one; an `Authorization` header is
-  ignored, the client always sends the authentication key.
+  `User-Agent` or `Authorization` header (names compared case-insensitively)
+  replaces the one the client sends by default. `Content-Type`,
+  `Content-Length`, `Transfer-Encoding` and `Host` entries are ignored: the
+  client sets these for the request it builds. Requests to pre-signed storage
+  URLs (translation memory upload and export download) carry no
+  `Authorization` header and none of these headers except `User-Agent`.
 - `Proxy`: see [Proxy configuration](#proxy-configuration).
 - `sendPlatformInfo` and `appInfo`: see
   [Anonymous platform information](#anonymous-platform-information) and
