@@ -29,11 +29,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `TranslationMemoryJob`, holding the job status as returned by the API.
 - The new translation memory overloads are members of `DeepLClient`; the `ITranslationMemoryManager` interface is
   unchanged.
-- Note: with the new options overloads, source code that passes a bare `null` as the first optional argument of these
-  calls no longer compiles (CS0121, ambiguous call): `ListTranslationMemorySegmentsAsync(id, null)`,
-  `ListTranslationMemorySegmentsAsync(translationMemory, null)`, `CreateTranslationMemoryImportAsync(fileName,
-  contentLength, null)` and `ImportTranslationMemoryFromFilepathAsync(path, null)`. Drop the `null`, or pass it as a
-  named argument (for example `displayName: null`). Already-compiled callers are unaffected.
 - Added `DeepLClient` overloads of all eight style rule methods that take a style rule ID (`GetStyleRuleAsync()`,
   `UpdateStyleRuleNameAsync()`, `UpdateStyleRuleConfiguredRulesAsync()`, `DeleteStyleRuleAsync()`,
   `CreateStyleRuleCustomInstructionAsync()`, `GetStyleRuleCustomInstructionAsync()`,
@@ -198,6 +193,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `OverallConnectionTimeout` (default 100 seconds) still limits a request including all retries.
 - `Content-Type`, `Content-Length`, `Transfer-Encoding` and `Host` entries in `Headers` are now ignored; previously the
   first two made every request fail with a `ConnectionException` and the others were sent.
+- Calls that pass `null` or `default` as the first optional argument of the translation memory methods with new
+  options overloads are now ambiguous and no longer compile when recompiled against this version (CS0121):
+  `ListTranslationMemorySegmentsAsync(id, null)`, `ListTranslationMemorySegmentsAsync(id, default)`,
+  `ListTranslationMemorySegmentsAsync(translationMemory, null)`,
+  `ListTranslationMemorySegmentsAsync(translationMemory, default)`, `CreateTranslationMemoryImportAsync(fileName,
+  contentLength, null)` and `ImportTranslationMemoryFromFilepathAsync(path, null)`; previously they compiled. Drop the
+  argument, cast it to the parameter type (for example `(TranslationMemorySegmentsOptions?)null`), or pass it as a
+  named argument (for example `displayName: null`).
+  Already-compiled callers are unaffected.
+- A 3xx response the HTTP client does not follow (for example 304, or a redirect without a `Location` header) now
+  throws a `DeepLException` with `HttpStatusCode` set; previously it was treated as a success.
+- `GlossaryEntries.FromTsv()` now stores and sends the trimmed, validated entries joined with `\n`, without blank
+  lines; previously it sent the original string, with untrimmed terms and `\r\n` line endings. With
+  `skipChecks: true` the string is still sent unchanged.
+- HTTP 401 now throws an `AuthorizationException`, like HTTP 403; previously it threw a `DeepLException` with an
+  "Unexpected status code" message. `AuthorizationException` derives from `DeepLException`.
+- Members marked `[Obsolete]` in this release now raise warning CS0618 in code recompiled against it (an error with
+  `TreatWarningsAsErrors`); already-compiled callers are unaffected.
 
 ### Deprecated
 - `GlossaryNotFoundException` is deprecated; catch `NotFoundException`, its base class. Glossary endpoints
@@ -233,14 +246,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - The first retry now waits exactly 1 second, and the first attempt's backoff deadline is exactly 1 second; the ±23 %
   jitter applies only from the second backoff on.
-- A 3xx response the HTTP client does not follow (for example 304, or a redirect without a `Location` header) now
-  throws `DeepLException` with `HttpStatusCode` set instead of being treated as a success.
 - TLS and certificate failures and proxy tunnel rejections are no longer retried, and their `ConnectionException`
   has `ShouldRetry` set to `false`. Connect, name resolution, timeout and connection reset failures are still
   retried.
-- `GlossaryEntries.FromTsv()` now stores and sends the trimmed, validated entries joined with `\n`, without blank
-  lines; it sent the original string, with untrimmed terms and `\r\n` line endings. With `skipChecks: true` the
-  string is still sent unchanged.
 - Document uploads from a non-seekable `Stream` (e.g. a network stream) are now buffered before sending, so a retry
   after HTTP 429, 5xx or a network failure resends the full document instead of failing.
 - `CreateDeveloperKeyAsync` retries refused connections and connect timeouts, as its documentation says.
@@ -287,8 +295,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `InnerException`.
 - Fixed the doc comments of `LanguageCode.English` and `LanguageCode.Portuguese`, which claimed they may only be used as
   source languages.
-- HTTP 401 now throws an `AuthorizationException`, like HTTP 403. Before, it threw a `DeepLException` with an
-  "Unexpected status code" message.
 - A malformed or mistyped JSON response now throws a `DeepLException` with the `JsonException` as `InnerException`.
   Before, the raw `JsonException` was thrown.
 
