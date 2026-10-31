@@ -1615,9 +1615,9 @@ The available options:
   replaces the one the client sends by default. `Content-Type`,
   `Content-Length`, `Transfer-Encoding` and `Host` entries are ignored: the
   client sets these for the request it builds. An `Accept` entry is ignored on
-  requests for which the client sets its own. Requests to pre-signed storage
-  URLs (translation memory upload and export download) carry no
-  `Authorization` header and none of these headers except `User-Agent`.
+  requests for which the client sets its own. Pre-signed storage URLs
+  (translation memory upload and export download) get none of the caller's
+  headers except `User-Agent`, and no `Authorization`.
 - `Proxy`: see [Proxy configuration](#proxy-configuration).
 - `sendPlatformInfo` and `appInfo`: see
   [Anonymous platform information](#anonymous-platform-information) and
