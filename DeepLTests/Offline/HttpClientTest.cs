@@ -115,10 +115,13 @@ namespace DeepLTests.Offline {
                       new DeepLClientOptions { PerRetryConnectionTimeout = TimeSpan.FromMilliseconds(milliseconds) }));
 
     [Fact]
-    public void DefaultClientHasNoOverallTimeout() {
+    public void DefaultClientHasOverallTimeoutOf100Seconds() {
       using var client = DeepL.Internal.DeepLHttpClient.CreateDefaultHttpClient(new DeepLClientOptions(), Http)
             .HttpClient;
-      Assert.Equal(Timeout.InfiniteTimeSpan, client.Timeout);
+      Assert.Equal(TimeSpan.FromSeconds(100), client.Timeout);
+      Assert.Empty(
+            typeof(BaseClientOptions).GetProperty("OverallConnectionTimeout")!
+                  .GetCustomAttributes(typeof(ObsoleteAttribute), true));
     }
 
     [Fact]

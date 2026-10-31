@@ -193,9 +193,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Retries now cover only HTTP 429, 5xx responses and transient network failures (timeouts, failed connections). Before,
   any exception thrown while sending a request was retried.
 - Each attempt of a request may now run until the time the client would wait before retrying it (the backoff delay)
-  when that is longer than `PerRetryConnectionTimeout`; `Timeout.InfiniteTimeSpan` still disables it. The default
-  client no longer limits a request including all retries to 100 seconds; `OverallConnectionTimeout` still applies
-  when it is set.
+  when that is longer than `PerRetryConnectionTimeout`; `Timeout.InfiniteTimeSpan` still disables it.
+  `OverallConnectionTimeout` (default 100 seconds) still limits a request including all retries.
 - `Content-Type`, `Content-Length`, `Transfer-Encoding` and `Host` entries in `Headers` are now ignored; previously the
   first two made every request fail with a `ConnectionException` and the others were sent.
 
@@ -229,8 +228,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Deprecated `Translator`, `ITranslator` and `TranslatorOptions` with `[Obsolete]`; use `DeepLClient` and
   `DeepLClientOptions` instead. They keep working and will be removed in the next major version.
 - Deprecated `Translator.AuthKeyIsFreeAccount()` with `[Obsolete]`; use `DeepLClient.IsFreeAccountAuthKey()` instead.
-- Deprecated `OverallConnectionTimeout` with `[Obsolete]`; each attempt is limited by `PerRetryConnectionTimeout`.
-  Its default is now no overall timeout.
 
 ### Fixed
 - The first retry now waits exactly 1 second, and the first attempt's backoff deadline is exactly 1 second; the ±23 %

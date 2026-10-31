@@ -1604,8 +1604,9 @@ The available options:
   so that a connect timeout is detected as such and `CreateDeveloperKeyAsync()`
   can retry it. On .NET Framework and .NET Core 3.1, only the operating system's
   connect timeout counts as a connect timeout.
-- `OverallConnectionTimeout`: deprecated; a timeout for the request including all
-  retries. By default there is none.
+- `OverallConnectionTimeout`: the timeout of a request including all retries
+  and the waits between them, by default 100 seconds.
+  `Timeout.InfiniteTimeSpan` disables it.
 - `ServerUrl`: overrides the DeepL API server URL.
 - `Headers`: extra HTTP headers sent with every request to the DeepL API. A
   `User-Agent` or `Authorization` header (names compared case-insensitively)

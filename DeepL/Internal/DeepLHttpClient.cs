@@ -334,12 +334,9 @@ namespace DeepL.Internal {
             innerHandler ?? CreateHttpClientHandler(options.Proxy, options.PerRetryConnectionTimeout),
             options.PerRetryConnectionTimeout,
             options.MaximumNetworkRetries);
-#pragma warning disable CS0618 // the deprecated overall timeout keeps working until it is removed
-      var overallTimeout = options.OverallConnectionTimeout;
-#pragma warning restore CS0618
       return new HttpClientAndDisposeFlag {
         DisposeClient = true,
-        HttpClient = new HttpClient(handler) { Timeout = overallTimeout }
+        HttpClient = new HttpClient(handler) { Timeout = options.OverallConnectionTimeout }
       };
     }
 
