@@ -51,40 +51,6 @@ namespace DeepL {
           string? targetLanguageCode = null,
           TextRephraseOptions? options = null,
           CancellationToken cancellationToken = default);
-
-    /// <summary>Correct specified texts, improving them by fixing grammar and spelling errors.</summary>
-    /// <param name="texts">Texts to improve; must not be empty.</param>
-    /// <param name="targetLanguageCode">Language code of the desired output language.</param>
-    /// <param name="options">Extra <see cref="CorrectTextOptions" /> influencing correction.</param>
-    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
-    /// <returns>Texts without grammatical or spelling errors.</returns>
-    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
-    /// <exception cref="DeepLException">
-    ///   If any error occurs while communicating with the DeepL API, a
-    ///   <see cref="DeepLException" /> or a derived class will be thrown.
-    /// </exception>
-    Task<WriteResult[]> CorrectTextAsync(
-          IEnumerable<string> texts,
-          string? targetLanguageCode = null,
-          CorrectTextOptions? options = null,
-          CancellationToken cancellationToken = default);
-
-    /// <summary>Correct specified text, improving it by fixing grammar and spelling errors.</summary>
-    /// <param name="text">Text to improve; must not be empty.</param>
-    /// <param name="targetLanguageCode">Language code of the desired output language.</param>
-    /// <param name="options">Extra <see cref="CorrectTextOptions" /> influencing correction.</param>
-    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
-    /// <returns>Text without grammatical or spelling errors.</returns>
-    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
-    /// <exception cref="DeepLException">
-    ///   If any error occurs while communicating with the DeepL API, a
-    ///   <see cref="DeepLException" /> or a derived class will be thrown.
-    /// </exception>
-    Task<WriteResult> CorrectTextAsync(
-          string text,
-          string? targetLanguageCode = null,
-          CorrectTextOptions? options = null,
-          CancellationToken cancellationToken = default);
   }
 
   /// <summary>
@@ -150,7 +116,17 @@ namespace DeepL {
             .ConfigureAwait(false);
     }
 
-    /// <inheritdoc />
+    /// <summary>Correct specified text, improving it by fixing grammar and spelling errors.</summary>
+    /// <param name="text">Text to improve; must not be empty.</param>
+    /// <param name="targetLanguageCode">Language code of the desired output language.</param>
+    /// <param name="options">Extra <see cref="CorrectTextOptions" /> influencing correction.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>Text without grammatical or spelling errors.</returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
     public async Task<WriteResult> CorrectTextAsync(
           string text,
           string? targetLanguageCode = null,
@@ -162,7 +138,17 @@ namespace DeepL {
                 cancellationToken)
           .ConfigureAwait(false))[0];
 
-    /// <inheritdoc />
+    /// <summary>Correct specified texts, improving them by fixing grammar and spelling errors.</summary>
+    /// <param name="texts">Texts to improve; must not be empty.</param>
+    /// <param name="targetLanguageCode">Language code of the desired output language.</param>
+    /// <param name="options">Extra <see cref="CorrectTextOptions" /> influencing correction.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>Texts without grammatical or spelling errors.</returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
     public async Task<WriteResult[]> CorrectTextAsync(
           IEnumerable<string> texts,
           string? targetLanguageCode = null,

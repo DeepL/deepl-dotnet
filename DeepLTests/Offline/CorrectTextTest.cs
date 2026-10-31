@@ -74,5 +74,9 @@ namespace DeepLTests.Offline {
     [Fact]
     public async Task ThrowsArgumentExceptionWhenTextIsEmpty() =>
           await Assert.ThrowsAsync<ArgumentException>(() => CreateClient().CorrectTextAsync("", "de"));
+
+    [Fact]
+    public void IsNotAMemberOfIWriter() =>
+          Assert.DoesNotContain(typeof(IWriter).GetMethods(), method => method.Name == "CorrectTextAsync");
   }
 }

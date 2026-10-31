@@ -5,7 +5,7 @@
 namespace DeepL {
   /// <summary>
   ///   Options to control text correction behaviour. These options may be provided to the
-  ///   <see cref="IWriter.CorrectTextAsync(string, string?, CorrectTextOptions?, System.Threading.CancellationToken)" />
+  ///   <see cref="DeepLClient.CorrectTextAsync(string, string?, CorrectTextOptions?, System.Threading.CancellationToken)" />
   ///   functions.
   /// </summary>
   public sealed class CorrectTextOptions : BaseRequestOptions {

@@ -294,6 +294,8 @@ WriteResult result = await client.CorrectTextAsync("I has a apple.", "EN-US");
 Console.WriteLine(result);
 ```
 
+`CorrectTextAsync()` is a member of `DeepLClient`; the `IWriter` interface is unchanged.
+
 Both methods throw a `DeepLException` if the response does not hold one improvement per input text.
 
 ### Translating documents

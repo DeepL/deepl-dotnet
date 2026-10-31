@@ -153,7 +153,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   documents (`docx` and `pdf` output only).
 - Added `CorrectTextAsync()` method to the `DeepLClient` class for correcting
   grammar and spelling errors via the `v2/write/correct` endpoint. It takes an optional `CorrectTextOptions`, whose
-  `ExtraBodyParameters` are added to the request body last.
+  `ExtraBodyParameters` are added to the request body last. It is a member of `DeepLClient`; the `IWriter` interface
+  is unchanged.
 - `TextRephraseOptions` now derives from `BaseRequestOptions`: its `ExtraBodyParameters` are added to the
   `RephraseTextAsync()` request body last, replacing built-in parameters with the same key.
 - Added `TextRephraseOptions` constructors taking a `WritingStyle` or `WritingTone` enum value, and the
