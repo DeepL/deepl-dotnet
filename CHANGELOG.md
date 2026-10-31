@@ -175,11 +175,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   is unchanged.
 
 ### Changed
-- `TranslateDocumentAsync()` with `FileInfo` arguments throws an `ArgumentException` before any request if the input
-  file does not exist (was a `FileNotFoundException`), and wraps the other local failures (an existing output file,
-  opening the input, document minification) in a `DocumentTranslationException` with the original exception as
-  `InnerException` (was a raw `IOException` or `DocumentMinificationException`). An existing output file is still
-  kept unchanged.
 - The README documents source language detection with glossaries in text translation: with a `null` source language,
   DeepL detects it and applies the glossary's dictionary for the detected language pair.
 - Because `GlossaryInfo`, `MultilingualGlossaryInfo`, `StyleRuleInfo`, `StyleProfile` and `TranslationMemoryInfo` now
@@ -240,8 +235,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - The first retry now waits exactly 1 second, and the first attempt's backoff deadline is exactly 1 second; the ±23 %
   jitter applies only from the second backoff on.
-- `TranslateDocumentUploadAsync(FileInfo, ...)` throws an `ArgumentException` before any request when the input file
-  does not exist, like `TranslateDocumentAsync(FileInfo, ...)`. Before, it threw a `FileNotFoundException`.
 - A 3xx response the HTTP client does not follow (for example 304, or a redirect without a `Location` header) now
   throws `DeepLException` with `HttpStatusCode` set instead of being treated as a success.
 - TLS and certificate failures and proxy tunnel rejections are no longer retried, and their `ConnectionException`
@@ -256,13 +249,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - On .NET 5 and later, connecting is limited to half of `PerRetryConnectionTimeout`, so that a hanging connect fails
   as a connect timeout instead of a per-attempt timeout, and `CreateDeveloperKeyAsync` retries it. Before, a hanging
   connect was cut by the per-attempt timeout, which `CreateDeveloperKeyAsync` does not retry.
-- `ImportTranslationMemoryFromFilepathAsync` reads the input file before creating the import job, and throws a
-  `DeepLException` (with the original exception as `InnerException`) if it cannot be read, instead of an
-  `IOException` or `UnauthorizedAccessException` after the job was created.
-- `ExportTranslationMemoryToFilepathAsync` creates the output file before creating the export job, and throws a
-  `DeepLException` (with the original exception as `InnerException`) if it already exists or cannot be created or
-  written, instead of an `IOException` after the export ran. A completed export job without a download URL also
-  throws a `DeepLException` instead of an `ArgumentException`. The output file is deleted if the export fails.
+- `ImportTranslationMemoryFromFilepathAsync` now reads the input file, and `ExportTranslationMemoryToFilepathAsync`
+  creates the output file, before creating the job: an unreadable input, existing output or unwritable path throws its
+  `IOException`, `UnauthorizedAccessException` or `DirectoryNotFoundException` before any job exists; previously after
+  the job was created. A completed export job without a download URL throws a `DeepLException` instead of an
+  `ArgumentException`. The output file is deleted if the export fails.
 - Fixed `GetTranslationMemoryJobAsync()` failing on a job status this library does not know: it is now parsed as
   `TranslationMemoryJobStatus.Unknown`, and `WaitUntilTranslationMemoryJobDoneAsync()` keeps polling on it.
 - Fixed `GetTranslationMemoryJobAsync()` and `CreateTranslationMemoryExportAsync()` failing when the job's

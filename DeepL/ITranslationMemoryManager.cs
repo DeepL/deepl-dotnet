@@ -295,9 +295,12 @@ namespace DeepL {
     ///   new translation memory.
     /// </returns>
     /// <exception cref="ArgumentException">If any argument is invalid, or the input file does not exist.</exception>
+    /// <exception cref="IOException">If the input file cannot be read; it is read before any job is created.</exception>
+    /// <exception cref="System.UnauthorizedAccessException">
+    ///   If the input file cannot be read due to permissions; it is read before any job is created.
+    /// </exception>
     /// <exception cref="DeepLException">
-    ///   If the input file cannot be read (before any job is created), the import failed, or any error occurs while
-    ///   communicating with the DeepL API.
+    ///   If the import failed, or any error occurs while communicating with the DeepL API.
     /// </exception>
     Task<TranslationMemoryJob> ImportTranslationMemoryFromFilepathAsync(
           string inputFilePath,
@@ -316,10 +319,13 @@ namespace DeepL {
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="TranslationMemoryJob" /> object for the completed export.</returns>
     /// <exception cref="NotFoundException">If the specified translation memory was not found.</exception>
+    /// <exception cref="IOException">
+    ///   If the output file already exists, its directory does not exist (a <see cref="DirectoryNotFoundException" />)
+    ///   or writing it fails. The file is created before any job is created.
+    /// </exception>
+    /// <exception cref="System.UnauthorizedAccessException">If the output file cannot be created due to permissions.</exception>
     /// <exception cref="DeepLException">
-    ///   If the output file cannot be created (it already exists, its directory does not exist or is not writable;
-    ///   checked before any job is created), writing it fails, the export failed, or any error occurs while
-    ///   communicating with the DeepL API.
+    ///   If the export failed, or any error occurs while communicating with the DeepL API.
     /// </exception>
     Task<TranslationMemoryJob> ExportTranslationMemoryToFilepathAsync(
           string translationMemoryId,
@@ -338,10 +344,13 @@ namespace DeepL {
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="TranslationMemoryJob" /> object for the completed export.</returns>
     /// <exception cref="NotFoundException">If the specified translation memory was not found.</exception>
+    /// <exception cref="IOException">
+    ///   If the output file already exists, its directory does not exist (a <see cref="DirectoryNotFoundException" />)
+    ///   or writing it fails. The file is created before any job is created.
+    /// </exception>
+    /// <exception cref="System.UnauthorizedAccessException">If the output file cannot be created due to permissions.</exception>
     /// <exception cref="DeepLException">
-    ///   If the output file cannot be created (it already exists, its directory does not exist or is not writable;
-    ///   checked before any job is created), writing it fails, the export failed, or any error occurs while
-    ///   communicating with the DeepL API.
+    ///   If the export failed, or any error occurs while communicating with the DeepL API.
     /// </exception>
     Task<TranslationMemoryJob> ExportTranslationMemoryToFilepathAsync(
           TranslationMemoryInfo translationMemory,

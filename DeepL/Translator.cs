@@ -75,11 +75,10 @@ namespace DeepL {
     /// <param name="targetLanguageCode">Language code of the desired output language.</param>
     /// <param name="options"><see cref="DocumentTranslateOptions" /> influencing translation.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
-    /// <exception cref="ArgumentException">If the input file does not exist; raised before any request.</exception>
+    /// <exception cref="FileNotFoundException">If the input file does not exist; raised before any request.</exception>
+    /// <exception cref="IOException">If the output path is occupied; an existing output file is left unchanged.</exception>
     /// <exception cref="DocumentTranslationException">
-    ///   If cancellation was requested, or an error occurs while translating the document, including local file
-    ///   failures such as an occupied output path (the <see cref="DocumentTranslationException.InnerException" /> is
-    ///   then the <see cref="IOException" />); an existing output file is left unchanged. If the document was uploaded
+    ///   If cancellation was requested, or an error occurs while translating the document. If the document was uploaded
     ///   successfully, then the <see cref="DocumentTranslationException.DocumentHandle" /> contains the document ID and
     ///   key that may be used to retrieve the document.
     ///   If cancellation was requested, the <see cref="DocumentTranslationException.InnerException" /> will be an
@@ -130,7 +129,8 @@ namespace DeepL {
     /// <param name="options"><see cref="DocumentTranslateOptions" /> influencing translation.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="DocumentHandle" /> object associated with the in-progress document translation.</returns>
-    /// <exception cref="ArgumentException">If any argument is invalid, or the input file does not exist.</exception>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="FileNotFoundException">If the input file does not exist; raised before any request.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -545,39 +545,9 @@ namespace DeepL {
           CancellationToken cancellationToken = default) {
       inputFileInfo.Refresh();
       if (!inputFileInfo.Exists) {
-        throw new ArgumentException($"File does not exist: {inputFileInfo.FullName}", nameof(inputFileInfo));
+        throw new FileNotFoundException($"File does not exist: {inputFileInfo.FullName}", inputFileInfo.FullName);
       }
 
-      try {
-        await TranslateDocumentFileAsync(
-              inputFileInfo,
-              outputFileInfo,
-              sourceLanguageCode,
-              targetLanguageCode,
-              options,
-              cancellationToken).ConfigureAwait(false);
-      } catch (DocumentTranslationException) {
-        throw;
-      } catch (Exception exception) {
-        // Local failures: opening the input, creating the output, (de)minification.
-        throw new DocumentTranslationException(
-              $"Error occurred during document translation: {exception.Message}",
-              exception,
-              null);
-      }
-    }
-
-    /// <summary>
-    ///   Implements <see cref="TranslateDocumentAsync(FileInfo, FileInfo, string?, string, DocumentTranslateOptions?, CancellationToken)" />
-    ///   without wrapping local file failures.
-    /// </summary>
-    private async Task TranslateDocumentFileAsync(
-          FileInfo inputFileInfo,
-          FileInfo outputFileInfo,
-          string? sourceLanguageCode,
-          string targetLanguageCode,
-          DocumentTranslateOptions? options,
-          CancellationToken cancellationToken) {
 #pragma warning disable CS0618 // Document minification is obsolete but still supported until the next major
       var willMinify = (options?.EnableDocumentMinification ?? false) &&
                        DocumentMinifier.CanMinifyFile(inputFileInfo.Name);
@@ -691,7 +661,7 @@ namespace DeepL {
           CancellationToken cancellationToken = default) {
       inputFileInfo.Refresh();
       if (!inputFileInfo.Exists) {
-        throw new ArgumentException($"File does not exist: {inputFileInfo.FullName}", nameof(inputFileInfo));
+        throw new FileNotFoundException($"File does not exist: {inputFileInfo.FullName}", inputFileInfo.FullName);
       }
 
       using var inputFileStream = inputFileInfo.OpenRead();

@@ -329,24 +329,20 @@ namespace DeepLTests.Offline {
                       Path.Combine(Fixtures.TempDir(), "missing.tmx")));
 
     [Fact]
-    public async Task ImportFromFilepathThrowsDeepLExceptionForUnreadableFileBeforeCreatingJob() {
+    public async Task ImportFromFilepathThrowsIOExceptionForUnreadableFileBeforeCreatingJob() {
       var path = TmxFile();
       // No request is declared: creating the import job would fail the test with a ConnectionException.
       using (new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None)) {
-        var exception = await Assert.ThrowsAsync<DeepLException>(
-              () => CreateClient().ImportTranslationMemoryFromFilepathAsync(path));
-        Assert.IsAssignableFrom<IOException>(exception.InnerException);
+        await Assert.ThrowsAsync<IOException>(() => CreateClient().ImportTranslationMemoryFromFilepathAsync(path));
       }
     }
 
     [Fact]
-    public async Task ExportToFilepathThrowsDeepLExceptionForExistingFileBeforeCreatingJob() {
+    public async Task ExportToFilepathThrowsIOExceptionForExistingFileBeforeCreatingJob() {
       var path = Path.Combine(Fixtures.TempDir(), "export.tmx");
       File.WriteAllText(path, "keep");
       // No request is declared: creating the export job would fail the test with a ConnectionException.
-      var exception = await Assert.ThrowsAsync<DeepLException>(
-            () => CreateClient().ExportTranslationMemoryToFilepathAsync("tm1", path));
-      Assert.IsAssignableFrom<IOException>(exception.InnerException);
+      await Assert.ThrowsAsync<IOException>(() => CreateClient().ExportTranslationMemoryToFilepathAsync("tm1", path));
       Assert.Equal("keep", File.ReadAllText(path));
     }
 
