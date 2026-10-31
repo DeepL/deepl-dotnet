@@ -1301,7 +1301,7 @@ For API Pro accounts, `Usage` also contains the following fields; they are `null
 - `StartTime` and `EndTime`: the start and end of the current billing period, as `DateTime`.
 - `Products`: the usage per product, as an array of `Usage.Product` with `ProductType` (for example `"translate"`,
   `"write"`, `"speechToText"`, `"speechToSpeech"`), `BillingUnit` (`"characters"` or `"minutes"`),
-  `ApiKeyUnitCount` and `AccountUnitCount`.
+  `ApiKeyUnitCount` and `AccountUnitCount`. Each of these four is `null` when the response omits it.
 
 `AnyLimitReached` checks only `Character`, `Document` and `TeamDocument`. It does not consider these API Pro
 fields; check `LimitReached` on them directly, e.g. `usage.ApiKeyCharacter?.LimitReached`.

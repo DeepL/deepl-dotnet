@@ -152,25 +152,34 @@ namespace DeepL.Model {
       /// <param name="apiKeyUnitCount">Units used for this product by the API key in the current billing period.</param>
       /// <param name="accountUnitCount">Units used for this product by the account in the current billing period.</param>
       [JsonConstructor]
-      public Product(string productType, string billingUnit, long apiKeyUnitCount, long accountUnitCount) {
+      public Product(string? productType, string? billingUnit, long? apiKeyUnitCount, long? accountUnitCount) {
         (ProductType, BillingUnit, ApiKeyUnitCount, AccountUnitCount) =
               (productType, billingUnit, apiKeyUnitCount, accountUnitCount);
       }
 
       /// <summary>
       ///   The product type, for example "write", "translate", "speechToText" or "speechToSpeech". The API may add
-      ///   further values.
+      ///   further values. <c>null</c> if the response does not contain it.
       /// </summary>
-      public string ProductType { get; }
+      public string? ProductType { get; }
 
-      /// <summary>The unit this product is billed in, for example "characters" or "minutes".</summary>
-      public string BillingUnit { get; }
+      /// <summary>
+      ///   The unit this product is billed in, for example "characters" or "minutes". <c>null</c> if the response does
+      ///   not contain it.
+      /// </summary>
+      public string? BillingUnit { get; }
 
-      /// <summary>Units used for this product by the API key used for this request in the current billing period.</summary>
-      public long ApiKeyUnitCount { get; }
+      /// <summary>
+      ///   Units used for this product by the API key used for this request in the current billing period. <c>null</c>
+      ///   if the response does not contain it.
+      /// </summary>
+      public long? ApiKeyUnitCount { get; }
 
-      /// <summary>Units used for this product by the whole account in the current billing period.</summary>
-      public long AccountUnitCount { get; }
+      /// <summary>
+      ///   Units used for this product by the whole account in the current billing period. <c>null</c> if the response
+      ///   does not contain it.
+      /// </summary>
+      public long? AccountUnitCount { get; }
 
       /// <summary>The product usage as a string.</summary>
       /// <returns>A string containing the product type, its unit and the API key and account counts.</returns>

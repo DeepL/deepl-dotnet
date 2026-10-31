@@ -91,11 +91,32 @@ namespace DeepLTests.Offline {
             Array.ConvertAll(products, p => p.ProductType));
       Assert.Equal(new[] { "characters", "characters", "minutes", "minutes" },
             Array.ConvertAll(products, p => p.BillingUnit));
-      Assert.Equal(new long[] { 0, 636, 30, 12 }, Array.ConvertAll(products, p => p.ApiKeyUnitCount));
-      Assert.Equal(new long[] { 5643, 5941580, 30, 12 }, Array.ConvertAll(products, p => p.AccountUnitCount));
+      Assert.Equal(new long?[] { 0, 636, 30, 12 }, Array.ConvertAll(products, p => p.ApiKeyUnitCount));
+      Assert.Equal(new long?[] { 5643, 5941580, 30, 12 }, Array.ConvertAll(products, p => p.AccountUnitCount));
 
       Assert.False(usage.AnyLimitReached);
       Assert.Equal("Usage this billing period:\nCharacters: 5947223 of 1000000000000", usage.ToString());
+    }
+
+    [Fact]
+    public async Task ParsesProductEntriesWithMissingOrNullFields() {
+      ExpectNoBody(HttpMethod.Get, "v2/usage")
+            .RespondJson(
+                  "{\"character_count\":5,\"character_limit\":10,\"products\":[{}," +
+                  "{\"product_type\":null,\"billing_unit\":null,\"api_key_unit_count\":null," +
+                  "\"account_unit_count\":null}]}");
+      var usage = await CreateClient().GetUsageAsync();
+
+      Assert.Equal(2, usage.Products!.Length);
+      foreach (var product in usage.Products) {
+        Assert.Null(product.ProductType);
+        Assert.Null(product.BillingUnit);
+        Assert.Null(product.ApiKeyUnitCount);
+        Assert.Null(product.AccountUnitCount);
+      }
+
+      Assert.Equal(5, usage.Character!.Count);
+      Assert.Equal(10, usage.Character.Limit);
     }
 
     [Fact]
