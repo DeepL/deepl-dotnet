@@ -75,7 +75,10 @@ namespace DeepL {
     /// <param name="targetLanguageCode">Language code of the desired output language.</param>
     /// <param name="options"><see cref="DocumentTranslateOptions" /> influencing translation.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
-    /// <exception cref="FileNotFoundException">If the input file does not exist; raised before any request.</exception>
+    /// <exception cref="FileNotFoundException">
+    ///   If the input file does not exist; raised before any request. If the input is minified, a
+    ///   <see cref="DocumentMinificationException" /> wrapping it is thrown instead.
+    /// </exception>
     /// <exception cref="IOException">If the output path is occupied; an existing output file is left unchanged.</exception>
     /// <exception cref="DocumentTranslationException">
     ///   If cancellation was requested, or an error occurs while translating the document. If the document was uploaded
@@ -543,11 +546,6 @@ namespace DeepL {
           string targetLanguageCode,
           DocumentTranslateOptions? options = null,
           CancellationToken cancellationToken = default) {
-      inputFileInfo.Refresh();
-      if (!inputFileInfo.Exists) {
-        throw new FileNotFoundException($"File does not exist: {inputFileInfo.FullName}", inputFileInfo.FullName);
-      }
-
 #pragma warning disable CS0618 // Document minification is obsolete but still supported until the next major
       var willMinify = (options?.EnableDocumentMinification ?? false) &&
                        DocumentMinifier.CanMinifyFile(inputFileInfo.Name);
@@ -659,11 +657,6 @@ namespace DeepL {
           string targetLanguageCode,
           DocumentTranslateOptions? options = null,
           CancellationToken cancellationToken = default) {
-      inputFileInfo.Refresh();
-      if (!inputFileInfo.Exists) {
-        throw new FileNotFoundException($"File does not exist: {inputFileInfo.FullName}", inputFileInfo.FullName);
-      }
-
       using var inputFileStream = inputFileInfo.OpenRead();
       return await TranslateDocumentUploadAsync(
             inputFileStream,

@@ -482,6 +482,41 @@ namespace DeepLTests.Offline {
                       "DE"));
 
     [Fact]
+    public async Task ThrowsUnauthorizedAccessExceptionBeforeAnyRequestWhenInputIsDirectory() {
+      var directory = Fixtures.TempDir();
+      var output = Path.Combine(directory, "out.txt");
+      await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => CreateClient().TranslateDocumentAsync(
+                  new FileInfo(directory),
+                  new FileInfo(output),
+                  null,
+                  "DE"));
+      Assert.False(File.Exists(output));
+    }
+
+    [Fact]
+    public async Task ThrowsUnauthorizedAccessExceptionBeforeAnyRequestWhenUploadInputIsDirectory() =>
+          await Assert.ThrowsAsync<UnauthorizedAccessException>(
+                () => CreateClient().TranslateDocumentUploadAsync(new FileInfo(Fixtures.TempDir()), null, "DE"));
+
+#pragma warning disable CS0618 // Document minification is obsolete but still supported until the next major
+    [Fact]
+    public async Task ThrowsDocumentMinificationExceptionBeforeAnyRequestWhenMinifiedInputFileIsMissing() {
+      var directory = Fixtures.TempDir();
+      var output = Path.Combine(directory, "out.docx");
+      var exception = await Assert.ThrowsAsync<DocumentMinificationException>(
+            () => CreateClient().TranslateDocumentAsync(
+                  new FileInfo(Path.Combine(directory, "missing.docx")),
+                  new FileInfo(output),
+                  null,
+                  "DE",
+                  new DocumentTranslateOptions { EnableDocumentMinification = true }));
+      Assert.IsType<FileNotFoundException>(exception.InnerException);
+      Assert.False(File.Exists(output));
+    }
+#pragma warning restore CS0618
+
+    [Fact]
     public async Task CopiesHttpStatusCodeAndShouldRetryFromCause() {
       Expect(HttpMethod.Post, "v2/document").RespondJson("{\"message\":\"quota\"}", (HttpStatusCode)456);
       var exception = await Assert.ThrowsAsync<DocumentTranslationException>(
