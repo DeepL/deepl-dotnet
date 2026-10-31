@@ -369,7 +369,9 @@ when it expires, a `DeepLException` is thrown. `TranslateDocumentStatusAsync()` 
 `TranslateDocumentGetStatusAsync()` and will be removed in the next major version.
 
 `DocumentStatus.Status` is `DocumentStatus.StatusCode.Unknown` for a status this library does not know; the waiting
-methods keep polling then. `DocumentStatus.StatusValue` holds the status string as returned by the API.
+methods keep polling then. `DocumentStatus.StatusValue` holds the status string as returned by the API. Because an
+unknown status keeps polling, pass a `TimeSpan` timeout to `TranslateDocumentWaitUntilDoneAsync()`, or set
+`DocumentTranslateOptions.Timeout` for `TranslateDocumentAsync()`, to bound the wait.
 
 #### Document translation options
 
@@ -1200,10 +1202,10 @@ poll it until it finishes. Note that an import job keeps reporting
 API detects the upload asynchronously; that status is polled through like any
 other non-terminal one. A status this library does not know is reported as
 `TranslationMemoryJobStatus.Unknown`, with the API's value in `StatusValue`, and
-is also polled through. A job whose file is never uploaded does not finish on
-its own, so pass a timeout (a `TimeSpan`, after which a `DeepLException` is
-thrown) or a `CancellationToken` when that is a possibility. Both methods take
-the job ID or a `TranslationMemoryJob`:
+is also polled through. Neither a job whose file is never uploaded nor a job
+with an unknown status finishes the wait on its own, so pass a timeout (a
+`TimeSpan`, after which a `DeepLException` is thrown) or a `CancellationToken`
+to bound the wait. Both methods take the job ID or a `TranslationMemoryJob`:
 
 ```c#
 var job = await client.GetTranslationMemoryJobAsync("YOUR_JOB_ID");
