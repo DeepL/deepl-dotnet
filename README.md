@@ -306,11 +306,13 @@ objects, and provide the source and target language as above.
 Additional `DocumentTranslateOptions` are also available,
 see [Document translation options](#document-translation-options) below.
 Note that file paths are not accepted as strings, to avoid mixing up the file and language arguments.
-A missing input file throws a `FileNotFoundException` before any request is sent (a
-`DocumentMinificationException` wrapping it if the input is minified). Other local file
-errors throw the exception of the file operation: an existing output file an `IOException`, a missing
-output directory a `DirectoryNotFoundException`, a file without permission an
-`UnauthorizedAccessException`. An existing output file is never overwritten or deleted. Errors while
+The input file is opened before any request is sent, and the exceptions of `FileInfo.OpenRead()`
+propagate: a missing file throws a `FileNotFoundException`, a missing directory a
+`DirectoryNotFoundException`, a directory as input or a file without permission an
+`UnauthorizedAccessException`. With `EnableDocumentMinification`, these are wrapped in a
+`DocumentMinificationException`. Output file errors throw the exception of the file operation: an
+existing output file an `IOException`, a missing output directory a `DirectoryNotFoundException`, an
+output path without permission an `UnauthorizedAccessException`. An existing output file is never overwritten or deleted. Errors while
 translating throw a `DocumentTranslationException`; its `HttpStatusCode` and `ShouldRetry` are copied
 from the `DeepLException` that caused it, if any.
 

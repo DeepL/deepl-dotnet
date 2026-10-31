@@ -75,11 +75,17 @@ namespace DeepL {
     /// <param name="targetLanguageCode">Language code of the desired output language.</param>
     /// <param name="options"><see cref="DocumentTranslateOptions" /> influencing translation.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
-    /// <exception cref="FileNotFoundException">
-    ///   If the input file does not exist; raised before any request. If the input is minified, a
-    ///   <see cref="DocumentMinificationException" /> wrapping it is thrown instead.
+    /// <exception cref="IOException">
+    ///   If the input cannot be opened; it is opened before any request, and the exception of
+    ///   <see cref="FileInfo.OpenRead" /> propagates: <see cref="FileNotFoundException" /> for a missing file,
+    ///   <see cref="DirectoryNotFoundException" /> for a missing directory. If the input is minified, a
+    ///   <see cref="DocumentMinificationException" /> wrapping it is thrown instead. Also if the output path is
+    ///   occupied; an existing output file is left unchanged.
     /// </exception>
-    /// <exception cref="IOException">If the output path is occupied; an existing output file is left unchanged.</exception>
+    /// <exception cref="UnauthorizedAccessException">
+    ///   If the input is a directory or cannot be read due to permissions; raised before any request, wrapped in a
+    ///   <see cref="DocumentMinificationException" /> if the input is minified.
+    /// </exception>
     /// <exception cref="DocumentTranslationException">
     ///   If cancellation was requested, or an error occurs while translating the document. If the document was uploaded
     ///   successfully, then the <see cref="DocumentTranslationException.DocumentHandle" /> contains the document ID and
@@ -133,7 +139,14 @@ namespace DeepL {
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="DocumentHandle" /> object associated with the in-progress document translation.</returns>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
-    /// <exception cref="FileNotFoundException">If the input file does not exist; raised before any request.</exception>
+    /// <exception cref="IOException">
+    ///   If the input cannot be opened; it is opened before any request, and the exception of
+    ///   <see cref="FileInfo.OpenRead" /> propagates: <see cref="FileNotFoundException" /> for a missing file,
+    ///   <see cref="DirectoryNotFoundException" /> for a missing directory.
+    /// </exception>
+    /// <exception cref="UnauthorizedAccessException">
+    ///   If the input is a directory or cannot be read due to permissions; raised before any request.
+    /// </exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
