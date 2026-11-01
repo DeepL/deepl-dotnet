@@ -127,10 +127,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (including `SpeechToSpeechMinutes`), `KeyUsage`, `CustomTagUsageReport`, `CustomTagUsage` and
   `CustomTagUsageBreakdown`, and requests the enums `AdminUsageGroupBy` and `CustomTagUsageAggregateBy`; overloads
   of the analytics methods take `groupBy` and `aggregateBy` as strings, sent as given.
-  `DeveloperKey.Label`, `DeveloperKey.UsageLimits` and `KeyUsage.ApiKeyLabel` are `null` when the API does not return
-  them. Unexpected values in Admin API responses are skipped or replaced by defaults instead of failing the call;
-  a response that is not a JSON object or array as expected, or a developer key response without `key_id`, throws a
-  `DeepLException`. The SDK passes labels and limit values to the API unchanged.
+  `DeveloperKey.Label`, `DeveloperKey.UsageLimits`, `KeyUsage.ApiKeyLabel`,
+  `AdminUsageBreakdown.SpeechToSpeechMinutes` and `CustomTagUsageBreakdown.SpeechToSpeechMinutes` are `null` when the
+  API does not return them. Unexpected values in Admin API responses are skipped or replaced by defaults instead of
+  failing the call; a response that is not a JSON object or array as expected, or a developer key response without
+  `key_id`, throws a `DeepLException`. The SDK passes labels and limit values to the API unchanged.
   The analytics methods accept `DateTime` values, sent as their UTC date (`Local` values are converted to UTC,
   `Unspecified` values are treated as UTC), or `"yyyy-MM-dd"` strings.
   `DeepLAdminClientOptions` and `TranslatorOptions` now share the connection settings of the new `BaseClientOptions`

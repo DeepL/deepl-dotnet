@@ -56,7 +56,7 @@ namespace DeepL.Model {
     [JsonConstructor]
     public CustomTagUsage(string? customTag, CustomTagUsageBreakdown? breakdown, DateTime? usageDate = null) {
       CustomTag = customTag ?? "";
-      Breakdown = breakdown ?? new CustomTagUsageBreakdown(0, 0, 0, 0, 0);
+      Breakdown = breakdown ?? new CustomTagUsageBreakdown(0, 0, 0, 0);
       UsageDate = usageDate;
     }
 
@@ -85,7 +85,7 @@ namespace DeepL.Model {
           long textTranslationCharacters,
           long textImprovementCharacters,
           double speechToTextMinutes,
-          double speechToSpeechMinutes) {
+          double? speechToSpeechMinutes = null) {
       TotalCharacters = totalCharacters;
       TextTranslationCharacters = textTranslationCharacters;
       TextImprovementCharacters = textImprovementCharacters;
@@ -113,9 +113,9 @@ namespace DeepL.Model {
     [JsonConverter(typeof(LenientDoubleConverter))]
     public double SpeechToTextMinutes { get; }
 
-    /// <summary>Number of speech-to-speech minutes used.</summary>
+    /// <summary>Number of speech-to-speech minutes used, or null if the API did not return it.</summary>
     [JsonPropertyName("speech_to_speech_minutes")]
-    [JsonConverter(typeof(LenientDoubleConverter))]
-    public double SpeechToSpeechMinutes { get; }
+    [JsonConverter(typeof(LenientNullableDoubleConverter))]
+    public double? SpeechToSpeechMinutes { get; }
   }
 }

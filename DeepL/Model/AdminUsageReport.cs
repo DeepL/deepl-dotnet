@@ -63,7 +63,10 @@ namespace DeepL.Model {
     public KeyUsage[] KeyAndDayUsages { get; }
   }
 
-  /// <summary>Usage totals in an <see cref="AdminUsageReport" />. Values missing in the response are 0.</summary>
+  /// <summary>
+  ///   Usage totals in an <see cref="AdminUsageReport" />. Values missing in the response are 0, except
+  ///   <see cref="SpeechToSpeechMinutes" />, which is null when the API does not return it.
+  /// </summary>
   public sealed class AdminUsageBreakdown {
     /// <summary>Initializes a new instance of <see cref="AdminUsageBreakdown" />.</summary>
     [JsonConstructor]
@@ -73,7 +76,7 @@ namespace DeepL.Model {
           long documentTranslationCharacters,
           long textImprovementCharacters,
           double speechToTextMinutes,
-          double speechToSpeechMinutes = 0) {
+          double? speechToSpeechMinutes = null) {
       TotalCharacters = totalCharacters;
       TextTranslationCharacters = textTranslationCharacters;
       DocumentTranslationCharacters = documentTranslationCharacters;
@@ -108,12 +111,12 @@ namespace DeepL.Model {
     public double SpeechToTextMinutes { get; }
 
     /// <summary>
-    ///   Number of speech-to-speech minutes used. The API returns this field although the API reference does not
-    ///   list it yet.
+    ///   Number of speech-to-speech minutes used, or null if the API did not return it. The API returns this field
+    ///   although the API reference does not list it yet.
     /// </summary>
     [JsonPropertyName("speech_to_speech_minutes")]
-    [JsonConverter(typeof(LenientDoubleConverter))]
-    public double SpeechToSpeechMinutes { get; }
+    [JsonConverter(typeof(LenientNullableDoubleConverter))]
+    public double? SpeechToSpeechMinutes { get; }
   }
 
   /// <summary>

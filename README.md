@@ -1496,6 +1496,7 @@ sent as given, for values the enum does not have.
 `report.GroupBy` is the raw grouping string returned by the API (`key` or
 `keyAndDay` at the time of writing). The usage breakdowns contain the
 characters per product, `SpeechToTextMinutes` and `SpeechToSpeechMinutes`.
+`SpeechToSpeechMinutes` is `null` if the API does not report it.
 `KeyUsage.ApiKeyLabel` is `null` if the API does not return a label.
 
 ```c#

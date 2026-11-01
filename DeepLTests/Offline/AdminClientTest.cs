@@ -508,7 +508,66 @@ namespace DeepLTests.Offline {
 
       Assert.Equal(3.5, report.TotalUsage!.SpeechToSpeechMinutes);
       Assert.Equal(1.25, report.KeyUsages[0].Usage.SpeechToSpeechMinutes);
-      Assert.Equal(0, report.KeyUsages[1].Usage.SpeechToSpeechMinutes);
+      Assert.Null(report.KeyUsages[1].Usage.SpeechToSpeechMinutes);
+    }
+
+    [Fact]
+    public async Task TestUsageAnalyticsSpeechToSpeechMinutesMissing() {
+      ExpectNoBody(HttpMethod.Get, "v2/admin/analytics?start_date=2025-09-29&end_date=2025-10-01&group_by=key")
+            .RespondJson(
+                  @"{""usage_report"": {
+                    ""total_usage"": {
+                      ""total_characters"": 9619, ""text_translation_characters"": 4892,
+                      ""document_translation_characters"": 10, ""text_improvement_characters"": 4717,
+                      ""speech_to_text_minutes"": 107.46},
+                    ""group_by"": ""key"",
+                    ""key_usages"": [{
+                      ""api_key"": ""dc88****3a2c"",
+                      ""usage"": {
+                        ""total_characters"": 315, ""text_translation_characters"": 159,
+                        ""document_translation_characters"": 0, ""text_improvement_characters"": 156,
+                        ""speech_to_text_minutes"": 11.94}}]}}");
+
+      var report = await CreateAdminClient().GetUsageAnalyticsAsync(
+            new DateTime(2025, 9, 29),
+            new DateTime(2025, 10, 1),
+            AdminUsageGroupBy.Key);
+
+      var total = report.TotalUsage!;
+      Assert.Null(total.SpeechToSpeechMinutes);
+      Assert.Equal(9619, total.TotalCharacters);
+      Assert.Equal(4892, total.TextTranslationCharacters);
+      Assert.Equal(10, total.DocumentTranslationCharacters);
+      Assert.Equal(4717, total.TextImprovementCharacters);
+      Assert.Equal(107.46, total.SpeechToTextMinutes);
+      var usage = Assert.Single(report.KeyUsages).Usage;
+      Assert.Null(usage.SpeechToSpeechMinutes);
+      Assert.Equal(315, usage.TotalCharacters);
+      Assert.Equal(159, usage.TextTranslationCharacters);
+      Assert.Equal(0, usage.DocumentTranslationCharacters);
+      Assert.Equal(156, usage.TextImprovementCharacters);
+      Assert.Equal(11.94, usage.SpeechToTextMinutes);
+    }
+
+    [Fact]
+    public async Task TestCustomTagUsageAnalyticsSpeechToSpeechMinutesMissing() {
+      ExpectNoBody(HttpMethod.Get, "v2/admin/analytics/custom-tags?start_date=2026-05-03&end_date=2026-05-15")
+            .RespondJson(
+                  @"{""custom_tag_usage_report"": {
+                    ""usage"": [{
+                      ""custom_tag"": ""example-custom-tag"",
+                      ""breakdown"": {
+                        ""total_characters"": 380, ""text_translation_characters"": 380,
+                        ""text_improvement_characters"": 0, ""speech_to_text_minutes"": 12.5}}]}}");
+
+      var report = await CreateAdminClient().GetCustomTagUsageAnalyticsAsync(
+            new DateTime(2026, 5, 3),
+            new DateTime(2026, 5, 15));
+
+      var breakdown = Assert.Single(report.Usage).Breakdown;
+      Assert.Null(breakdown.SpeechToSpeechMinutes);
+      Assert.Equal(380, breakdown.TotalCharacters);
+      Assert.Equal(12.5, breakdown.SpeechToTextMinutes);
     }
 
     [Fact]

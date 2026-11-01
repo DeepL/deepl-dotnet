@@ -90,6 +90,20 @@ namespace DeepL.Internal {
           writer.WriteNumberValue(value);
   }
 
+  /// <summary>Reads an optional number, returning null if the value is missing or not a number.</summary>
+  internal sealed class LenientNullableDoubleConverter : JsonConverter<double?> {
+    public override double? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+          LenientNumber.Read(ref reader);
+
+    public override void Write(Utf8JsonWriter writer, double? value, JsonSerializerOptions options) {
+      if (value.HasValue) {
+        writer.WriteNumberValue(value.Value);
+      } else {
+        writer.WriteNullValue();
+      }
+    }
+  }
+
   /// <summary>Reads an optional page number, returning null if the value is missing or not a number.</summary>
   internal sealed class LenientNullableIntConverter : JsonConverter<int?> {
     public override int? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {
