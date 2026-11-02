@@ -127,9 +127,10 @@ package:
     - build
   parallel:
     matrix:
-      # net7.0 runs the library's netstandard2.0 build, rolled forward to the .NET 8 runtime.
+      # Runs the library's netstandard2.0 build on the .NET 8 runtime.
       - DOCKER_IMAGE: "mcr.microsoft.com/dotnet/sdk:8.0-alpine"
-        FRAMEWORK: "net7.0"
+        FRAMEWORK: "net8.0"
+        LIBRARY_FRAMEWORK: "netstandard2.0"
         CONFIGURATION:
           - Debug
           - Release
@@ -148,6 +149,7 @@ package:
     - dotnet test
       --configuration $CONFIGURATION
       --framework $FRAMEWORK
+      -p:DeepLLibraryFramework=$LIBRARY_FRAMEWORK
       --filter "FullyQualifiedName~DeepLTests.Offline."
       --logger:"junit;LogFilePath=..\artifacts\{assembly}-test-result.xml;MethodFormat=Class;FailureBodyFormat=Verbose"
       --collect:"XPlat Code Coverage"

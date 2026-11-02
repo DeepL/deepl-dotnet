@@ -1,29 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- net7.0 picks the library's netstandard2.0 build, so that build runs the tests too. -->
-    <TargetFrameworks>net7.0;net8.0;net10.0;net462</TargetFrameworks>
+    <TargetFrameworks>net8.0;net10.0;net462</TargetFrameworks>
     <!-- The .NET 8 SDK cannot target net10.0; it builds and runs the other targets. -->
-    <TargetFrameworks Condition="$([MSBuild]::VersionLessThan('$(NETCoreSdkVersion)', '10.0'))">net7.0;net8.0;net462</TargetFrameworks>
+    <TargetFrameworks Condition="$([MSBuild]::VersionLessThan('$(NETCoreSdkVersion)', '10.0'))">net8.0;net462</TargetFrameworks>
     <LangVersion>8</LangVersion>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>../DeepL/sgKey.snk</AssemblyOriginatorKeyFile>
-  </PropertyGroup>
-
-  <!-- .NET 7 is out of support and CI images have no .NET 7 runtime: run the net7.0 target on a newer
-       runtime, and silence the end-of-life and dependency TFM-support warnings it triggers, and the
-       TFM-support error of Microsoft.NET.Test.Sdk (the tests run on the .NET 8 runtime, which it supports). -->
-  <PropertyGroup Condition="'$(TargetFramework)' == 'net7.0'">
-    <RollForward>Major</RollForward>
-    <CheckEolTargetFramework>false</CheckEolTargetFramework>
-    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
-    <SuppressTfmSupportBuildErrors>true</SuppressTfmSupportBuildErrors>
-    <!-- Microsoft.NET.Test.Sdk does not set this up for net7.0; without it the package assemblies stay in the
-         NuGet cache, which the CI test jobs do not have. -->
-    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <ItemGroup>
@@ -39,7 +25,20 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <ProjectReference Include="..\DeepL\DeepL.csproj" />
+    <ProjectReference Include="..\DeepL\DeepL.csproj" Condition="'$(DeepLLibraryFramework)' == ''" />
+  </ItemGroup>
+
+  <!-- Run the tests against a specific library build, e.g. -p:DeepLLibraryFramework=netstandard2.0 to test the
+       netstandard2.0 build (used by .NET Framework) on a .NET 8+ runtime. -->
+  <ItemGroup Condition="'$(DeepLLibraryFramework)' != ''">
+    <ProjectReference Include="..\DeepL\DeepL.csproj" SetTargetFramework="TargetFramework=$(DeepLLibraryFramework)" />
+  </ItemGroup>
+
+  <!-- NuGet restore ignores SetTargetFramework, so the netstandard2.0-only dependencies of the library must be
+       referenced here to reach the test output. -->
+  <ItemGroup Condition="'$(DeepLLibraryFramework)' == 'netstandard2.0' And '$(TargetFrameworkIdentifier)' == '.NETCoreApp'">
+    <PackageReference Include="System.Text.Json" Version="10.0.14" />
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.14" />
   </ItemGroup>
 
   <ItemGroup>
