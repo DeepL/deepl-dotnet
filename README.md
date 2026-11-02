@@ -515,7 +515,7 @@ var glossaryDicts = new[] {new MultilingualGlossaryDictionaryEntries(
   "EN", "DE", new GlossaryEntries(entriesDictionary))};
 var glossaryEnToDe = await client.CreateMultilingualGlossaryAsync("My glossary", glossaryDicts);
 
-var glossaryDictEnToDe = glossaryEnToDe.Dictionaries[0]
+var glossaryDictEnToDe = glossaryEnToDe.Dictionaries[0];
 Console.WriteLine($"Created {glossaryEnToDe.Name}' ({glossaryEnToDe.GlossaryId}) " +
     $"with {glossaryEnToDe.Dictionaries.Length} dictionary where its language pair is "
     $"{glossaryDictEnToDe.SourceLanguageCode}->{glossaryDictEnToDe.TargetLanguageCode} " +
@@ -583,9 +583,9 @@ To list the entries contained within a stored glossary, use
 and either a `MultilingualGlossaryDictionaryInfo` or source and target language pair:
 
 ```c#
-var glossaryDicts = await client.GetMultilingualGlossaryDictionaryEntriesAsync(myGlossary, "en", "de");
+var glossaryDict = await client.GetMultilingualGlossaryDictionaryEntriesAsync(myGlossary, "en", "de");
 
-foreach (KeyValuePair<string, string> entry in glossaryDicts[0].Entries.ToDictionary()) {
+foreach (KeyValuePair<string, string> entry in glossaryDict.Entries.ToDictionary()) {
   Console.WriteLine($"{entry.Key}: {entry.Value}");
 }
 // prints:
@@ -627,21 +627,21 @@ Functions to edit stored glossaries are also provided:
 ```c#
 // Update glossary dictionary
 var entries = new Dictionary<string, string>{{"artist", "Maler"}, {"hello", "guten tag"}};
-var dictionaries = new[] {new MultilingualGlossaryDictionaryEntries("EN", "DE", entries)};
+var dictionaries = new[] {new MultilingualGlossaryDictionaryEntries("EN", "DE", new GlossaryEntries(entries))};
 var myGlossary = await client.CreateMultilingualGlossaryAsync(
     "My glossary",
     dictionaries
 );
 var newEntries = new Dictionary<string, string>{{"hello", "hallo"}, {"prize", "Gewinn"}};
-var glossaryDict = new MultilingualGlossaryDictionaryEntries("EN", "DE", newEntries);
+var glossaryDict = new MultilingualGlossaryDictionaryEntries("EN", "DE", new GlossaryEntries(newEntries));
 var updatedGlossary = await client.UpdateMultilingualGlossaryDictionaryAsync(
     myGlossary,
     glossaryDict
 );
 
-var entriesResponse = await client.GetMultilingualGlossaryEntriesAsync(myGlossary, "EN", "DE");
+var entriesResponse = await client.GetMultilingualGlossaryDictionaryEntriesAsync(myGlossary, "EN", "DE");
 
-foreach (KeyValuePair<string, string> entry in entriesResponse.Dictionaries[0].Entries.ToDictionary()) {
+foreach (KeyValuePair<string, string> entry in entriesResponse.Entries.ToDictionary()) {
   Console.WriteLine($"{entry.Key}: {entry.Value}");
 }
 // prints:
@@ -659,8 +659,8 @@ var glossaryDict = new MultilingualGlossaryDictionaryEntries("EN", "DE", new Glo
 var updatedGlossary = await client.ReplaceMultilingualGlossaryDictionaryAsync(
   myGlossary,
   glossaryDict);
-var entriesResponse = await client.GetMultilingualGlossaryEntries(myGlossary, "EN", "DE");
-foreach (KeyValuePair<string, string> entry in entriesResponse.Dictionaries[0].Entries.ToDictionary()) {
+var entriesResponse = await client.GetMultilingualGlossaryDictionaryEntriesAsync(myGlossary, "EN", "DE");
+foreach (KeyValuePair<string, string> entry in entriesResponse.Entries.ToDictionary()) {
   Console.WriteLine($"{entry.Key}: {entry.Value}");
 }
 // prints:
@@ -902,7 +902,7 @@ var updated = await client.UpdateStyleRuleNameAsync("YOUR_STYLE_ID", "New Name")
 
 // Update configured rules
 var configuredRules = new Dictionary<string, Dictionary<string, string>> {
-  ["style_and_tone"] = new Dictionary<string, string> { ["formality"] = "formal" }
+  ["dates_and_times"] = new Dictionary<string, string> { ["calendar_era"] = "use_bc_and_ad" }
 };
 var updatedRules = await client.UpdateStyleRuleConfiguredRulesAsync(updated, configuredRules);
 ```
@@ -1343,7 +1343,7 @@ foreach (var lang in sourceLanguages) {
 }
 var targetLanguages = await client.GetTargetLanguagesAsync();
 foreach (var lang in targetLanguages) {
-  if (lang.SupportsFormality ?? false) {
+  if (lang.SupportsFormality) {
     Console.WriteLine($"{lang.Name} ({lang.Code}) supports formality");
      // Example: "German (DE) supports formality"
   }
@@ -1354,15 +1354,15 @@ foreach (var lang in targetLanguages) {
 
 Glossaries are supported for a subset of language pairs. To retrieve those
 languages use the `GetGlossaryLanguagesAsync()` function, which returns an array
-of `GlossaryLanguagePair` objects. Use the `SourceLanguage` and
-`TargetLanguage` properties to check the pair of language codes supported.
+of `GlossaryLanguagePair` objects. Use the `SourceLanguageCode` and
+`TargetLanguageCode` properties to check the pair of language codes supported.
 
 ```c#
 
 // Glossary languages
 var glossaryLanguages = await client.GetGlossaryLanguagesAsync();
 foreach (var languagePair in glossaryLanguages) {
-  Console.WriteLine($"{languagePair.SourceLanguage} to {languagePair.TargetLanguage}");
+  Console.WriteLine($"{languagePair.SourceLanguageCode} to {languagePair.TargetLanguageCode}");
   // Example: "EN to DE", "DE to EN", etc.
 }
 ```
