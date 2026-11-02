@@ -341,7 +341,7 @@ namespace DeepL.Internal {
     }
 
     /// <summary>
-    ///   Creates the handler sending requests, using the given proxy if set. On .NET 5 and later, connecting is limited
+    ///   Creates the handler sending requests, using the given proxy if set. In the net8.0 build, connecting is limited
     ///   to half of the per-attempt timeout, so that a hanging connect fails as a connect timeout before the attempt
     ///   times out: unlike a per-attempt timeout, a connect timeout shows that the request was not sent.
     /// </summary>

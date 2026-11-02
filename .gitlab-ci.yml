@@ -10,7 +10,7 @@ include:
 
 # Global --------------------------
 
-image: mcr.microsoft.com/dotnet/sdk:5.0-alpine
+image: mcr.microsoft.com/dotnet/sdk:10.0-alpine
 
 workflow:
   rules:
@@ -33,6 +33,13 @@ variables:
   DOTNET_CLI_HOME: ${CI_PROJECT_DIR}
   XDG_DATA_HOME: ${CI_PROJECT_DIR}
   GITLAB_ADVANCED_SAST_ENABLED: 'true'
+
+# The .NET 8+ CLI takes a named mutex for NuGet's one-time migrations, which fails on
+# the CI runners; the marker file records that they already ran.
+.dotnet_cli:
+  before_script:
+    - mkdir -p "${XDG_DATA_HOME}/NuGet/Migrations"
+    - touch "${XDG_DATA_HOME}/NuGet/Migrations/1"
 
 # stage: check ----------------------
 
@@ -81,6 +88,7 @@ semgrep-sast:
 # stage: build ----------------------
 
 build:
+  extends: .dotnet_cli
   stage: build
   parallel:
     matrix:
@@ -97,6 +105,7 @@ build:
       - DeepLTests/obj/
 
 package:
+  extends: .dotnet_cli
   stage: build
   needs: ["build"]
   script:
@@ -112,18 +121,19 @@ package:
 
 # Offline suite: no secrets and no network. Runs on every runtime.
 .test_offline_base:
+  extends: .dotnet_cli
   stage: test
   dependencies:
     - build
   parallel:
     matrix:
-      - DOCKER_IMAGE: "mcr.microsoft.com/dotnet/sdk:5.0-alpine"
-        FRAMEWORK: "net5.0"
+      - DOCKER_IMAGE: "mcr.microsoft.com/dotnet/sdk:8.0-alpine"
+        FRAMEWORK: "net8.0"
         CONFIGURATION:
           - Debug
           - Release
-      - DOCKER_IMAGE: "mcr.microsoft.com/dotnet/sdk:3.1-alpine"
-        FRAMEWORK: "netcoreapp3.1"
+      - DOCKER_IMAGE: "mcr.microsoft.com/dotnet/sdk:10.0-alpine"
+        FRAMEWORK: "net10.0"
         CONFIGURATION:
           - Debug
           - Release
@@ -159,14 +169,14 @@ test_offline_manual:
 # Every endpoint once against the real API; no retry, as a retry repeats every request.
 .test_real_api_base:
   stage: test
-  extends: .test
+  extends: [.test, .dotnet_cli]
   dependencies:
     - build
-  image: mcr.microsoft.com/dotnet/sdk:5.0-alpine
+  image: mcr.microsoft.com/dotnet/sdk:10.0-alpine
   script:
     - dotnet test
       --configuration Release
-      --framework net5.0
+      --framework net10.0
       --filter "FullyQualifiedName~DeepLTests.RealApi."
       --logger:"junit;LogFilePath=..\artifacts\{assembly}-test-result.xml;MethodFormat=Class;FailureBodyFormat=Verbose"
       --collect:"XPlat Code Coverage"
@@ -195,7 +205,7 @@ test_real_api_manual:
 
 nuget upload:
   stage: publish
-  extends: .publish
+  extends: [.publish, .dotnet_cli]
   dependencies:
     - package
   rules:

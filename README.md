@@ -22,7 +22,10 @@ With a DeepL API Free account you can consume up to 500,000 characters/month for
 
 ## Installation
 
-Using the .NET Core command-line interface (CLI) tools:
+The library is supported on .NET 8 and later, and on .NET Framework 4.6.2 and later through its netstandard2.0
+build. It is tested on .NET 8 and .NET 10.
+
+Using the .NET command-line interface (CLI) tools:
 
 ```
 dotnet add package DeepL.net
@@ -1539,11 +1542,11 @@ The available options:
   certificate and proxy failures are not retried.
 - `PerRetryConnectionTimeout`: the timeout of each attempt, by default 10
   seconds. An attempt may run longer, until the time the client would wait
-  before retrying it (the backoff delay), when that is longer. On .NET 5 and
+  before retrying it (the backoff delay), when that is longer. On .NET 8 and
   later, connecting to the server (or proxy) is limited to half of this timeout,
   so that a connect timeout is detected as such and `CreateDeveloperKeyAsync()`
-  can retry it. On .NET Framework and .NET Core 3.1, only the operating system's
-  connect timeout counts as a connect timeout.
+  can retry it. With the netstandard2.0 build (.NET Framework, and .NET 5, 6 and
+  7), only the operating system's connect timeout counts as a connect timeout.
 - `OverallConnectionTimeout`: the timeout of a request including all retries
   and the waits between them, by default 100 seconds.
   `Timeout.InfiniteTimeSpan` disables it.

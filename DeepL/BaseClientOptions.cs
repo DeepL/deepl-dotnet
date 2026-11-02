@@ -39,7 +39,7 @@ namespace DeepL {
 
     /// <summary>
     ///   Timeout for each attempt of an HTTP request, the default is 10 seconds. An attempt may run longer, until the
-    ///   time the client would wait before retrying it (the backoff delay), when that is longer. On .NET 5 and later,
+    ///   time the client would wait before retrying it (the backoff delay), when that is longer. On .NET 8 and later,
     ///   connecting to the server or proxy is limited to half of this timeout, so that a connect timeout is detected as
     ///   such.
     ///   <see cref="System.Threading.Timeout.InfiniteTimeSpan" /> disables it; zero and other negative values throw an

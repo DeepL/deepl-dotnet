@@ -6,6 +6,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Changed
+- The package now targets `net8.0` and `netstandard2.0`; the `net5.0` target is removed. .NET 5, 6 and 7
+  applications now use the `netstandard2.0` build, which has no separate connect timeout (see
+  `PerRetryConnectionTimeout` in the README) and does not honour cancellation while it copies a translation
+  memory export to a stream. The library is supported on .NET 8 and later, and on .NET Framework 4.6.2 and later.
+- The `System.Text.Json` dependency is now `10.0.14` and applies to the `netstandard2.0` build only; `net8.0` uses
+  the framework's own `System.Text.Json`. Applications on `netstandard2.0` platforms that pin an older
+  `System.Text.Json` must raise it to at least `10.0.14`.
+- The `Microsoft.Extensions.Http.Polly` dependency is now `8.0.33` (still Polly 7). Retry and timeout behaviour
+  are unchanged. Applications that pin `Microsoft.Extensions.Http` or `Microsoft.Extensions.Http.Polly` below 8.0
+  must raise them.
+- The library is now tested on .NET 8 and .NET 10, instead of .NET 5 and .NET Core 3.1. .NET Core 3.1 and .NET 5
+  to 7 can still install the package but are no longer tested.
 - Glossary endpoints (v2 and v3 multilingual) now throw `NotFoundException` on HTTP 404, like every other endpoint;
   they threw its subclass `GlossaryNotFoundException` before. Code catching `NotFoundException` is unaffected.
 - `DeepL.Internal.LargeFormUrlEncodedContent`, `MultilingualGlossaryDictionaryEntriesResult` and the
