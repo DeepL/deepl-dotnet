@@ -21,6 +21,9 @@
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
     <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
     <SuppressTfmSupportBuildErrors>true</SuppressTfmSupportBuildErrors>
+    <!-- Microsoft.NET.Test.Sdk does not set this up for net7.0; without it the package assemblies stay in the
+         NuGet cache, which the CI test jobs do not have. -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <ItemGroup>
