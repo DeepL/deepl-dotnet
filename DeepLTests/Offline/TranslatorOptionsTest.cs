@@ -187,7 +187,7 @@ namespace DeepLTests.Offline {
 
     [Fact]
     public void ReportsVersions() {
-      Assert.Equal("1.22.1", DeepL.Translator.Version());
+      Assert.Equal("1.23.0", DeepL.Translator.Version());
       // The assembly version must remain unchanged for binary compatibility, except for the major version.
       Assert.Equal("1.0.0.0", typeof(DeepL.Translator).Assembly.GetName().Version?.ToString());
     }
