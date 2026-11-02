@@ -653,7 +653,8 @@ namespace DeepLTests.Offline {
       Assert.True(exception.ShouldRetry);
     }
 
-#if NET5_0_OR_GREATER
+    // The library's netstandard2.0 build has no separate connect timeout.
+#if NET5_0_OR_GREATER && !DEEPL_NETSTANDARD2_0
     [Fact]
     public async Task CreateDeveloperKeyRetriesConnectTimeout() {
       // Relies on Linux dropping connection attempts while a listener's accept queue is full.

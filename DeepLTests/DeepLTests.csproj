@@ -30,6 +30,10 @@
 
   <!-- Run the tests against a specific library build, e.g. -p:DeepLLibraryFramework=netstandard2.0 to test the
        netstandard2.0 build (used by .NET Framework) on a .NET 8+ runtime. -->
+  <PropertyGroup Condition="'$(DeepLLibraryFramework)' == 'netstandard2.0'">
+    <!-- Lets tests skip features that only the library's net8.0 build has, such as the connect timeout. -->
+    <DefineConstants>$(DefineConstants);DEEPL_NETSTANDARD2_0</DefineConstants>
+  </PropertyGroup>
   <ItemGroup Condition="'$(DeepLLibraryFramework)' != ''">
     <ProjectReference Include="..\DeepL\DeepL.csproj" SetTargetFramework="TargetFramework=$(DeepLLibraryFramework)" />
   </ItemGroup>
