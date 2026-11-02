@@ -14,11 +14,13 @@
   </PropertyGroup>
 
   <!-- .NET 7 is out of support and CI images have no .NET 7 runtime: run the net7.0 target on a newer
-       runtime, and silence the end-of-life and dependency TFM-support warnings it triggers. -->
+       runtime, and silence the end-of-life and dependency TFM-support warnings it triggers, and the
+       TFM-support error of Microsoft.NET.Test.Sdk (the tests run on the .NET 8 runtime, which it supports). -->
   <PropertyGroup Condition="'$(TargetFramework)' == 'net7.0'">
     <RollForward>Major</RollForward>
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
     <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
+    <SuppressTfmSupportBuildErrors>true</SuppressTfmSupportBuildErrors>
   </PropertyGroup>
 
   <ItemGroup>
