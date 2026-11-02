@@ -516,13 +516,14 @@ var glossaryDicts = new[] {new MultilingualGlossaryDictionaryEntries(
 var glossaryEnToDe = await client.CreateMultilingualGlossaryAsync("My glossary", glossaryDicts);
 
 var glossaryDictEnToDe = glossaryEnToDe.Dictionaries[0];
-Console.WriteLine($"Created {glossaryEnToDe.Name}' ({glossaryEnToDe.GlossaryId}) " +
-    $"with {glossaryEnToDe.Dictionaries.Length} dictionary where its language pair is "
+Console.WriteLine($"Created '{glossaryEnToDe.Name}' ({glossaryEnToDe.GlossaryId}) " +
+    $"with {glossaryEnToDe.Dictionaries.Length} dictionary where its language pair is " +
     $"{glossaryDictEnToDe.SourceLanguageCode}->{glossaryDictEnToDe.TargetLanguageCode} " +
     $"containing {glossaryDictEnToDe.EntryCount} entries"
 );
 // Example: Created 'My glossary' (559192ed-8e23-...) with 1 dictionary where
 // its language pair is EN->DE containing 2 entries
+```
 
 You can also upload a glossary downloaded from the DeepL website using
 `CreateMultilingualGlossaryFromCsvAsync()`. Instead of supplying the entries as a dictionary,
