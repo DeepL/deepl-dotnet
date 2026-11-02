@@ -1642,7 +1642,6 @@ API usage.
 
 [api-docs-outputformat-param]: https://www.deepl.com/docs-api/documents/format-conversions/?utm_source=github&utm_medium=github-dotnet-readme
 
-
 [api-docs-xml-handling]: https://www.deepl.com/docs-api/handling-xml/?utm_source=github&utm_medium=github-dotnet-readme
 
 [issues]: https://www.github.com/DeepLcom/deepl-dotnet/issues
