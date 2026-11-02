@@ -7,6 +7,8 @@
     <PackageVersion>1.23.0</PackageVersion>
     <FileVersion>1.23.0.0</FileVersion>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <!-- Keep the informational version (Version(), User-Agent) free of the "+<commit>" suffix the .NET 8 SDK adds. -->
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <TargetFrameworks>net8.0;netstandard2.0</TargetFrameworks>
     <LangVersion>12</LangVersion>
     <Nullable>enable</Nullable>
