@@ -137,7 +137,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DeepLAdminClientOptions` and `TranslatorOptions` now share the connection settings of the new `BaseClientOptions`
   base class.
 - Added `LanguageCode` constants for target language variants `GermanSwiss` (`de-CH`), `GermanGermany` (`de-DE`),
-  `SpanishEuropean` (`es-ES`), `FrenchCanadian` (`fr-CA`) and `FrenchEuropean` (`fr-FR`).
+  `SpanishEuropean` (`es-ES`), `FrenchCanadian` (`fr-CA`) and `FrenchEuropean` (`fr-FR`). Like the other `LanguageCode` constants, they are
+  deprecated with `[Obsolete]`.
 - Added `DeepLClient.GetLanguagesForResourceAsync()` to retrieve the languages supported by a DeepL API resource
   (`GET /v3/languages`), with source/target usability, status and per-language features. Pass `include` values
   `LanguageSupport.IncludeBeta` and `LanguageSupport.IncludeExternal` to also return beta and third-party languages
