@@ -8,12 +8,12 @@ using System.Text.Json.Serialization;
 
 namespace DeepL.Model {
   /// <summary>
-  ///   A language supported by DeepL translation. The <see cref="Translator" /> class provides functions to retrieve
+  ///   A language supported by DeepL translation. The <see cref="DeepLClient" /> class provides functions to retrieve
   ///   the available source and target languages. <see cref="Language" /> objects are considered equal if their
   ///   language codes match.
   /// </summary>
-  /// <seealso cref="Translator.GetSourceLanguagesAsync" />
-  /// <seealso cref="Translator.GetTargetLanguagesAsync" />
+  /// <seealso cref="DeepLClient.GetSourceLanguagesAsync" />
+  /// <seealso cref="DeepLClient.GetTargetLanguagesAsync" />
   public class Language : IEquatable<Language> {
     /// <summary>Initializes a new Language object.</summary>
     /// <param name="code">The language code.</param>
@@ -112,7 +112,7 @@ namespace DeepL.Model {
   }
 
   /// <summary>
-  ///   A source language supported by DeepL translation, returned by <see cref="Translator.GetSourceLanguagesAsync" />.
+  ///   A source language supported by DeepL translation, returned by <see cref="DeepLClient.GetSourceLanguagesAsync" />.
   /// </summary>
   public sealed class SourceLanguage : Language {
     /// <summary>Initializes a new Language object.</summary>
@@ -129,7 +129,7 @@ namespace DeepL.Model {
   }
 
   /// <summary>
-  ///   A target language supported by DeepL translation, returned by <see cref="Translator.GetTargetLanguagesAsync" />.
+  ///   A target language supported by DeepL translation, returned by <see cref="DeepLClient.GetTargetLanguagesAsync" />.
   /// </summary>
   public sealed class TargetLanguage : Language {
     /// <summary>Initializes a new Language object.</summary>

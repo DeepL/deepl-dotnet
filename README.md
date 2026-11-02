@@ -62,8 +62,7 @@ but instead fetched from a configuration file or environment variable.
 `DeepLClient` accepts options as the second argument, see [Configuration](#configuration) for more information.
 
 `DeepLClient.IsFreeAccountAuthKey(authKey)` returns `true` if the key belongs to a DeepL API Free account (it ends
-with `:fx`). The client uses this to choose the server URL. `Translator` and `TranslatorOptions` are deprecated: use
-`DeepLClient` and `DeepLClientOptions`.
+with `:fx`). The client uses this to choose the server URL.
 
 ### Translating text
 
@@ -371,8 +370,7 @@ application needs to execute these steps individually, you can instead use the f
 - `TranslateDocumentDownloadAsync()`
 
 `TranslateDocumentWaitUntilDoneAsync()` polls the status every 5 seconds. Pass a `TimeSpan` timeout to limit the wait;
-when it expires, a `DeepLException` is thrown. `TranslateDocumentStatusAsync()` is the obsolete former name of
-`TranslateDocumentGetStatusAsync()` and will be removed in the next major version.
+when it expires, a `DeepLException` is thrown.
 
 `DocumentStatus.Status` is `DocumentStatus.StatusCode.Unknown` for a status this library does not know; the waiting
 methods keep polling then. `DocumentStatus.StatusValue` holds the status string as returned by the API. Because an

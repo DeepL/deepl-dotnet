@@ -5,7 +5,7 @@
 namespace DeepL {
   /// <summary>
   ///   Helpers for language codes. To retrieve the currently supported languages use
-  ///   <see cref="ITranslator.GetSourceLanguagesAsync" /> and <see cref="ITranslator.GetTargetLanguagesAsync" />.
+  ///   <see cref="DeepLClient.GetSourceLanguagesAsync" /> and <see cref="DeepLClient.GetTargetLanguagesAsync" />.
   /// </summary>
   public static class LanguageCode {
     /// <summary>Removes the regional variant (if any) from the given language code</summary>

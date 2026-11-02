@@ -306,9 +306,7 @@ namespace DeepLTests.Offline {
       ExpectForm(HttpMethod.Post, "v2/document/d1", ("document_key", "k1"))
             .RespondJson(
                   "{\"document_id\":\"d1\",\"status\":\"translating\",\"seconds_remaining\":3,\"billed_characters\":7}");
-#pragma warning disable CS0618
-      var status = await CreateClient().TranslateDocumentStatusAsync(Handle);
-#pragma warning restore CS0618
+      var status = await CreateClient().TranslateDocumentGetStatusAsync(Handle);
       Assert.Equal("d1", status.DocumentId);
       Assert.Equal(DocumentStatus.StatusCode.Translating, status.Status);
       Assert.Equal(3, status.SecondsRemaining);

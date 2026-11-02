@@ -29,6 +29,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   object instead.
 
 ### Removed
+- Removed the `Translator` class, its `ITranslator` interface and `TranslatorOptions`. `DeepLClient` no longer
+  derives from `Translator` and now holds all of its methods. Replace `new Translator(authKey, new TranslatorOptions
+  { ... })` with `new DeepLClient(authKey, new DeepLClientOptions { ... })`, and variables or parameters typed
+  `Translator` or `ITranslator` with `DeepLClient`. `DeepLClientOptions` now derives from `BaseClientOptions`.
+- Removed `Translator.AuthKeyIsFreeAccount()`; use `DeepLClient.IsFreeAccountAuthKey()` instead.
+- Removed `TranslateDocumentStatusAsync()`; use `TranslateDocumentGetStatusAsync()` instead.
 - Removed `GlossaryNotFoundException`; catch `NotFoundException` instead.
 - Removed document minification: `DocumentTranslateOptions.EnableDocumentMinification`, `DocumentMinifier`,
   `IDocumentMinifier`, `DocumentMinificationException` and `DocumentDeminificationException`. Translate the document

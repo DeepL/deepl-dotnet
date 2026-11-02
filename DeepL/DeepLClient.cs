@@ -9,6 +9,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
@@ -57,13 +58,58 @@ namespace DeepL {
   ///   Client for the DeepL API. To use the DeepL API, initialize an instance of this class using your DeepL
   ///   Authentication Key. All functions are thread-safe, aside from <see cref="DeepLClient.Dispose" />.
   /// </summary>
-#pragma warning disable CS0618 // derives from the deprecated Translator until the next major version
-  public sealed class DeepLClient : Translator, IWriter, IGlossaryManager, IStyleRuleManager, IStyleProfileManager,
+  public sealed class DeepLClient : IWriter, IGlossaryManager, IStyleRuleManager, IStyleProfileManager,
         ITranslationMemoryManager, ISpokenTermsManager {
-#pragma warning restore CS0618
-    /// <summary>Initializes a new instance of the <see cref="AuthorizationException" /> class.</summary>
-    /// <param name="message">The message that describes the error.</param>
-    public DeepLClient(string authKey, DeepLClientOptions? options = null) : base(authKey, options) { }
+    /// <summary>Base URL for DeepL API Pro accounts.</summary>
+    private const string DeepLServerUrl = "https://api.deepl.com";
+
+    /// <summary>Base URL for DeepL API Free accounts.</summary>
+    private const string DeepLServerUrlFree = "https://api-free.deepl.com";
+
+    /// <summary>Internal class implementing HTTP requests.</summary>
+    internal readonly DeepLHttpClient _client;
+
+    /// <summary>Initializes a new <see cref="DeepLClient" /> object using your authentication key.</summary>
+    /// <param name="authKey">
+    ///   Authentication Key as found in your
+    ///   <a href="https://www.deepl.com/pro-account/">DeepL API account</a>.
+    /// </param>
+    /// <param name="options">Additional options controlling client behaviour.</param>
+    /// <exception cref="ArgumentNullException">If authKey argument is null.</exception>
+    /// <exception cref="ArgumentException">If authKey argument is empty.</exception>
+    /// <remarks>
+    ///   This function does not establish a connection to the DeepL API. To check connectivity, use
+    ///   <see cref="GetUsageAsync" />.
+    /// </remarks>
+    public DeepLClient(string authKey, DeepLClientOptions? options = null) {
+      options ??= new DeepLClientOptions();
+
+      if (authKey == null) {
+        throw new ArgumentNullException(nameof(authKey));
+      }
+
+      authKey = authKey.Trim();
+
+      if (authKey.Length == 0) {
+        throw new ArgumentException($"{nameof(authKey)} is empty");
+      }
+
+      var serverUrl = new Uri(
+            options.ServerUrl ?? (IsFreeAccountAuthKey(authKey) ? DeepLServerUrlFree : DeepLServerUrl));
+
+      _client = DeepLHttpClient.Create(authKey, serverUrl, options);
+    }
+
+    /// <summary>Releases the unmanaged resources and disposes of the managed resources used by the <see cref="DeepLClient" />.</summary>
+    public void Dispose() => _client.Dispose();
+
+    /// <summary>Retrieves the version string, with format MAJOR.MINOR.BUGFIX.</summary>
+    /// <returns>String containing the library version.</returns>
+    public static string Version() {
+      var version = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+            ?.InformationalVersion ?? "";
+      return version;
+    }
 
     /// <summary>
     ///   Determines if the given DeepL Authentication Key belongs to an API Free account or an API Pro account.
@@ -76,7 +122,1103 @@ namespace DeepL {
     ///   <c>true</c> if the Authentication Key belongs to an API Free account (ends with <c>:fx</c>), <c>false</c> if it
     ///   belongs to an API Pro account.
     /// </returns>
-    public static bool IsFreeAccountAuthKey(string authKey) => IsFreeAccountKey(authKey);
+    public static bool IsFreeAccountAuthKey(string authKey) => authKey.TrimEnd().EndsWith(":fx");
+
+    /// <summary>Retrieves the usage in the current billing period for this DeepL account.</summary>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns><see cref="Usage" /> object containing account usage information.</returns>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<Usage> GetUsageAsync(CancellationToken cancellationToken = default) {
+      using var responseMessage = await _client.ApiGetAsync("v2/usage", cancellationToken).ConfigureAwait(false);
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage).ConfigureAwait(false);
+      var usageFields = await JsonUtils.DeserializeAsync<Usage.ResponseFieldsStruct>(responseMessage)
+            .ConfigureAwait(false);
+      return new Usage(usageFields);
+    }
+
+    /// <summary>Translate specified texts from source language into target language.</summary>
+    /// <param name="texts">Texts to translate; must not be empty.</param>
+    /// <param name="sourceLanguageCode">Language code of the input language, or null to use auto-detection.</param>
+    /// <param name="targetLanguageCode">Language code of the desired output language.</param>
+    /// <param name="options">Extra <see cref="TextTranslateOptions" /> influencing translation.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>Texts translated into specified target language.</returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<TextResult[]> TranslateTextAsync(
+          IEnumerable<string> texts,
+          string? sourceLanguageCode,
+          string targetLanguageCode,
+          TextTranslateOptions? options = null,
+          CancellationToken cancellationToken = default) {
+      var bodyParams = CreateHttpParams(sourceLanguageCode, targetLanguageCode, options);
+      var textParams = texts
+            .Select(text => text.Length > 0 ? ("text", text) : throw new ArgumentException("text must not be empty"))
+            .ToList();
+      bodyParams.AddRange(textParams);
+      // Added after the texts, so that an extra "text" parameter replaces them like any other field.
+      AddExtraBodyParameters(bodyParams, options);
+
+      using var responseMessage = await _client
+            .ApiPostAsync("v2/translate", cancellationToken, bodyParams).ConfigureAwait(false);
+
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage).ConfigureAwait(false);
+      var translatedTexts =
+            await JsonUtils.DeserializeAsync<TextTranslateResult>(responseMessage).ConfigureAwait(false);
+      var translations = translatedTexts.Translations;
+      // An extra "text" parameter may change the number of texts sent; require at least one translation then.
+      var expectedCount = options?.ExtraBodyParameters?.ContainsKey("text") == true ? 1 : textParams.Count;
+      if (translations == null || translations.Length < Math.Max(expectedCount, 1)) {
+        throw new DeepLException(
+              $"Expected {expectedCount} translations in the response, received {translations?.Length ?? 0}");
+      }
+
+      return translations;
+    }
+
+    /// <summary>Translate specified text from source language into target language.</summary>
+    /// <param name="text">Text to translate; must not be empty.</param>
+    /// <param name="sourceLanguageCode">Language code of the input language, or null to use auto-detection.</param>
+    /// <param name="targetLanguageCode">Language code of the desired output language.</param>
+    /// <param name="options"><see cref="TextTranslateOptions" /> influencing translation.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>Text translated into specified target language.</returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<TextResult> TranslateTextAsync(
+          string text,
+          string? sourceLanguageCode,
+          string targetLanguageCode,
+          TextTranslateOptions? options = null,
+          CancellationToken cancellationToken = default)
+      => (await TranslateTextAsync(
+                  new[] { text },
+                  sourceLanguageCode,
+                  targetLanguageCode,
+                  options,
+                  cancellationToken)
+            .ConfigureAwait(false))[0];
+
+    /// <summary>
+    ///   Translate document at specified input <see cref="FileInfo" /> from source language to target language and
+    ///   store the translated document at specified output <see cref="FileInfo" />.
+    /// </summary>
+    /// <param name="inputFileInfo"><see cref="FileInfo" /> object containing path to input document.</param>
+    /// <param name="outputFileInfo"><see cref="FileInfo" /> object containing path to store translated document.</param>
+    /// <param name="sourceLanguageCode">Language code of the input language, or null to use auto-detection.</param>
+    /// <param name="targetLanguageCode">Language code of the desired output language.</param>
+    /// <param name="options"><see cref="DocumentTranslateOptions" /> influencing translation.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <exception cref="IOException">
+    ///   If the input cannot be opened; it is opened before any request, and the exception of
+    ///   <see cref="FileInfo.OpenRead" /> propagates: <see cref="FileNotFoundException" /> for a missing file,
+    ///   <see cref="DirectoryNotFoundException" /> for a missing directory. Also if the output path is occupied; an
+    ///   existing output file is left unchanged.
+    /// </exception>
+    /// <exception cref="UnauthorizedAccessException">
+    ///   If the input is a directory or cannot be read due to permissions; raised before any request.
+    /// </exception>
+    /// <exception cref="DocumentTranslationException">
+    ///   If cancellation was requested, or an error occurs while translating the document. If the document was uploaded
+    ///   successfully, then the <see cref="DocumentTranslationException.DocumentHandle" /> contains the document ID and
+    ///   key that may be used to retrieve the document.
+    ///   If cancellation was requested, the <see cref="DocumentTranslationException.InnerException" /> will be an
+    ///   <see cref="OperationCanceledException" /> (usually a <see cref="TaskCanceledException" />).
+    /// </exception>
+    public async Task TranslateDocumentAsync(
+          FileInfo inputFileInfo,
+          FileInfo outputFileInfo,
+          string? sourceLanguageCode,
+          string targetLanguageCode,
+          DocumentTranslateOptions? options = null,
+          CancellationToken cancellationToken = default) {
+      using var inputFile = inputFileInfo.OpenRead();
+      using var outputFile = outputFileInfo.Open(FileMode.CreateNew, FileAccess.Write);
+      try {
+        await TranslateDocumentAsync(
+              inputFile,
+              options?.Filename ?? inputFileInfo.Name,
+              outputFile,
+              sourceLanguageCode,
+              targetLanguageCode,
+              options,
+              cancellationToken).ConfigureAwait(false);
+      } catch {
+        try {
+          outputFileInfo.Delete();
+        } catch {
+          // ignored
+        }
+
+        throw;
+      }
+    }
+
+    /// <summary>
+    ///   Translate specified document content from source language to target language and store the translated document
+    ///   content to specified stream.
+    /// </summary>
+    /// <param name="inputFile"><see cref="Stream" /> containing input document content.</param>
+    /// <param name="inputFileName">Name of the input file. The file extension is used to determine file type.</param>
+    /// <param name="outputFile"><see cref="Stream" /> to store translated document content.</param>
+    /// <param name="sourceLanguageCode">Language code of the input language, or null to use auto-detection.</param>
+    /// <param name="targetLanguageCode">Language code of the desired output language.</param>
+    /// <param name="options"><see cref="DocumentTranslateOptions" /> influencing translation.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <exception cref="DocumentTranslationException">
+    ///   If cancellation was requested, or an error occurs while translating the document. If the document was uploaded
+    ///   successfully, then the <see cref="DocumentTranslationException.DocumentHandle" /> contains the document ID and
+    ///   key that may be used to retrieve the document.
+    ///   If cancellation was requested, the <see cref="DocumentTranslationException.InnerException" /> will be an
+    ///   <see cref="OperationCanceledException" /> (usually a <see cref="TaskCanceledException" />).
+    /// </exception>
+    public async Task TranslateDocumentAsync(
+          Stream inputFile,
+          string inputFileName,
+          Stream outputFile,
+          string? sourceLanguageCode,
+          string targetLanguageCode,
+          DocumentTranslateOptions? options = null,
+          CancellationToken cancellationToken = default) {
+      DocumentHandle? handle = null;
+      try {
+        handle = await TranslateDocumentUploadAsync(
+                    inputFile,
+                    inputFileName,
+                    sourceLanguageCode,
+                    targetLanguageCode,
+                    options,
+                    cancellationToken)
+              .ConfigureAwait(false);
+        await TranslateDocumentWaitUntilDoneAsync(handle.Value, options?.Timeout, cancellationToken)
+              .ConfigureAwait(false);
+        await TranslateDocumentDownloadAsync(handle.Value, outputFile, cancellationToken).ConfigureAwait(false);
+      } catch (Exception exception) {
+        throw new DocumentTranslationException(
+              $"Error occurred during document translation: {exception.Message}",
+              exception,
+              handle);
+      }
+    }
+
+    /// <summary>
+    ///   Translate specified document content from source language to target language and store the translated document
+    ///   content to specified stream. The file name is taken from <see cref="DocumentTranslateOptions.Filename" />.
+    /// </summary>
+    /// <param name="inputFile"><see cref="Stream" /> containing input document content.</param>
+    /// <param name="outputFile"><see cref="Stream" /> to store translated document content.</param>
+    /// <param name="sourceLanguageCode">Language code of the input language, or null to use auto-detection.</param>
+    /// <param name="targetLanguageCode">Language code of the desired output language.</param>
+    /// <param name="options">
+    ///   <see cref="DocumentTranslateOptions" /> influencing translation; <see cref="DocumentTranslateOptions.Filename" />
+    ///   is required.
+    /// </param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <exception cref="DocumentTranslationException">
+    ///   If cancellation was requested, the <see cref="DocumentTranslateOptions.Timeout" /> expired, or an error occurs
+    ///   while translating the document, including a missing <see cref="DocumentTranslateOptions.Filename" />. If the
+    ///   document was uploaded successfully, then the <see cref="DocumentTranslationException.DocumentHandle" />
+    ///   contains the document ID and key that may be used to retrieve the document.
+    /// </exception>
+    public Task TranslateDocumentAsync(
+          Stream inputFile,
+          Stream outputFile,
+          string? sourceLanguageCode,
+          string targetLanguageCode,
+          DocumentTranslateOptions? options = null,
+          CancellationToken cancellationToken = default) =>
+          TranslateDocumentAsync(
+                inputFile,
+                options?.Filename!,
+                outputFile,
+                sourceLanguageCode,
+                targetLanguageCode,
+                options,
+                cancellationToken);
+
+    /// <summary>
+    ///   Upload document at specified input <see cref="FileInfo" /> for translation from source language to target
+    ///   language.
+    /// </summary>
+    /// <param name="inputFileInfo"><see cref="FileInfo" /> object containing path to input document.</param>
+    /// <param name="sourceLanguageCode">Language code of the input language, or null to use auto-detection.</param>
+    /// <param name="targetLanguageCode">Language code of the desired output language.</param>
+    /// <param name="options"><see cref="DocumentTranslateOptions" /> influencing translation.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns><see cref="DocumentHandle" /> object associated with the in-progress document translation.</returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="IOException">
+    ///   If the input cannot be opened; it is opened before any request, and the exception of
+    ///   <see cref="FileInfo.OpenRead" /> propagates: <see cref="FileNotFoundException" /> for a missing file,
+    ///   <see cref="DirectoryNotFoundException" /> for a missing directory.
+    /// </exception>
+    /// <exception cref="UnauthorizedAccessException">
+    ///   If the input is a directory or cannot be read due to permissions; raised before any request.
+    /// </exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<DocumentHandle> TranslateDocumentUploadAsync(
+          FileInfo inputFileInfo,
+          string? sourceLanguageCode,
+          string targetLanguageCode,
+          DocumentTranslateOptions? options = null,
+          CancellationToken cancellationToken = default) {
+      using var inputFileStream = inputFileInfo.OpenRead();
+      return await TranslateDocumentUploadAsync(
+            inputFileStream,
+            options?.Filename ?? inputFileInfo.Name,
+            sourceLanguageCode,
+            targetLanguageCode,
+            options,
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    ///   Upload document content for translation from source language to target language. The file name is taken from
+    ///   <see cref="DocumentTranslateOptions.Filename" />.
+    /// </summary>
+    /// <param name="inputFile"><see cref="Stream" /> containing input document content.</param>
+    /// <param name="sourceLanguageCode">Language code of the input language, or null to use auto-detection.</param>
+    /// <param name="targetLanguageCode">Language code of the desired output language.</param>
+    /// <param name="options">
+    ///   <see cref="DocumentTranslateOptions" /> influencing translation; <see cref="DocumentTranslateOptions.Filename" />
+    ///   is required.
+    /// </param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns><see cref="DocumentHandle" /> object associated with the in-progress document translation.</returns>
+    /// <exception cref="ArgumentException">
+    ///   If any argument is invalid, or <see cref="DocumentTranslateOptions.Filename" /> is not set.
+    /// </exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public Task<DocumentHandle> TranslateDocumentUploadAsync(
+          Stream inputFile,
+          string? sourceLanguageCode,
+          string targetLanguageCode,
+          DocumentTranslateOptions? options = null,
+          CancellationToken cancellationToken = default) =>
+          TranslateDocumentUploadAsync(
+                inputFile,
+                options?.Filename!,
+                sourceLanguageCode,
+                targetLanguageCode,
+                options,
+                cancellationToken);
+
+    /// <summary>Upload document content with specified filename for translation from source language to target language.</summary>
+    /// <param name="inputFile"><see cref="Stream" /> containing input document content.</param>
+    /// <param name="inputFileName">Name of the input file. The file extension is used to determine file type.</param>
+    /// <param name="sourceLanguageCode">Language code of the input language, or null to use auto-detection.</param>
+    /// <param name="targetLanguageCode">Language code of the desired output language.</param>
+    /// <param name="options"><see cref="DocumentTranslateOptions" /> influencing translation.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns><see cref="DocumentHandle" /> object associated with the in-progress document translation.</returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<DocumentHandle> TranslateDocumentUploadAsync(
+          Stream inputFile,
+          string inputFileName,
+          string? sourceLanguageCode,
+          string targetLanguageCode,
+          DocumentTranslateOptions? options = null,
+          CancellationToken cancellationToken = default) {
+      // null if passed so, or if the overload without it is used and DocumentTranslateOptions.Filename is unset.
+      if (inputFileName == null) {
+        throw new ArgumentException(
+              $"{nameof(inputFileName)} or {nameof(DocumentTranslateOptions)}." +
+              $"{nameof(DocumentTranslateOptions.Filename)} is required with stream input");
+      }
+
+      // Document translation cannot detect the source language when a glossary is used.
+      if (sourceLanguageCode == null && (options?.Glossary != null || options?.GlossaryIds?.Count > 0)) {
+        throw new ArgumentException($"{nameof(sourceLanguageCode)} is required if using a glossary");
+      }
+
+      var bodyParams = CreateCommonHttpParams(
+            sourceLanguageCode,
+            targetLanguageCode,
+            options?.FormalityValue != null ? null : options?.Formality,
+            options?.Glossary,
+            options?.StyleRule,
+            options?.TranslationMemory,
+            options?.GlossaryIds,
+            options?.StyleProfile);
+
+      if (options?.FormalityValue != null) {
+        bodyParams.Add(("formality", options.FormalityValue));
+      }
+
+      if (options?.TranslationMemoryThreshold != null) {
+        if (options.TranslationMemory == null) {
+          throw new ArgumentException("TranslationMemoryThreshold requires TranslationMemory");
+        }
+
+        if (options.TranslationMemoryThreshold.Value < 0 || options.TranslationMemoryThreshold.Value > 100) {
+          throw new ArgumentOutOfRangeException(
+                nameof(options.TranslationMemoryThreshold),
+                options.TranslationMemoryThreshold.Value,
+                $"{nameof(options.TranslationMemoryThreshold)} must be between 0 and 100");
+        }
+
+        bodyParams.Add(("translation_memory_threshold", options.TranslationMemoryThreshold.Value.ToString()));
+      }
+
+      if (options?.OutputFormat != null) {
+        bodyParams.Add(("output_format", options?.OutputFormat!));
+      }
+
+      if (options?.EnableWatermark != null) {
+        // The API ignores "1" for this parameter; it needs "true"/"false".
+        bodyParams.Add(("enable_watermark", options.EnableWatermark.Value ? "true" : "false"));
+      }
+
+      AddExtraBodyParameters(bodyParams, options);
+
+      using var responseMessage = await _client.ApiUploadAsync(
+                  "v2/document",
+                  cancellationToken,
+                  bodyParams,
+                  inputFile,
+                  inputFileName)
+            .ConfigureAwait(false);
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage).ConfigureAwait(false);
+      return await JsonUtils.DeserializeAsync<DocumentHandle>(responseMessage).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    ///   Retrieve the status of in-progress document translation associated with specified
+    ///   <see cref="DocumentHandle" />.
+    /// </summary>
+    /// <param name="handle"><see cref="DocumentHandle" /> associated with an in-progress document translation.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns><see cref="DocumentStatus" /> object containing the document translation status.</returns>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<DocumentStatus> TranslateDocumentGetStatusAsync(
+          DocumentHandle handle,
+          CancellationToken cancellationToken = default) {
+      var bodyParams = new (string Key, string Value)[] { ("document_key", handle.DocumentKey) };
+      using var responseMessage =
+            await _client.ApiPostAsync(
+                        $"v2/document/{Uri.EscapeDataString(handle.DocumentId)}",
+                        cancellationToken,
+                        bodyParams)
+                  .ConfigureAwait(false);
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage).ConfigureAwait(false);
+      return await JsonUtils.DeserializeAsync<DocumentStatus>(responseMessage).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    ///   Checks document translation status and asynchronously-waits until document translation is complete or fails
+    ///   due to an error.
+    /// </summary>
+    /// <param name="handle"><see cref="DocumentHandle" /> associated with an in-progress document translation.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public Task TranslateDocumentWaitUntilDoneAsync(
+          DocumentHandle handle,
+          CancellationToken cancellationToken = default) =>
+          TranslateDocumentWaitUntilDoneAsync(handle, null, cancellationToken);
+
+    /// <summary>
+    ///   Checks document translation status and asynchronously-waits until document translation is complete or fails
+    ///   due to an error, for at most the given time.
+    /// </summary>
+    /// <param name="handle"><see cref="DocumentHandle" /> associated with an in-progress document translation.</param>
+    /// <param name="timeout">Maximum time to wait, or <c>null</c> to wait without a limit.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <exception cref="DeepLException">
+    ///   If the document translation fails, the <paramref name="timeout" /> expires before it is complete, or any error
+    ///   occurs while communicating with the DeepL API, a <see cref="DeepLException" /> or a derived class will be
+    ///   thrown.
+    /// </exception>
+    public async Task TranslateDocumentWaitUntilDoneAsync(
+          DocumentHandle handle,
+          TimeSpan? timeout,
+          CancellationToken cancellationToken = default) {
+      var deadline = timeout == null ? (DateTime?)null : DateTime.UtcNow + timeout.Value;
+      var status = await TranslateDocumentGetStatusAsync(handle, cancellationToken).ConfigureAwait(false);
+      while (status.Ok && !status.Done) {
+        var wait = CalculateDocumentWaitTime(status.SecondsRemaining);
+        if (deadline != null) {
+          var remaining = deadline.Value - DateTime.UtcNow;
+          if (remaining <= TimeSpan.Zero) {
+            throw new DeepLException($"Document translation did not finish within the timeout of {timeout}");
+          }
+
+          if (remaining < wait) {
+            wait = remaining;
+          }
+        }
+
+        await Task.Delay(wait, cancellationToken).ConfigureAwait(false);
+        status = await TranslateDocumentGetStatusAsync(handle, cancellationToken).ConfigureAwait(false);
+      }
+
+      if (!status.Ok) {
+        throw new DeepLException(status.ErrorMessage ?? "Unknown error");
+      }
+    }
+
+    /// <summary>
+    ///   Downloads the resulting translated document associated with specified <see cref="DocumentHandle" /> to the
+    ///   specified <see cref="FileInfo" />. The <see cref="DocumentStatus" /> for the document must have
+    ///   <see cref="DocumentStatus.Done" /> == <c>true</c>.
+    /// </summary>
+    /// <param name="handle"><see cref="DocumentHandle" /> associated with an in-progress document translation.</param>
+    /// <param name="outputFileInfo"><see cref="FileInfo" /> object containing path to store translated document.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <exception cref="IOException">If the output path is occupied.</exception>
+    /// <exception cref="DocumentNotReadyException">
+    ///   If the document is not ready to be downloaded, that is, the document status
+    ///   is not <see cref="DocumentStatus.Done" />.
+    /// </exception>
+    /// <exception cref="DeepLException">
+    ///   If any other error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task TranslateDocumentDownloadAsync(
+          DocumentHandle handle,
+          FileInfo outputFileInfo,
+          CancellationToken cancellationToken = default) {
+      using var outputFileStream = outputFileInfo.Open(FileMode.CreateNew, FileAccess.Write);
+      try {
+        await TranslateDocumentDownloadAsync(handle, outputFileStream, cancellationToken).ConfigureAwait(false);
+      } catch {
+        try {
+          outputFileInfo.Delete();
+        } catch {
+          // ignored
+        }
+
+        throw;
+      }
+    }
+
+    /// <summary>
+    ///   Downloads the resulting translated document associated with specified <see cref="DocumentHandle" /> to the
+    ///   specified <see cref="Stream" />. The <see cref="DocumentStatus" /> for the document must have
+    ///   <see cref="DocumentStatus.Done" /> == <c>true</c>.
+    /// </summary>
+    /// <param name="handle"><see cref="DocumentHandle" /> associated with an in-progress document translation.</param>
+    /// <param name="outputFile"><see cref="Stream" /> to store translated document content.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <exception cref="DocumentNotReadyException">
+    ///   If the document is not ready to be downloaded, that is, the document status
+    ///   is not <see cref="DocumentStatus.Done" />.
+    /// </exception>
+    /// <exception cref="DeepLException">
+    ///   If any other error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task TranslateDocumentDownloadAsync(
+          DocumentHandle handle,
+          Stream outputFile,
+          CancellationToken cancellationToken = default) {
+      var bodyParams = new (string Key, string Value)[] { ("document_key", handle.DocumentKey) };
+      using var responseMessage = await _client.ApiPostAsync(
+                  $"v2/document/{Uri.EscapeDataString(handle.DocumentId)}/result",
+                  cancellationToken,
+                  bodyParams)
+            .ConfigureAwait(false);
+
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, downloadingDocument: true).ConfigureAwait(false);
+      await responseMessage.Content.CopyToAsync(outputFile).ConfigureAwait(false);
+    }
+
+    /// <summary>Retrieves the list of supported translation source languages.</summary>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>Array of <see cref="Language" /> objects representing the available translation source languages.</returns>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<SourceLanguage[]> GetSourceLanguagesAsync(CancellationToken cancellationToken = default) =>
+          await GetLanguagesAsync<SourceLanguage>(false, cancellationToken).ConfigureAwait(false);
+
+    /// <summary>Retrieves the list of supported translation target languages.</summary>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>Array of <see cref="Language" /> objects representing the available translation target languages.</returns>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<TargetLanguage[]> GetTargetLanguagesAsync(CancellationToken cancellationToken = default) =>
+          await GetLanguagesAsync<TargetLanguage>(true, cancellationToken).ConfigureAwait(false);
+
+    /// <summary>
+    ///   Retrieves the list of supported glossary language pairs. When creating glossaries, the source and target
+    ///   language pair must match one of the available language pairs.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>Array of <see cref="GlossaryLanguagePair" /> objects representing the available glossary language pairs.</returns>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<GlossaryLanguagePair[]> GetGlossaryLanguagesAsync(CancellationToken cancellationToken = default) {
+      var queryParams = new (string Key, string Value)[] { ("resource", "glossary") };
+      using var responseMessage = await _client
+            .ApiGetAsync("v3/languages", cancellationToken, queryParams).ConfigureAwait(false);
+
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage).ConfigureAwait(false);
+      var languages = await JsonUtils.DeserializeAsync<V3Language[]>(responseMessage).ConfigureAwait(false);
+      var sourceLanguages = languages.Where(language => language.UsableAsSource).Select(language => language.Lang);
+      var targetLanguages = languages.Where(language => language.UsableAsTarget).Select(language => language.Lang);
+      return sourceLanguages
+            .SelectMany(source => targetLanguages, (source, target) => new GlossaryLanguagePair(source, target))
+            .Where(pair => pair.SourceLanguageCode != pair.TargetLanguageCode)
+            .ToArray();
+    }
+
+    /// <summary>
+    ///   Creates a v2 glossary in your DeepL account with the specified details and returns a
+    ///   <see cref="GlossaryInfo" /> object with details about the newly created glossary. The glossary can be used
+    ///   in translations to override translations for specific terms (words). The glossary source and target languages
+    ///   must match the languages of translations for which it will be used.
+    /// </summary>
+    /// <param name="name">User-defined name to assign to the glossary; must not be empty.</param>
+    /// <param name="sourceLanguageCode">Language code of the source terms language.</param>
+    /// <param name="targetLanguageCode">Language code of the target terms language.</param>
+    /// <param name="entries">Glossary entry list.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns><see cref="GlossaryInfo" /> object with details about the newly created glossary.</returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<GlossaryInfo> CreateGlossaryAsync(
+          string name,
+          string sourceLanguageCode,
+          string targetLanguageCode,
+          GlossaryEntries entries,
+          CancellationToken cancellationToken = default) =>
+          await CreateGlossaryInternalAsync(
+                name,
+                sourceLanguageCode,
+                targetLanguageCode,
+                "tsv",
+                entries.ToTsv(),
+                cancellationToken).ConfigureAwait(false);
+
+    /// <summary>
+    ///   Creates a v2 glossary in your DeepL account with the specified details and returns a
+    ///   <see cref="GlossaryInfo" /> object with details about the newly created glossary. The glossary can be used
+    ///   in translations to override translations for specific terms (words). The glossary source and target languages
+    ///   must match the languages of translations for which it will be used.
+    /// </summary>
+    /// <param name="name">User-defined name to assign to the glossary; must not be empty.</param>
+    /// <param name="sourceLanguageCode">Language code of the source terms language.</param>
+    /// <param name="targetLanguageCode">Language code of the target terms language.</param>
+    /// <param name="csvFile"><see cref="Stream" /> containing CSV content.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns><see cref="GlossaryInfo" /> object with details about the newly created glossary.</returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<GlossaryInfo> CreateGlossaryFromCsvAsync(
+          string name,
+          string sourceLanguageCode,
+          string targetLanguageCode,
+          Stream csvFile,
+          CancellationToken cancellationToken = default) =>
+          await CreateGlossaryInternalAsync(
+                name,
+                sourceLanguageCode,
+                targetLanguageCode,
+                "csv",
+                await new StreamReader(csvFile).ReadToEndAsync().ConfigureAwait(false),
+                cancellationToken).ConfigureAwait(false);
+
+    /// <summary>
+    ///   Retrieves information about the glossary with the specified ID and returns a <see cref="GlossaryInfo" />
+    ///   object containing details. This does not retrieve the glossary entries; to retrieve entries use
+    ///   <see cref="GetGlossaryEntriesAsync(string,System.Threading.CancellationToken)" />
+    /// </summary>
+    /// <param name="glossaryId">ID of glossary to retrieve.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns><see cref="GlossaryInfo" /> object with details about the specified glossary.</returns>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<GlossaryInfo> GetGlossaryAsync(
+          string glossaryId,
+          CancellationToken cancellationToken = default) {
+      using var responseMessage =
+            await _client.ApiGetAsync($"v2/glossaries/{glossaryId}", cancellationToken)
+                  .ConfigureAwait(false);
+
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.Glossary).ConfigureAwait(false);
+      return await JsonUtils.DeserializeAsync<GlossaryInfo>(responseMessage).ConfigureAwait(false);
+    }
+
+    /// <summary>Asynchronously waits until the given glossary is ready to be used for translations.</summary>
+    /// <param name="glossaryId">ID of glossary to ensure ready.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<GlossaryInfo> WaitUntilGlossaryReadyAsync(
+          string glossaryId,
+          CancellationToken cancellationToken = default) {
+      var info = await GetGlossaryAsync(glossaryId, cancellationToken).ConfigureAwait(false);
+      while (!info.Ready) {
+        await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken).ConfigureAwait(false);
+        info = await GetGlossaryAsync(glossaryId, cancellationToken).ConfigureAwait(false);
+      }
+
+      return info;
+    }
+
+    /// <summary>
+    ///   Retrieves information about all glossaries and returns an array of <see cref="GlossaryInfo" /> objects
+    ///   containing details. This does not retrieve the glossary entries; to retrieve entries use
+    ///   <see cref="GetGlossaryEntriesAsync(string,System.Threading.CancellationToken)" />
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>Array of <see cref="GlossaryInfo" /> objects with details about each glossary.</returns>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<GlossaryInfo[]> ListGlossariesAsync(CancellationToken cancellationToken = default) {
+      using var responseMessage =
+            await _client.ApiGetAsync("v2/glossaries", cancellationToken).ConfigureAwait(false);
+
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.Glossary).ConfigureAwait(false);
+      return (await JsonUtils.DeserializeAsync<GlossaryListResult>(responseMessage).ConfigureAwait(false)).Glossaries;
+    }
+
+    /// <summary>
+    ///   Retrieves the entries containing within the glossary with the specified ID and returns them as a
+    ///   <see cref="GlossaryEntries" />.
+    /// </summary>
+    /// <param name="glossaryId">ID of glossary for which to retrieve entries.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns><see cref="GlossaryEntries" /> containing entry pairs of the glossary.</returns>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<GlossaryEntries> GetGlossaryEntriesAsync(
+          string glossaryId,
+          CancellationToken cancellationToken = default) {
+      using var responseMessage = await _client.ApiGetAsync(
+            $"v2/glossaries/{glossaryId}/entries",
+            cancellationToken,
+            acceptHeader: "text/tab-separated-values").ConfigureAwait(false);
+
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.Glossary).ConfigureAwait(false);
+      var contentTsv = await responseMessage.Content.ReadAsStringAsync().ConfigureAwait(false);
+      return GlossaryEntries.FromTsv(contentTsv, true);
+    }
+
+    /// <summary>
+    ///   Retrieves the entries containing within the glossary and returns them as a <see cref="GlossaryEntries" />.
+    /// </summary>
+    /// <param name="glossary"><see cref="GlossaryInfo" /> object corresponding to glossary for which to retrieve entries.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns><see cref="GlossaryEntries" /> containing entry pairs of the glossary.</returns>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task<GlossaryEntries> GetGlossaryEntriesAsync(
+          GlossaryInfo glossary,
+          CancellationToken cancellationToken = default) =>
+          await GetGlossaryEntriesAsync(glossary.GlossaryId, cancellationToken).ConfigureAwait(false);
+
+    /// <summary>Deletes the glossary with the specified ID.</summary>
+    /// <param name="glossaryId">ID of glossary to delete.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task DeleteGlossaryAsync(
+          string glossaryId,
+          CancellationToken cancellationToken = default) {
+      using var responseMessage =
+            await _client.ApiDeleteAsync($"v2/glossaries/{glossaryId}", cancellationToken)
+                  .ConfigureAwait(false);
+
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.Glossary).ConfigureAwait(false);
+    }
+
+    /// <summary>Deletes the specified glossary.</summary>
+    /// <param name="glossary"><see cref="GlossaryInfo" /> object corresponding to glossary to delete.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    public async Task DeleteGlossaryAsync(
+          GlossaryInfo glossary,
+          CancellationToken cancellationToken = default) =>
+          await DeleteGlossaryAsync(glossary.GlossaryId, cancellationToken).ConfigureAwait(false);
+
+    /// <summary>Internal function to retrieve available languages.</summary>
+    /// <param name="target"><c>true</c> to retrieve target languages, <c>false</c> to retrieve source languages.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>Array of <see cref="Language" /> objects containing information about the available languages.</returns>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    private async Task<TValue[]> GetLanguagesAsync<TValue>(
+          bool target,
+          CancellationToken cancellationToken = default) {
+      var queryParams = new (string Key, string Value)[] { ("resource", "translate_text") };
+      using var responseMessage =
+            await _client.ApiGetAsync("v3/languages", cancellationToken, queryParams)
+                  .ConfigureAwait(false);
+
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage).ConfigureAwait(false);
+      var languages = await JsonUtils.DeserializeAsync<V3Language[]>(responseMessage).ConfigureAwait(false);
+      return languages
+            .Where(language => target ? language.UsableAsTarget : language.UsableAsSource)
+            .Select(
+                  language => target
+                        ? (TValue)(object)new TargetLanguage(
+                              language.Lang,
+                              language.Name,
+                              language.Features?.ContainsKey("formality") ?? false)
+                        : (TValue)(object)new SourceLanguage(language.Lang, language.Name))
+            .ToArray();
+    }
+
+    /// <summary>
+    ///   Checks the specified languages and options are valid, and returns a list of tuples containing the parameters
+    ///   to include in HTTP request, without the texts and the extra body parameters.
+    /// </summary>
+    /// <param name="sourceLanguageCode">
+    ///   Language code of translation source language, or null if auto-detection should be
+    ///   used.
+    /// </param>
+    /// <param name="targetLanguageCode">Language code of translation target language.</param>
+    /// <param name="options">Extra <see cref="TextTranslateOptions" /> influencing translation.</param>
+    /// <returns>Enumerable of tuples containing the parameters to include in HTTP request.</returns>
+    /// <exception cref="ArgumentException">If the specified languages or options are invalid.</exception>
+    private static List<(string Key, string Value)> CreateHttpParams(
+          string? sourceLanguageCode,
+          string targetLanguageCode,
+          TextTranslateOptions? options) {
+      var bodyParams = CreateCommonHttpParams(
+            sourceLanguageCode,
+            targetLanguageCode,
+            options?.FormalityValue != null ? null : options?.Formality,
+            options?.Glossary,
+            options?.StyleRule,
+            options?.TranslationMemory,
+            options?.GlossaryIds,
+            options?.StyleProfile);
+
+      if (options?.FormalityValue != null) {
+        bodyParams.Add(("formality", options.FormalityValue));
+      }
+
+      // Always send show_billed_characters=1, remove when the API default is changed to true
+      bodyParams.Add(("show_billed_characters", "1"));
+
+      if (options == null) {
+        return bodyParams;
+      }
+
+      if (options.TranslationMemoryThreshold != null) {
+        if (options.TranslationMemory == null) {
+          throw new ArgumentException("TranslationMemoryThreshold requires TranslationMemory");
+        }
+
+        if (options.TranslationMemoryThreshold.Value < 0 || options.TranslationMemoryThreshold.Value > 100) {
+          throw new ArgumentOutOfRangeException(
+                nameof(options.TranslationMemoryThreshold),
+                options.TranslationMemoryThreshold.Value,
+                $"{nameof(options.TranslationMemoryThreshold)} must be between 0 and 100");
+        }
+
+        bodyParams.Add(("translation_memory_threshold", options.TranslationMemoryThreshold.Value.ToString()));
+      }
+
+      if (options.Context != null) {
+        bodyParams.Add(("context", options.Context));
+      }
+
+      if (options.SplitSentences != null) {
+        bodyParams.Add(("split_sentences", options.SplitSentences));
+      } else if (options.SentenceSplittingMode != SentenceSplittingMode.All) {
+        bodyParams.Add(
+              ("split_sentences", options.SentenceSplittingMode == SentenceSplittingMode.Off ? "0" : "nonewlines"));
+      }
+
+      if (options.PreserveFormatting) {
+        bodyParams.Add(("preserve_formatting", "1"));
+      }
+
+      if (options.TagHandling != null) {
+        bodyParams.Add(("tag_handling", options.TagHandling));
+      }
+
+      if (options.TagHandlingVersion != null) {
+        bodyParams.Add(("tag_handling_version", options.TagHandlingVersion));
+      }
+
+      if (!options.OutlineDetection) {
+        bodyParams.Add(("outline_detection", "0"));
+      }
+
+      if (options.NonSplittingTags.Count > 0) {
+        bodyParams.Add(("non_splitting_tags", string.Join(",", options.NonSplittingTags)));
+      }
+
+      if (options.SplittingTags.Count > 0) {
+        bodyParams.Add(("splitting_tags", string.Join(",", options.SplittingTags)));
+      }
+
+      if (options.IgnoreTags.Count > 0) {
+        bodyParams.Add(("ignore_tags", string.Join(",", options.IgnoreTags)));
+      }
+
+      if (options.ModelTypeValue != null) {
+        bodyParams.Add(("model_type", options.ModelTypeValue));
+      } else if (options.ModelType != null) {
+        bodyParams.Add(("model_type", options.ModelType.Value.ToApiValue()));
+      }
+
+      if (options.CustomInstructions.Count > 0) {
+        foreach (var instruction in options.CustomInstructions) {
+          bodyParams.Add(("custom_instructions", instruction));
+        }
+      }
+
+      return bodyParams;
+    }
+
+    /// <summary>
+    ///   Checks the specified languages and options are valid, and returns a list of tuples containing the parameters
+    ///   to include in HTTP request.
+    /// </summary>
+    /// <param name="sourceLanguageCode">
+    ///   Language code of translation source language, or null if auto-detection should be
+    ///   used.
+    /// </param>
+    /// <param name="targetLanguageCode">Language code of translation target language.</param>
+    /// <param name="formality">Formality option for translation.</param>
+    /// <param name="glossaryId">Optional ID of glossary to use for translation.</param>
+    /// <param name="styleId">Optional ID of style rule to use for translation.</param>
+    /// <param name="translationMemoryId">Optional ID of translation memory to use for translation.</param>
+    /// <param name="glossaryIds">
+    ///   Optional list of glossary IDs to use for translation (maximum of 5). Cannot be combined with
+    ///   <paramref name="glossaryId" />.
+    /// </param>
+    /// <param name="styleProfileId">Optional ID of style profile to use for translation.</param>
+    /// <returns>List of tuples containing the parameters to include in HTTP request.</returns>
+    /// <exception cref="ArgumentException">If the specified languages or options are invalid.</exception>
+    private static List<(string Key, string Value)> CreateCommonHttpParams(
+          string? sourceLanguageCode,
+          string targetLanguageCode,
+          Formality? formality,
+          string? glossaryId,
+          string? styleId = null,
+          string? translationMemoryId = null,
+          ICollection<string>? glossaryIds = null,
+          string? styleProfileId = null) {
+      targetLanguageCode = LanguageCode.Standardize(targetLanguageCode);
+      sourceLanguageCode = sourceLanguageCode == null ? null : LanguageCode.Standardize(sourceLanguageCode);
+
+      CheckValidLanguages(sourceLanguageCode, targetLanguageCode);
+
+      var bodyParams = new List<(string Key, string Value)> { ("target_lang", targetLanguageCode) };
+      if (sourceLanguageCode != null) {
+        bodyParams.Add(("source_lang", sourceLanguageCode));
+      }
+
+      var hasGlossaryIds = glossaryIds != null && glossaryIds.Count > 0;
+
+      if (glossaryId != null && hasGlossaryIds) {
+        throw new ArgumentException("Glossary and GlossaryIds cannot be used together");
+      }
+
+      if (glossaryId != null) {
+        bodyParams.Add(("glossary_id", glossaryId));
+      }
+
+      if (hasGlossaryIds) {
+        if (glossaryIds!.Count > 5) {
+          throw new ArgumentException("GlossaryIds must not contain more than 5 glossary IDs");
+        }
+
+        bodyParams.Add(("glossary_ids", string.Join(",", glossaryIds)));
+      }
+
+      if (styleId != null) {
+        bodyParams.Add(("style_id", styleId));
+      }
+
+      if (styleProfileId != null) {
+        bodyParams.Add(("style_profile_id", styleProfileId));
+      }
+
+      if (translationMemoryId != null) {
+        bodyParams.Add(("translation_memory_id", translationMemoryId));
+      }
+
+      switch (formality) {
+        case null:
+        case Formality.Default:
+          break;
+        case Formality.Less:
+          bodyParams.Add(("formality", "less"));
+          break;
+        case Formality.More:
+          bodyParams.Add(("formality", "more"));
+          break;
+        case Formality.PreferLess:
+          bodyParams.Add(("formality", "prefer_less"));
+          break;
+        case Formality.PreferMore:
+          bodyParams.Add(("formality", "prefer_more"));
+          break;
+        default:
+          throw new ArgumentException($"{nameof(formality)} value is out of range");
+      }
+
+      return bodyParams;
+    }
+
+    /// <summary>Checks the specified source and target language are valid, and throws an exception if not.</summary>
+    /// <param name="sourceLanguageCode">Language code of translation source language, or null if auto-detection is used.</param>
+    /// <param name="targetLanguageCode">Language code of translation target language.</param>
+    /// <exception cref="ArgumentException">If source or target language code are not valid.</exception>
+    private static void CheckValidLanguages(string? sourceLanguageCode, string targetLanguageCode) {
+      if (sourceLanguageCode is { Length: 0 }) {
+        throw new ArgumentException($"{nameof(sourceLanguageCode)} must not be empty");
+      }
+
+      if (targetLanguageCode.Length == 0) {
+        throw new ArgumentException($"{nameof(targetLanguageCode)} must not be empty");
+      }
+    }
+
+    /// <summary>
+    ///   Determines recommended time to wait before checking document translation again, using an optional hint of
+    ///   seconds remaining.
+    /// </summary>
+    /// <param name="hintSecondsRemaining">Optional hint of the number of seconds remaining.</param>
+    /// <returns><see cref="TimeSpan" /> to wait.</returns>
+    private static TimeSpan CalculateDocumentWaitTime(int? hintSecondsRemaining) {
+      // hintSecondsRemaining is currently unreliable, so just poll equidistantly
+      const int POLLING_TIME_SECS = 5;
+      return TimeSpan.FromSeconds(POLLING_TIME_SECS);
+    }
+
+    /// <summary>Creates a glossary with given details.</summary>
+    private async Task<GlossaryInfo> CreateGlossaryInternalAsync(
+          string name,
+          string sourceLanguageCode,
+          string targetLanguageCode,
+          string entriesFormat,
+          string entries,
+          CancellationToken cancellationToken) {
+      if (name.Length == 0) {
+        throw new ArgumentException($"Parameter {nameof(name)} must not be empty");
+      }
+
+      sourceLanguageCode = LanguageCode.RemoveRegionalVariant(sourceLanguageCode);
+      targetLanguageCode = LanguageCode.RemoveRegionalVariant(targetLanguageCode);
+
+      var bodyParams = new (string Key, string Value)[] {
+            ("name", name), ("source_lang", sourceLanguageCode), ("target_lang", targetLanguageCode),
+            ("entries_format", entriesFormat), ("entries", entries)
+      };
+      using var responseMessage =
+            await _client.ApiPostAsync("v2/glossaries", cancellationToken, bodyParams).ConfigureAwait(false);
+
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.Glossary).ConfigureAwait(false);
+      return await JsonUtils.DeserializeAsync<GlossaryInfo>(responseMessage).ConfigureAwait(false);
+    }
+
+    /// <summary>Class used for JSON-deserialization of text translate results.</summary>
+    private readonly struct TextTranslateResult {
+      /// <summary>Initializes a new instance of <see cref="TextTranslateResult" />, used for JSON deserialization.</summary>
+      [JsonConstructor]
+      public TextTranslateResult(TextResult[] translations) {
+        Translations = translations;
+      }
+
+      /// <summary>Array of <see cref="TextResult" /> objects holding text translation results.</summary>
+      public TextResult[] Translations { get; }
+    }
+
+    /// <summary>Class used for JSON-deserialization of glossary list results.</summary>
+    private readonly struct GlossaryListResult {
+      /// <summary>Initializes a new instance of <see cref="GlossaryListResult" />, used for JSON deserialization.</summary>
+      [JsonConstructor]
+      public GlossaryListResult(GlossaryInfo[] glossaries) {
+        Glossaries = glossaries;
+      }
+
+      /// <summary>Array of <see cref="GlossaryInfo" /> objects holding glossary information.</summary>
+      public GlossaryInfo[] Glossaries { get; }
+    }
+
+    /// <summary>Class used for JSON-deserialization of entries returned by the <c>GET /v3/languages</c> endpoint.</summary>
+    private readonly struct V3Language {
+      /// <summary>Initializes a new instance of <see cref="V3Language" />, used for JSON deserialization.</summary>
+      [JsonConstructor]
+      public V3Language(
+            string lang,
+            string name,
+            bool usableAsSource,
+            bool usableAsTarget,
+            Dictionary<string, JsonElement> features) {
+        Lang = lang;
+        Name = name;
+        UsableAsSource = usableAsSource;
+        UsableAsTarget = usableAsTarget;
+        Features = features;
+      }
+
+      /// <summary>The BCP-47 language code, for example "de" or "en-US".</summary>
+      public string Lang { get; }
+
+      /// <summary>The name of the language in English.</summary>
+      public string Name { get; }
+
+      /// <summary><c>true</c> if the language may be used as a source language for the requested resource.</summary>
+      public bool UsableAsSource { get; }
+
+      /// <summary><c>true</c> if the language may be used as a target language for the requested resource.</summary>
+      public bool UsableAsTarget { get; }
+
+      /// <summary>Map of feature name to feature metadata supported by this language for the requested resource.</summary>
+      public Dictionary<string, JsonElement> Features { get; }
+    }
 
     /// <inheritdoc />
     public async Task<WriteResult> RephraseTextAsync(

@@ -8,7 +8,7 @@ using DeepL.Model;
 
 namespace DeepL {
   /// <summary>
-  ///   Options to control text translation behaviour. These options may be provided to <see cref="Translator" /> text
+  ///   Options to control text translation behaviour. These options may be provided to <see cref="DeepLClient" /> text
   ///   translate functions.
   /// </summary>
   public sealed class TextTranslateOptions : BaseRequestOptions {

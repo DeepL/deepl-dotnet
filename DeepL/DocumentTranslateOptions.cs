@@ -9,7 +9,7 @@ using DeepL.Model;
 
 namespace DeepL {
   /// <summary>
-  ///   Options to control document translation behaviour. These options may be provided to <see cref="Translator" />
+  ///   Options to control document translation behaviour. These options may be provided to <see cref="DeepLClient" />
   ///   document translate functions.
   /// </summary>
   public sealed class DocumentTranslateOptions : BaseRequestOptions {
@@ -153,7 +153,7 @@ namespace DeepL {
 
     /// <summary>
     ///   Client-side limit for the wait between upload and download in
-    ///   <see cref="Translator.TranslateDocumentAsync(Stream, Stream, string?, string, DocumentTranslateOptions?, System.Threading.CancellationToken)" />
+    ///   <see cref="DeepLClient.TranslateDocumentAsync(Stream, Stream, string?, string, DocumentTranslateOptions?, System.Threading.CancellationToken)" />
     ///   and its overloads. If the document is not translated in time, a <see cref="DocumentTranslationException" />
     ///   is thrown, carrying the <see cref="DocumentHandle" /> so the translation can be resumed. If unset, the wait is
     ///   not limited. Not sent to the API.

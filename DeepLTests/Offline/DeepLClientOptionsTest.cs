@@ -11,11 +11,8 @@ using DeepL;
 using RichardSzalay.MockHttp;
 using Xunit;
 
-// Translator, TranslatorOptions and AuthKeyIsFreeAccount are deprecated; their existing tests stay until removal.
-#pragma warning disable CS0618
-
 namespace DeepLTests.Offline {
-  public sealed class TranslatorOptionsTest : OfflineTest {
+  public sealed class DeepLClientOptionsTest : OfflineTest {
     private const string UsageReply = "{\"character_count\":1,\"character_limit\":2}";
 
     private async Task<string> SendAndCaptureUserAgent(Action<DeepLClientOptions> configure) {
@@ -42,7 +39,7 @@ namespace DeepLTests.Offline {
     [Fact]
     public async Task SendsOnlyLibraryVersionInUserAgentWhenPlatformInfoIsOff() {
       var userAgent = await SendAndCaptureUserAgent(options => options.sendPlatformInfo = false);
-      Assert.Equal("deepl-dotnet/" + DeepL.Translator.Version(), userAgent);
+      Assert.Equal("deepl-dotnet/" + DeepLClient.Version(), userAgent);
     }
 
     [Theory]
@@ -148,9 +145,9 @@ namespace DeepLTests.Offline {
 
     [Fact]
     public void ThrowsArgumentExceptionWhenAuthKeyIsEmpty() {
-      Assert.Throws<ArgumentException>(() => new DeepL.Translator(""));
-      Assert.Throws<ArgumentException>(() => new DeepL.Translator("  "));
-      Assert.Throws<ArgumentNullException>(() => new DeepL.Translator(null!));
+      Assert.Throws<ArgumentException>(() => new DeepLClient(""));
+      Assert.Throws<ArgumentException>(() => new DeepLClient("  "));
+      Assert.Throws<ArgumentNullException>(() => new DeepLClient(null!));
     }
 
     [Fact]
@@ -164,19 +161,13 @@ namespace DeepLTests.Offline {
     [InlineData(false)]
     public void DisposesClientOfFactoryOnlyWhenAsked(bool disposeClient) {
       var client = new TrackingHttpClient(Http);
-      var translator = new DeepL.Translator(
+      var deepLClient = new DeepLClient(
             AuthKey,
-            new DeepL.TranslatorOptions {
+            new DeepLClientOptions {
               ClientFactory = () => new HttpClientAndDisposeFlag { DisposeClient = disposeClient, HttpClient = client }
             });
-      translator.Dispose();
+      deepLClient.Dispose();
       Assert.Equal(disposeClient, client.WasDisposed);
-    }
-
-    [Fact]
-    public void ReportsAuthKeyOfFreeAccount() {
-      Assert.True(DeepL.Translator.AuthKeyIsFreeAccount("ABCD:fx "));
-      Assert.False(DeepL.Translator.AuthKeyIsFreeAccount("ABCD "));
     }
 
     [Fact]
@@ -187,9 +178,9 @@ namespace DeepLTests.Offline {
 
     [Fact]
     public void ReportsVersions() {
-      Assert.Equal("1.23.0", DeepL.Translator.Version());
+      Assert.Equal("1.23.0", DeepLClient.Version());
       // The assembly version must remain unchanged for binary compatibility, except for the major version.
-      Assert.Equal("1.0.0.0", typeof(DeepL.Translator).Assembly.GetName().Version?.ToString());
+      Assert.Equal("1.0.0.0", typeof(DeepLClient).Assembly.GetName().Version?.ToString());
     }
 
     private sealed class TrackingHttpClient : System.Net.Http.HttpClient {
