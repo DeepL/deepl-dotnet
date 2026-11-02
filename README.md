@@ -1364,7 +1364,7 @@ of `GlossaryLanguagePair` objects. Use the `SourceLanguageCode` and
 var glossaryLanguages = await client.GetGlossaryLanguagesAsync();
 foreach (var languagePair in glossaryLanguages) {
   Console.WriteLine($"{languagePair.SourceLanguageCode} to {languagePair.TargetLanguageCode}");
-  // Example: "EN to DE", "DE to EN", etc.
+  // Example: "en to de", "de to en", etc.
 }
 ```
 
