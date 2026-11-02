@@ -2,7 +2,6 @@
 // Use of this source code is governed by an MIT
 // license that can be found in the LICENSE file.
 
-using System;
 using System.Text.Json.Serialization;
 
 namespace DeepL.Model {
@@ -28,8 +27,7 @@ namespace DeepL.Model {
             (sourceLanguageCode, targetLanguageCode, entries);
     }
 
-    [Obsolete("Internal type; will be made internal in the next major version.")]
-    public MultilingualGlossaryDictionaryEntries(MultilingualGlossaryDictionaryEntriesResult dictionaryEntriesResult) {
+    internal MultilingualGlossaryDictionaryEntries(MultilingualGlossaryDictionaryEntriesResult dictionaryEntriesResult) {
       (SourceLanguageCode, TargetLanguageCode, Entries) =
             (dictionaryEntriesResult.SourceLanguageCode, dictionaryEntriesResult.TargetLanguageCode,
                   GlossaryEntries.FromTsv(dictionaryEntriesResult.Entries, true));
@@ -61,8 +59,8 @@ namespace DeepL.Model {
   }
 
   /// <summary>Class used for JSON-deserialization of glossary dictionary entries results.</summary>
-  [Obsolete("Internal type; will be made internal in the next major version.")]
-  public readonly struct MultilingualGlossaryDictionaryEntriesResult {
+  /// <remarks>System.Text.Json 5 binds only public constructors and properties, so they are public on this internal type.</remarks>
+  internal readonly struct MultilingualGlossaryDictionaryEntriesResult {
     /// <summary>
     ///   Initializes a new instance of <see cref="MultilingualGlossaryDictionaryEntriesResult" />, used for JSON
     ///   deserialization.

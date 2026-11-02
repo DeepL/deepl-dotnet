@@ -467,10 +467,7 @@ namespace DeepL.Internal {
     /// <param name="downloadingDocument"><c>true</c> if document download function is used, otherwise <c>false</c>.</param>
     /// <exception cref="AuthorizationException">If authorization failed.</exception>
     /// <exception cref="QuotaExceededException">If the translation quota has been exceeded.</exception>
-    /// <exception cref="NotFoundException">
-    ///   If the specified resource was not found; on glossary endpoints the deprecated subclass
-    ///   <see cref="GlossaryNotFoundException" />.
-    /// </exception>
+    /// <exception cref="NotFoundException">If the specified resource was not found.</exception>
     /// <exception cref="TooManyRequestsException">If the DeepL servers are currently receiving too many requests.</exception>
     /// <exception cref="DocumentNotReadyException">If a document download returns HTTP 503.</exception>
     /// <exception cref="DeepLException">
@@ -520,11 +517,7 @@ namespace DeepL.Internal {
           var notFoundMessage = resourceType != null
                 ? $"{resourceType.Value.ToDisplayString()} not found" + message
                 : "Not found" + message;
-#pragma warning disable CS0618 // glossary endpoints keep throwing the deprecated subclass until the next major
-          return resourceType == ResourceType.Glossary
-                ? new GlossaryNotFoundException(notFoundMessage)
-                : new NotFoundException(notFoundMessage);
-#pragma warning restore CS0618
+          return new NotFoundException(notFoundMessage);
         case HttpStatusCode.BadRequest:
           return new DeepLException("Bad request" + message);
         case HttpStatusCodeTooManyRequests:
@@ -601,10 +594,8 @@ namespace DeepL.Internal {
         RequestUri = new Uri(_serverUrl, relativeUri),
         Method = HttpMethod.Post,
         Content = bodyParams != null
-#pragma warning disable CS0618 // internal use of a type obsolete only for library users
                   ? new LargeFormUrlEncodedContent(
                         bodyParams.Select(pair => new KeyValuePair<string, string>(pair.Key, pair.Value)))
-#pragma warning restore CS0618
                   : null
       };
       return await ApiCallAsync(requestMessage, cancellationToken);
@@ -654,10 +645,8 @@ namespace DeepL.Internal {
         RequestUri = new Uri(_serverUrl, relativeUri),
         Method = HttpMethod.Put,
         Content = bodyParams != null
-#pragma warning disable CS0618 // internal use of a type obsolete only for library users
                   ? new LargeFormUrlEncodedContent(
                         bodyParams.Select(pair => new KeyValuePair<string, string>(pair.Key, pair.Value)))
-#pragma warning restore CS0618
                   : null
       };
       return await ApiCallAsync(requestMessage, cancellationToken);
@@ -698,10 +687,8 @@ namespace DeepL.Internal {
         RequestUri = new Uri(_serverUrl, relativeUri),
         Method = new HttpMethod("PATCH"),
         Content = bodyParams != null
-#pragma warning disable CS0618 // internal use of a type obsolete only for library users
                   ? new LargeFormUrlEncodedContent(
                         bodyParams.Select(pair => new KeyValuePair<string, string>(pair.Key, pair.Value)))
-#pragma warning restore CS0618
                   : null
       };
       return await ApiCallAsync(requestMessage, cancellationToken);

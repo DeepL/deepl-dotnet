@@ -78,13 +78,11 @@ namespace DeepL {
     /// <exception cref="IOException">
     ///   If the input cannot be opened; it is opened before any request, and the exception of
     ///   <see cref="FileInfo.OpenRead" /> propagates: <see cref="FileNotFoundException" /> for a missing file,
-    ///   <see cref="DirectoryNotFoundException" /> for a missing directory. If the input is minified, a
-    ///   <see cref="DocumentMinificationException" /> wrapping it is thrown instead. Also if the output path is
-    ///   occupied; an existing output file is left unchanged.
+    ///   <see cref="DirectoryNotFoundException" /> for a missing directory. Also if the output path is occupied; an
+    ///   existing output file is left unchanged.
     /// </exception>
     /// <exception cref="UnauthorizedAccessException">
-    ///   If the input is a directory or cannot be read due to permissions; raised before any request, wrapped in a
-    ///   <see cref="DocumentMinificationException" /> if the input is minified.
+    ///   If the input is a directory or cannot be read due to permissions; raised before any request.
     /// </exception>
     /// <exception cref="DocumentTranslationException">
     ///   If cancellation was requested, or an error occurs while translating the document. If the document was uploaded
@@ -559,23 +557,12 @@ namespace DeepL {
           string targetLanguageCode,
           DocumentTranslateOptions? options = null,
           CancellationToken cancellationToken = default) {
-#pragma warning disable CS0618 // Document minification is obsolete but still supported until the next major
-      var willMinify = (options?.EnableDocumentMinification ?? false) &&
-                       DocumentMinifier.CanMinifyFile(inputFileInfo.Name);
-      var fileToUpload = inputFileInfo;
-      var minifier = new DocumentMinifier();
-#pragma warning restore CS0618
-      if (willMinify) {
-        minifier.MinifyDocument(inputFileInfo.FullName, true);
-        fileToUpload = new FileInfo(minifier.GetMinifiedDocFile(inputFileInfo.FullName));
-      }
-
-      using var inputFile = fileToUpload.OpenRead();
+      using var inputFile = inputFileInfo.OpenRead();
       using var outputFile = outputFileInfo.Open(FileMode.CreateNew, FileAccess.Write);
       try {
         await TranslateDocumentAsync(
               inputFile,
-              options?.Filename ?? fileToUpload.Name,
+              options?.Filename ?? inputFileInfo.Name,
               outputFile,
               sourceLanguageCode,
               targetLanguageCode,
@@ -589,12 +576,6 @@ namespace DeepL {
         }
 
         throw;
-      }
-
-      if (willMinify) {
-        outputFile.Dispose();
-        // Translated minified file is at `outputFileName`. Reinsert media (deminify) before returning
-        minifier.DeminifyDocument(outputFileInfo.FullName, outputFileInfo.FullName, true);
       }
     }
 

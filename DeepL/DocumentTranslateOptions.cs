@@ -132,10 +132,6 @@ namespace DeepL {
     /// <summary>Specifies the minimum similarity threshold for translation memory matches (0-100).</summary>
     public int? TranslationMemoryThreshold { get; set; }
 
-    /// <summary> Controls whether to use Document Minification for translation, if available.</summary>
-    [Obsolete("Document minification is deprecated and will be removed in the next major version. The DeepL API accepts larger documents; see the usage limits.")]
-    public bool EnableDocumentMinification { get; set; }
-
     /// <summary>
     ///   File extension of desired format of translated file, for example: docx. If unspecified, by default the
     ///   translated file will be in the same format as the input file.

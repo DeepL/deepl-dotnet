@@ -17,29 +17,6 @@ namespace DeepL.Model {
   ///   <a href="https://www.deepl.com/docs-api/">API documentation</a> for more information.
   /// </remarks>
   public sealed class Usage {
-    /// <summary>
-    ///   Initializes a new <see cref="Usage" /> object from the given fields object. Note that this constructor
-    ///   should ONLY be used externally in testing code, never in production code.
-    /// </summary>
-    /// <param name="fieldsStruct"><see cref="JsonFieldsStruct" /> object containing fields read from JSON data.</param>
-    public Usage(in JsonFieldsStruct fieldsStruct) : this(new ResponseFieldsStruct(
-          fieldsStruct.CharacterCount,
-          fieldsStruct.CharacterLimit,
-          fieldsStruct.DocumentCount,
-          fieldsStruct.DocumentLimit,
-          fieldsStruct.TeamDocumentCount,
-          fieldsStruct.TeamDocumentLimit,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null)) {
-    }
-
     /// <summary>Initializes a new <see cref="Usage" /> object from the full <c>GET /v2/usage</c> response.</summary>
     /// <param name="fieldsStruct"><see cref="ResponseFieldsStruct" /> object containing fields read from JSON data.</param>
     internal Usage(in ResponseFieldsStruct fieldsStruct) {
@@ -189,31 +166,6 @@ namespace DeepL.Model {
       /// </remarks>
       public override string ToString() =>
             $"{ProductType}: {ApiKeyUnitCount} {BillingUnit} (API key), {AccountUnitCount} {BillingUnit} (account)";
-    }
-
-    /// <summary>
-    ///   Internal struct used for JSON deserialization of <see cref="Usage" />. You should only need to
-    ///   instantiate this object in testing code.
-    /// </summary>
-    public readonly struct JsonFieldsStruct {
-      [JsonConstructor]
-      public JsonFieldsStruct(
-            long? characterCount,
-            long? characterLimit,
-            long? documentCount,
-            long? documentLimit,
-            long? teamDocumentCount,
-            long? teamDocumentLimit) {
-        (CharacterCount, CharacterLimit, DocumentCount, DocumentLimit, TeamDocumentCount, TeamDocumentLimit) =
-              (characterCount, characterLimit, documentCount, documentLimit, teamDocumentCount, teamDocumentLimit);
-      }
-
-      public long? CharacterCount { get; }
-      public long? CharacterLimit { get; }
-      public long? DocumentCount { get; }
-      public long? DocumentLimit { get; }
-      public long? TeamDocumentCount { get; }
-      public long? TeamDocumentLimit { get; }
     }
 
     /// <summary>

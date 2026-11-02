@@ -52,18 +52,6 @@ namespace DeepL {
     }
   }
 
-  /// <summary>
-  ///   Exception thrown when no glossary could be found with the specified ID. Deprecated: catch
-  ///   <see cref="NotFoundException" />, which glossary endpoints will throw from the next major version on.
-  /// </summary>
-  [Obsolete("Catch NotFoundException instead. Glossary endpoints will throw NotFoundException in the next major version.")]
-  public sealed class GlossaryNotFoundException : NotFoundException {
-    /// <summary>Initializes a new instance of the <see cref="GlossaryNotFoundException" /> class.</summary>
-    /// <param name="message">The message that describes the error.</param>
-    public GlossaryNotFoundException(string message) : base(message) {
-    }
-  }
-
   /// <summary>Exception thrown when the DeepL translation quota has been reached.</summary>
   public sealed class QuotaExceededException : DeepLException {
     /// <summary>Initializes a new instance of the <see cref="QuotaExceededException" /> class.</summary>
@@ -126,33 +114,5 @@ namespace DeepL {
     /// <summary>Handle to the in-progress document translation, or null if an error occurred before uploading the document.</summary>
     /// The handle can be used to later retrieve the document or to contact DeepL support.
     public DocumentHandle? DocumentHandle { get; }
-  }
-
-  /// <summary>
-  ///   Exception thrown if an error occurs during the minification phase of document minification.
-  ///   See <see cref="DocumentMinifier.MinifyDocument"/>
-  /// </summary>
-  [Obsolete("Document minification is deprecated and will be removed in the next major version. The DeepL API accepts larger documents; see the usage limits.")]
-  public sealed class DocumentMinificationException : DeepLException {
-    /// <summary>Initializes a new instance of the <see cref="DocumentMinificationException" /> class.</summary>
-    /// <param name="message">The message that describes the error.</param>
-    /// <param name="innerException">The exception representing the connection error.</param>
-    public DocumentMinificationException(string message, Exception innerException) :
-          base(message, innerException) {
-    }
-  }
-
-  /// <summary>
-  ///   Exception thrown if an error occurs during the minification phase of document deminification.
-  ///   See <see cref="DocumentMinifier.DeminifyDocument"/>
-  /// </summary>
-  [Obsolete("Document minification is deprecated and will be removed in the next major version. The DeepL API accepts larger documents; see the usage limits.")]
-  public sealed class DocumentDeminificationException : DeepLException {
-    /// <summary>Initializes a new instance of the <see cref="DocumentDeminificationException" /> class.</summary>
-    /// <param name="message">The message that describes the error.</param>
-    /// <param name="innerException">The exception representing the connection error.</param>
-    public DocumentDeminificationException(string message, Exception innerException) :
-          base(message, innerException) {
-    }
   }
 }

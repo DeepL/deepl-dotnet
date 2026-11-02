@@ -68,8 +68,7 @@ To translate text, call `TranslateTextAsync()`. The first argument is a string c
 The second and third arguments are case-insensitive language codes for the source and target language respectively,
 for example `"DE"`, `"FR"`.
 Language codes are plain strings; use the languages API (`GetSourceLanguagesAsync()` and
-`GetTargetLanguagesAsync()`) to retrieve the currently supported languages. The constants in the `LanguageCode` static
-class are deprecated and will be removed in the next major version.
+`GetTargetLanguagesAsync()`) to retrieve the currently supported languages.
 A target language without a regional variant translates to its default variant, for example `"EN"` to `"EN-US"` and
 `"PT"` to `"PT-PT"`; specify the variant, for example `"EN-GB"` or `"PT-BR"`, to choose explicitly.
 To auto-detect the input text language, specify `null` as the source language.
@@ -309,8 +308,7 @@ Note that file paths are not accepted as strings, to avoid mixing up the file an
 The input file is opened before any request is sent, and the exceptions of `FileInfo.OpenRead()`
 propagate: a missing file throws a `FileNotFoundException`, a missing directory a
 `DirectoryNotFoundException`, a directory as input or a file without permission an
-`UnauthorizedAccessException`. With `EnableDocumentMinification`, these are wrapped in a
-`DocumentMinificationException`. Output file errors throw the exception of the file operation: an
+`UnauthorizedAccessException`. Output file errors throw the exception of the file operation: an
 existing output file an `IOException`, a missing output directory a `DirectoryNotFoundException`, an
 output path without permission an `UnauthorizedAccessException`. An existing output file is never overwritten or deleted. Errors while
 translating throw a `DocumentTranslationException`; its `HttpStatusCode` and `ShouldRetry` are copied
@@ -400,13 +398,6 @@ unknown status keeps polling, pass a `TimeSpan` timeout to `TranslateDocumentWai
 - `Timeout`: a `TimeSpan?` limiting how long `TranslateDocumentAsync()` waits for the translation between upload and
   download. When it expires, a `DocumentTranslationException` is thrown whose `DocumentHandle` can be used to resume.
   If unset (the default), the wait is not limited. It is not sent to the API.
-- `EnableDocumentMinification` (obsolete): A `bool` value. If set to `true`, the library will try to minify a document
-  before translating it through the API, sending a smaller document if the file contains a lot of media. This is
-  currently only supported for `pptx` and `docx` files. See also [Document minification](#document-minification).
-  Note that this only works in the high-level `TranslateDocumentDownloadAsync` method, not
-  `TranslateDocumentUploadAsync`. However, the behavior can be emulated by creating a new `DocumentMinifier`
-  object and calling the minifier's methods in between. This option and `DocumentMinifier` are obsolete and will
-  be removed in the next major version.
 - `OutputFormat`: using the parameter during document upload, you can select alternative output formats. See
   the [API documentation][api-docs-outputformat-param] for more information and example usage.
 - `EnableWatermark`: A `bool?` value. If set to `true`, the API adds a "Translated by DeepL" watermark to the
@@ -415,64 +406,6 @@ unknown status keeps polling, pass a `TimeSpan` timeout to `TranslateDocumentWai
 - `ExtraBodyParameters`: `Dictionary<string, string>` of extra parameters to pass in the body of the HTTP request. Keys
   in this dictionary will be added to the request body and can override built-in parameters. Mostly used by DeepL
   employees to test functionality, or for beta programs.
-
-#### Document minification
-
-> **Obsolete:** The `EnableDocumentMinification` option, `DocumentMinifier`, `IDocumentMinifier`,
-> `DocumentMinificationException` and `DocumentDeminificationException` are marked `[Obsolete]` and will be removed
-> in the next major version. Using them produces compiler warning CS0618; they keep working until then.
-
-In some contexts, one can end up with large document files (e.g. PowerPoint presentations
-or Word files with many contributors, especially in a larger organization). The DeepL API
-limits the size of uploaded documents; see the [usage limits][api-docs-usage-limits] for the current limits.
-In the case that most of this size comes from media included in the documents (e.g. images,
-videos, animations), document minification can help.
-In this case, the library will create a temporary directory to extract the document into,
-replace the large media with tiny placeholders, create a minified document, translate that
-via the API, and re-insert the original media into the original file. Please note that this
-requires a bit of additional (temporary) disk space, we recommend at least 2x the file size
-of the document to be translated.
-To use document minification, simply pass the option to the `TranslateDocumentAsync` function:
-
-```c#
-await client.TranslateDocumentAsync(
-    inFile, outFile, "EN", "DE", new DocumentTranslateOptions { EnableDocumentMinification = true }
-);
-```
-
-In order to use document minification with the lower-level `TranslateDocumentUploadAsync`,
-`TranslateDocumentWaitUntilDoneAsync` and `TranslateDocumentDownloadAsync` methods as well as other details,
-see the `DocumentMinifier` class.
-Currently supported document types for minification:
-
-1. `pptx`
-2. `docx`
-   Currently supported media types for minification:
-1. `png`
-2. `jpg`
-3. `jpeg`
-4. `emf`
-5. `bmp`
-6. `tiff`
-7. `wdp`
-8. `svg`
-9. `gif`
-10. `mp4`
-11. `asf`
-12. `avi`
-13. `m4v`
-14. `mpg`
-15. `mpeg`
-16. `wmv`
-17. `mov`
-18. `aiff`
-19. `au`
-20. `mid`
-21. `midi`
-22. `mp3`
-23. `m4a`
-24. `wav`
-25. `wma`
 
 ### Glossaries
 
@@ -1541,7 +1474,7 @@ invalid arguments are provided, they may raise the standard exceptions
 | Exception | Raised when |
 |---|---|
 | `AuthorizationException` | HTTP 401 or 403: the key is invalid or not authorized |
-| `NotFoundException` | HTTP 404 (on glossary endpoints the deprecated subclass `GlossaryNotFoundException`; catch `NotFoundException`) |
+| `NotFoundException` | HTTP 404 |
 | `TooManyRequestsException` | HTTP 429 after all retries |
 | `QuotaExceededException` | HTTP 456: the quota is exceeded |
 | `DocumentNotReadyException` | HTTP 503 while downloading a document |
@@ -1709,7 +1642,6 @@ API usage.
 
 [api-docs-outputformat-param]: https://www.deepl.com/docs-api/documents/format-conversions/?utm_source=github&utm_medium=github-dotnet-readme
 
-[api-docs-usage-limits]: https://developers.deepl.com/docs/resources/usage-limits
 
 [api-docs-xml-handling]: https://www.deepl.com/docs-api/handling-xml/?utm_source=github&utm_medium=github-dotnet-readme
 

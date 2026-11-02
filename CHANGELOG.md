@@ -5,6 +5,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed
+- Glossary endpoints (v2 and v3 multilingual) now throw `NotFoundException` on HTTP 404, like every other endpoint;
+  they threw its subclass `GlossaryNotFoundException` before. Code catching `NotFoundException` is unaffected.
+- `DeepL.Internal.LargeFormUrlEncodedContent`, `MultilingualGlossaryDictionaryEntriesResult` and the
+  `MultilingualGlossaryDictionaryEntries` constructor taking a `MultilingualGlossaryDictionaryEntriesResult` are now
+  internal. Construct `MultilingualGlossaryDictionaryEntries` from the language codes and a `GlossaryEntries`
+  object instead.
+
+### Removed
+- Removed `GlossaryNotFoundException`; catch `NotFoundException` instead.
+- Removed document minification: `DocumentTranslateOptions.EnableDocumentMinification`, `DocumentMinifier`,
+  `IDocumentMinifier`, `DocumentMinificationException` and `DocumentDeminificationException`. Translate the document
+  as is; the DeepL API accepts larger documents than when minification was added. A missing or unreadable input
+  file of `TranslateDocumentAsync()` now always throws the exception of `FileInfo.OpenRead()`, never a
+  `DocumentMinificationException`.
+- Removed the language code constants of the `LanguageCode` class (for example `LanguageCode.German`). Pass the
+  language code as a string, for example `"de"`, and use `GetSourceLanguagesAsync()` and `GetTargetLanguagesAsync()`
+  to retrieve the supported languages. `LanguageCode.RemoveRegionalVariant()` remains.
+- Removed `Usage.JsonFieldsStruct` and the `Usage(in Usage.JsonFieldsStruct)` constructor; `GetUsageAsync()` does not
+  use them, and `Usage` no longer has a public constructor. Obtain `Usage` from `GetUsageAsync()`.
 
 ## [1.23.0] - 2026-11-02
 TL;DR: new APIs in this release: the Admin API, spoken terms, style profiles and text correction.

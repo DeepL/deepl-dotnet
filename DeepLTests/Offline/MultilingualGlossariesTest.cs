@@ -258,9 +258,8 @@ namespace DeepLTests.Offline {
       await client.CreateMultilingualGlossaryFromCsvAsync("n", "en", "de", CsvStream(), options);
     }
 
-#pragma warning disable CS0618 // glossary endpoints still throw the deprecated GlossaryNotFoundException
     [Fact]
-    public async Task ThrowsGlossaryNotFoundExceptionWhenCreateReturns404() {
+    public async Task ThrowsNotFoundExceptionWhenCreateReturns404() {
       ExpectForm(
                   HttpMethod.Post,
                   "v3/glossaries",
@@ -280,14 +279,13 @@ namespace DeepLTests.Offline {
                   ("dictionaries[0].entries_format", "csv"))
             .RespondJson("{}", HttpStatusCode.NotFound);
       var client = CreateClient();
-      await Assert.ThrowsAsync<GlossaryNotFoundException>(
+      await Assert.ThrowsAsync<NotFoundException>(
             () => client.CreateMultilingualGlossaryAsync(
                   "n",
                   new[] { new MultilingualGlossaryDictionaryEntries("en", "de", Apple) }));
-      await Assert.ThrowsAsync<GlossaryNotFoundException>(
+      await Assert.ThrowsAsync<NotFoundException>(
             () => client.CreateMultilingualGlossaryFromCsvAsync("n", "en", "de", CsvStream()));
     }
-#pragma warning restore CS0618
 
     [Fact]
     public async Task SendsOnlySetFieldsAsJsonWhenUpdating() {
@@ -393,13 +391,11 @@ namespace DeepLTests.Offline {
             () => CreateClient().GetMultilingualGlossaryDictionaryEntriesAsync("g1", "en", "de"));
     }
 
-#pragma warning disable CS0618 // glossary endpoints still throw the deprecated GlossaryNotFoundException
     [Fact]
-    public async Task ThrowsGlossaryNotFoundExceptionWhenStatusIs404() {
+    public async Task ThrowsNotFoundExceptionWhenStatusIs404() {
       ExpectNoBody(HttpMethod.Get, "v3/glossaries/x").RespondJson("{}", HttpStatusCode.NotFound);
-      await Assert.ThrowsAsync<GlossaryNotFoundException>(() => CreateClient().GetMultilingualGlossaryAsync("x"));
+      await Assert.ThrowsAsync<NotFoundException>(() => CreateClient().GetMultilingualGlossaryAsync("x"));
     }
-#pragma warning restore CS0618
 
     [Fact]
     public async Task ThrowsArgumentExceptionWhenArgumentsAreEmpty() {
