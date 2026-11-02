@@ -23,7 +23,9 @@ With a DeepL API Free account you can consume up to 500,000 characters/month for
 ## Installation
 
 The library is supported on .NET 8 and later, and on .NET Framework 4.6.2 and later through its netstandard2.0
-build. It is tested on .NET 8 and .NET 10.
+build. It is tested on .NET 8 and .NET 10. Applications targeting .NET Core 3.1 or .NET 5 to 7 get a build warning
+that the `System.Text.Json` or `Microsoft.Extensions.Http` dependency does not support their target framework; these
+runtimes are not supported. The `SuppressTfmSupportBuildWarnings` MSBuild property silences the warning.
 
 Using the .NET command-line interface (CLI) tools:
 

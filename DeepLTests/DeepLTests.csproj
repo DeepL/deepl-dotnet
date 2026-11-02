@@ -1,15 +1,24 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net10.0;net462</TargetFrameworks>
+    <!-- net7.0 picks the library's netstandard2.0 build, so that build runs the tests too. -->
+    <TargetFrameworks>net7.0;net8.0;net10.0;net462</TargetFrameworks>
     <!-- The .NET 8 SDK cannot target net10.0; it builds and runs the other targets. -->
-    <TargetFrameworks Condition="$([MSBuild]::VersionLessThan('$(NETCoreSdkVersion)', '10.0'))">net8.0;net462</TargetFrameworks>
+    <TargetFrameworks Condition="$([MSBuild]::VersionLessThan('$(NETCoreSdkVersion)', '10.0'))">net7.0;net8.0;net462</TargetFrameworks>
     <LangVersion>8</LangVersion>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>../DeepL/sgKey.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+
+  <!-- .NET 7 is out of support and CI images have no .NET 7 runtime: run the net7.0 target on a newer
+       runtime, and silence the end-of-life and dependency TFM-support warnings it triggers. -->
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net7.0'">
+    <RollForward>Major</RollForward>
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
+    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
   </PropertyGroup>
 
   <ItemGroup>

@@ -16,8 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The `Microsoft.Extensions.Http.Polly` dependency is now `8.0.33` (still Polly 7). Retry and timeout behaviour
   are unchanged. Applications that pin `Microsoft.Extensions.Http` or `Microsoft.Extensions.Http.Polly` below 8.0
   must raise them.
-- The library is now tested on .NET 8 and .NET 10, instead of .NET 5 and .NET Core 3.1. .NET Core 3.1 and .NET 5
-  to 7 can still install the package but are no longer tested.
+- The library is now tested on .NET 8 and .NET 10, instead of .NET 5 and .NET Core 3.1; the `netstandard2.0` build
+  is tested on the .NET 8 runtime. .NET Core 3.1 and .NET 5 to 7 are not supported: the `System.Text.Json` 10 and
+  `Microsoft.Extensions.Http` 8 dependencies do not support them, and applications targeting them get a build
+  warning that the package "doesn't support" their target framework (an error with `TreatWarningsAsErrors`). Set
+  the `SuppressTfmSupportBuildWarnings` MSBuild property to `true` to silence it, at your own risk.
 - Glossary endpoints (v2 and v3 multilingual) now throw `NotFoundException` on HTTP 404, like every other endpoint;
   they threw its subclass `GlossaryNotFoundException` before. Code catching `NotFoundException` is unaffected.
 - `DeepL.Internal.LargeFormUrlEncodedContent`, `MultilingualGlossaryDictionaryEntriesResult` and the

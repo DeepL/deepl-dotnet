@@ -127,6 +127,12 @@ package:
     - build
   parallel:
     matrix:
+      # net7.0 runs the library's netstandard2.0 build, rolled forward to the .NET 8 runtime.
+      - DOCKER_IMAGE: "mcr.microsoft.com/dotnet/sdk:8.0-alpine"
+        FRAMEWORK: "net7.0"
+        CONFIGURATION:
+          - Debug
+          - Release
       - DOCKER_IMAGE: "mcr.microsoft.com/dotnet/sdk:8.0-alpine"
         FRAMEWORK: "net8.0"
         CONFIGURATION:
