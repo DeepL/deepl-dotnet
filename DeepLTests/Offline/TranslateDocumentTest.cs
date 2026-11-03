@@ -497,6 +497,17 @@ namespace DeepLTests.Offline {
                       "DE"));
 
     [Fact]
+    public async Task UploadsInputFileCreatedAfterItsFileInfoWasRead() {
+      var path = Path.Combine(Fixtures.TempDir(), "a.txt");
+      var inputFileInfo = new FileInfo(path);
+      Assert.False(inputFileInfo.Exists);
+      File.WriteAllText(path, "hello");
+      ExpectMultipart("v2/document", ("target_lang", null, "de"), ("file", "a.txt", "hello")).RespondJson(HandleReply);
+      var handle = await CreateClient().TranslateDocumentUploadAsync(inputFileInfo, null, "DE");
+      Assert.Equal("d1", handle.DocumentId);
+    }
+
+    [Fact]
     public async Task ThrowsArgumentExceptionBeforeAnyRequestWhenInputIsDirectory() {
       var directory = Fixtures.TempDir();
       var output = Path.Combine(directory, "out.txt");

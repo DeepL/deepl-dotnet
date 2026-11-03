@@ -219,6 +219,8 @@ namespace DeepL {
 
     /// <summary>Throws <see cref="ArgumentException" /> if the document input file does not exist or is not a file.</summary>
     private static void CheckDocumentInputFile(FileInfo inputFileInfo) {
+      // FileInfo caches Exists from its first read; the caller may have read it before creating the file.
+      inputFileInfo.Refresh();
       if (!inputFileInfo.Exists) {
         throw new ArgumentException($"File does not exist: {inputFileInfo.FullName}", nameof(inputFileInfo));
       }
