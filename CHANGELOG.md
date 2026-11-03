@@ -61,7 +61,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`["outline_detection"] = false`) or use the matching option. Collection initializers with string values compile
   unchanged; variables or helpers declared as `Dictionary<string, string>` must be declared as
   `Dictionary<string, object?>`.
-
 - `TranslateDocumentAsync()` (all overloads) now returns `Task<DocumentStatus>`, the final status of the
   translation (for example with `BilledCharacters`). Code that awaits it without using a result compiles unchanged;
   classes implementing `IDocumentTranslator` must change the return type.
