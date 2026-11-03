@@ -20,9 +20,6 @@ namespace DeepL.Model {
     /// <summary>The job finished successfully.</summary>
     Completed,
 
-    /// <summary>The exported file has already been downloaded.</summary>
-    Downloaded,
-
     /// <summary>An error occurred while processing the job.</summary>
     Failed,
 
@@ -54,7 +51,6 @@ namespace DeepL.Model {
             "awaiting_input" => TranslationMemoryJobStatus.AwaitingInput,
             "processing" => TranslationMemoryJobStatus.Processing,
             "completed" => TranslationMemoryJobStatus.Completed,
-            "downloaded" => TranslationMemoryJobStatus.Downloaded,
             "failed" => TranslationMemoryJobStatus.Failed,
             "expired" => TranslationMemoryJobStatus.Expired,
             _ => TranslationMemoryJobStatus.Unknown
@@ -66,7 +62,6 @@ namespace DeepL.Model {
             TranslationMemoryJobStatus.AwaitingInput => "awaiting_input",
             TranslationMemoryJobStatus.Processing => "processing",
             TranslationMemoryJobStatus.Completed => "completed",
-            TranslationMemoryJobStatus.Downloaded => "downloaded",
             TranslationMemoryJobStatus.Failed => "failed",
             TranslationMemoryJobStatus.Expired => "expired",
             _ => ""
@@ -81,7 +76,6 @@ namespace DeepL.Model {
                   TranslationMemoryJobStatus.AwaitingInput => "awaiting_input",
                   TranslationMemoryJobStatus.Processing => "processing",
                   TranslationMemoryJobStatus.Completed => "completed",
-                  TranslationMemoryJobStatus.Downloaded => "downloaded",
                   TranslationMemoryJobStatus.Failed => "failed",
                   TranslationMemoryJobStatus.Expired => "expired",
                   // The raw value of an unknown status is kept in TranslationMemoryJobResult.StatusValue.
@@ -162,12 +156,11 @@ namespace DeepL.Model {
     /// <summary>Number of segments an import skipped.</summary>
     public int? SkippedSegmentCount { get; }
 
-    /// <summary><c>true</c> if the job has finished, successfully or not, otherwise <c>false</c>.</summary>
-    public bool Done =>
-          Status == TranslationMemoryJobStatus.Completed ||
-          Status == TranslationMemoryJobStatus.Downloaded ||
-          Status == TranslationMemoryJobStatus.Failed ||
-          Status == TranslationMemoryJobStatus.Expired;
+    /// <summary>
+    ///   <c>true</c> if the job has completed successfully (<see cref="TranslationMemoryJobStatus.Completed" />),
+    ///   otherwise <c>false</c>. A failed or expired job is not done; see <see cref="Ok" />.
+    /// </summary>
+    public bool Done => Status == TranslationMemoryJobStatus.Completed;
 
     /// <summary><c>true</c> if no error has occurred during the job, otherwise <c>false</c>.</summary>
     public bool Ok =>
@@ -250,7 +243,10 @@ namespace DeepL.Model {
     /// </summary>
     public string? StatusValue => Result?.StatusValue;
 
-    /// <summary><c>true</c> if the job has finished, successfully or not, otherwise <c>false</c>.</summary>
+    /// <summary>
+    ///   <c>true</c> if the job has completed successfully (<see cref="TranslationMemoryJobStatus.Completed" />),
+    ///   otherwise <c>false</c>. A failed or expired job is not done; see <see cref="Ok" />.
+    /// </summary>
     public bool Done => Result?.Done ?? false;
 
     /// <summary><c>true</c> if no error has occurred during the job, otherwise <c>false</c>.</summary>

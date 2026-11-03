@@ -62,6 +62,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   unchanged; variables or helpers declared as `Dictionary<string, string>` must be declared as
   `Dictionary<string, object?>`.
 
+- `TranslateDocumentAsync()` (all overloads) now returns `Task<DocumentStatus>`, the final status of the
+  translation (for example with `BilledCharacters`). Code that awaits it without using a result compiles unchanged;
+  classes implementing `IDocumentTranslator` must change the return type.
+- `TranslateDocumentWaitUntilDoneAsync()` (both overloads) now returns `Task<DocumentStatus>`, the final status with
+  status done, instead of discarding it. Classes implementing `IDocumentTranslator` must change the return type.
+- `TranslateDocumentAsync()` no longer wraps a cancellation requested through its `CancellationToken` in a
+  `DocumentTranslationException`: the `OperationCanceledException` (usually a `TaskCanceledException`) propagates
+  as is, as in the step methods. Code catching `DocumentTranslationException` to detect cancellation must catch
+  `OperationCanceledException` instead. Timeouts and other failures are still wrapped.
+- `TranslateDocumentAsync(FileInfo, ...)` and `TranslateDocumentUploadAsync(FileInfo, ...)` now throw an
+  `ArgumentException` before any request when the input file does not exist or is a directory, instead of a
+  `FileNotFoundException`, `DirectoryNotFoundException` or `UnauthorizedAccessException`. Other local file failures of
+  `TranslateDocumentAsync(FileInfo, ...)` (the input cannot be read, the output file already exists or cannot be
+  created) now throw a `DocumentTranslationException` with the `IOException` or `UnauthorizedAccessException` as
+  `InnerException`, still before any request; an existing output file is still left unchanged. Catch
+  `ArgumentException` and `DocumentTranslationException` instead of the I/O exceptions.
+- `TranslationMemoryJob.Done` and `TranslationMemoryJobResult.Done` are now `true` only for
+  `TranslationMemoryJobStatus.Completed`; a failed or expired job is no longer done (check `Ok` for those). Code that
+  used `Done` to mean "finished, successfully or not" must check `Done || !Ok`.
+  `WaitUntilTranslationMemoryJobDoneAsync()` still returns a completed job and throws a `DeepLException` for a failed or expired one.
+- `ImportTranslationMemoryFromFilepathAsync()` and `ExportTranslationMemoryToFilepathAsync()` now wrap local file
+  failures in a `DeepLException`, with the original `IOException` or `UnauthorizedAccessException` as
+  `InnerException`: an input file that cannot be read, an output file that already exists or cannot be created, and
+  errors writing the output. The checks still run before any job is created, and a missing input file still throws
+  an `ArgumentException`. Catch `DeepLException` instead of the I/O exceptions.
+
 ### Removed
 - Removed the `ConfiguredRules` class and the `DeepLClient.CreateStyleRuleAsync()` and
   `UpdateStyleRuleConfiguredRulesAsync()` overloads taking it. Pass the configured rules as a
@@ -76,11 +102,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed `Translator.AuthKeyIsFreeAccount()`; use `DeepLClient.IsFreeAccountAuthKey()` instead.
 - Removed `TranslateDocumentStatusAsync()`; use `TranslateDocumentGetStatusAsync()` instead.
 - Removed `GlossaryNotFoundException`; catch `NotFoundException` instead.
+- Removed `TranslationMemoryJobStatus.Downloaded`; the DeepL API does not define that status. A `"downloaded"` status
+  is now `TranslationMemoryJobStatus.Unknown`, with `"downloaded"` in `StatusValue`, and
+  `WaitUntilTranslationMemoryJobDoneAsync()` keeps polling on it instead of returning. Compare `StatusValue` with
+  `"downloaded"` where you compared `Status` with `TranslationMemoryJobStatus.Downloaded`.
 - Removed document minification: `DocumentTranslateOptions.EnableDocumentMinification`, `DocumentMinifier`,
   `IDocumentMinifier`, `DocumentMinificationException` and `DocumentDeminificationException`. Translate the document
   as is; the DeepL API accepts larger documents than when minification was added. A missing or unreadable input
-  file of `TranslateDocumentAsync()` now always throws the exception of `FileInfo.OpenRead()`, never a
-  `DocumentMinificationException`.
+  file of `TranslateDocumentAsync()` no longer throws a `DocumentMinificationException`; see Changed for the
+  exceptions it throws now.
 - Removed the language code constants of the `LanguageCode` class (for example `LanguageCode.German`). Pass the
   language code as a string, for example `"de"`, and use `GetSourceLanguagesAsync()` and `GetTargetLanguagesAsync()`
   to retrieve the supported languages. `LanguageCode.RemoveRegionalVariant()` remains.

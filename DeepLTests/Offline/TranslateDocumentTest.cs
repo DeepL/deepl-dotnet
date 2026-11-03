@@ -344,8 +344,10 @@ namespace DeepLTests.Offline {
       ExpectForm(HttpMethod.Post, "v2/document/d1", ("document_key", "k1"))
             .RespondJson("{\"document_id\":\"d1\",\"status\":\"queued\"}");
       ExpectForm(HttpMethod.Post, "v2/document/d1", ("document_key", "k1"))
-            .RespondJson("{\"document_id\":\"d1\",\"status\":\"done\"}");
-      await CreateClient().TranslateDocumentWaitUntilDoneAsync(Handle);
+            .RespondJson("{\"document_id\":\"d1\",\"status\":\"done\",\"billed_characters\":5}");
+      var status = await CreateClient().TranslateDocumentWaitUntilDoneAsync(Handle);
+      Assert.True(status.Done);
+      Assert.Equal(5, status.BilledCharacters);
     }
 
     [Fact]
@@ -462,20 +464,22 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
-    public async Task ThrowsIOExceptionAndKeepsFileWhenTranslatingToExistingFile() {
+    public async Task WrapsIOExceptionAndKeepsFileWhenTranslatingToExistingFile() {
       var input = Fixtures.CreateTextDocument();
       var output = Path.Combine(Fixtures.TempDir(), "out.txt");
       File.WriteAllText(output, "keep");
-      await Assert.ThrowsAsync<IOException>(
+      var exception = await Assert.ThrowsAsync<DocumentTranslationException>(
             () => CreateClient().TranslateDocumentAsync(new FileInfo(input), new FileInfo(output), null, "DE"));
+      Assert.IsAssignableFrom<IOException>(exception.InnerException);
+      Assert.Null(exception.DocumentHandle);
       Assert.Equal("keep", File.ReadAllText(output));
     }
 
     [Fact]
-    public async Task ThrowsFileNotFoundExceptionBeforeAnyRequestWhenInputFileIsMissing() {
+    public async Task ThrowsArgumentExceptionBeforeAnyRequestWhenInputFileIsMissing() {
       var directory = Fixtures.TempDir();
       var output = Path.Combine(directory, "out.txt");
-      await Assert.ThrowsAsync<FileNotFoundException>(
+      await Assert.ThrowsAsync<ArgumentException>(
             () => CreateClient().TranslateDocumentAsync(
                   new FileInfo(Path.Combine(directory, "missing.txt")),
                   new FileInfo(output),
@@ -485,18 +489,18 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
-    public async Task ThrowsFileNotFoundExceptionBeforeAnyRequestWhenUploadInputFileIsMissing() =>
-          await Assert.ThrowsAsync<FileNotFoundException>(
+    public async Task ThrowsArgumentExceptionBeforeAnyRequestWhenUploadInputFileIsMissing() =>
+          await Assert.ThrowsAsync<ArgumentException>(
                 () => CreateClient().TranslateDocumentUploadAsync(
                       new FileInfo(Path.Combine(Fixtures.TempDir(), "missing.txt")),
                       null,
                       "DE"));
 
     [Fact]
-    public async Task ThrowsUnauthorizedAccessExceptionBeforeAnyRequestWhenInputIsDirectory() {
+    public async Task ThrowsArgumentExceptionBeforeAnyRequestWhenInputIsDirectory() {
       var directory = Fixtures.TempDir();
       var output = Path.Combine(directory, "out.txt");
-      await Assert.ThrowsAsync<UnauthorizedAccessException>(
+      await Assert.ThrowsAsync<ArgumentException>(
             () => CreateClient().TranslateDocumentAsync(
                   new FileInfo(directory),
                   new FileInfo(output),
@@ -506,8 +510,8 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
-    public async Task ThrowsUnauthorizedAccessExceptionBeforeAnyRequestWhenUploadInputIsDirectory() =>
-          await Assert.ThrowsAsync<UnauthorizedAccessException>(
+    public async Task ThrowsArgumentExceptionBeforeAnyRequestWhenUploadInputIsDirectory() =>
+          await Assert.ThrowsAsync<ArgumentException>(
                 () => CreateClient().TranslateDocumentUploadAsync(new FileInfo(Fixtures.TempDir()), null, "DE"));
 
     [Fact]
@@ -562,7 +566,7 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
-    public async Task WrapsCancellationInDocumentTranslationException() {
+    public async Task DoesNotWrapCancellationByCaller() {
       using var cancellation = new CancellationTokenSource();
       Expect(HttpMethod.Post, "v2/document")
             .Respond(
@@ -571,10 +575,9 @@ namespace DeepLTests.Offline {
                     throw new OperationCanceledException(cancellation.Token);
                   });
       using var output = new MemoryStream();
-      var exception = await Assert.ThrowsAsync<DocumentTranslationException>(
+      await Assert.ThrowsAnyAsync<OperationCanceledException>(
             () => CreateClient()
                   .TranslateDocumentAsync(Text("hello"), "a.txt", output, "EN", "DE", null, cancellation.Token));
-      Assert.IsAssignableFrom<OperationCanceledException>(exception.InnerException);
     }
 
     [Fact]
@@ -585,8 +588,10 @@ namespace DeepLTests.Offline {
             .RespondJson("{\"document_id\":\"d1\",\"status\":\"done\",\"billed_characters\":5}");
       ExpectForm(HttpMethod.Post, "v2/document/d1/result", ("document_key", "k1")).Respond("text/plain", "hallo");
       using var output = new MemoryStream();
-      await CreateClient().TranslateDocumentAsync(Text("hello"), "a.txt", output, "EN", "DE");
+      var status = await CreateClient().TranslateDocumentAsync(Text("hello"), "a.txt", output, "EN", "DE");
       Assert.Equal("hallo", Encoding.UTF8.GetString(output.ToArray()));
+      Assert.True(status.Done);
+      Assert.Equal(5, status.BilledCharacters);
     }
 
     [Fact]

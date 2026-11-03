@@ -20,23 +20,22 @@ namespace DeepL {
     /// <param name="targetLanguageCode">Language code of the desired output language.</param>
     /// <param name="options"><see cref="DocumentTranslateOptions" /> influencing translation.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
-    /// <exception cref="IOException">
-    ///   If the input cannot be opened; it is opened before any request, and the exception of
-    ///   <see cref="FileInfo.OpenRead" /> propagates: <see cref="FileNotFoundException" /> for a missing file,
-    ///   <see cref="DirectoryNotFoundException" /> for a missing directory. Also if the output path is occupied; an
-    ///   existing output file is left unchanged.
+    /// <returns>The final <see cref="DocumentStatus" /> of the translation, with status done.</returns>
+    /// <exception cref="ArgumentException">
+    ///   If the input file does not exist or is not a file; raised before any request.
     /// </exception>
-    /// <exception cref="UnauthorizedAccessException">
-    ///   If the input is a directory or cannot be read due to permissions; raised before any request.
+    /// <exception cref="OperationCanceledException">
+    ///   If cancellation was requested through <paramref name="cancellationToken" />; it is not wrapped.
     /// </exception>
     /// <exception cref="DocumentTranslationException">
-    ///   If cancellation was requested, or an error occurs while translating the document. If the document was uploaded
-    ///   successfully, then the <see cref="DocumentTranslationException.DocumentHandle" /> contains the document ID and
-    ///   key that may be used to retrieve the document.
-    ///   If cancellation was requested, the <see cref="DocumentTranslationException.InnerException" /> will be an
-    ///   <see cref="OperationCanceledException" /> (usually a <see cref="TaskCanceledException" />).
+    ///   If an error occurs while translating the document, including local file failures: the input cannot be read
+    ///   or the output path is occupied (both checked before any request; an existing output file is left
+    ///   unchanged), with the <see cref="IOException" /> or <see cref="UnauthorizedAccessException" /> as
+    ///   <see cref="Exception.InnerException" />. If the document was uploaded successfully, then the
+    ///   <see cref="DocumentTranslationException.DocumentHandle" /> contains the document ID and key that may be used
+    ///   to retrieve the document.
     /// </exception>
-    Task TranslateDocumentAsync(
+    Task<DocumentStatus> TranslateDocumentAsync(
           FileInfo inputFileInfo,
           FileInfo outputFileInfo,
           string? sourceLanguageCode,
@@ -55,14 +54,16 @@ namespace DeepL {
     /// <param name="targetLanguageCode">Language code of the desired output language.</param>
     /// <param name="options"><see cref="DocumentTranslateOptions" /> influencing translation.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
-    /// <exception cref="DocumentTranslationException">
-    ///   If cancellation was requested, or an error occurs while translating the document. If the document was uploaded
-    ///   successfully, then the <see cref="DocumentTranslationException.DocumentHandle" /> contains the document ID and
-    ///   key that may be used to retrieve the document.
-    ///   If cancellation was requested, the <see cref="DocumentTranslationException.InnerException" /> will be an
-    ///   <see cref="OperationCanceledException" /> (usually a <see cref="TaskCanceledException" />).
+    /// <returns>The final <see cref="DocumentStatus" /> of the translation, with status done.</returns>
+    /// <exception cref="OperationCanceledException">
+    ///   If cancellation was requested through <paramref name="cancellationToken" />; it is not wrapped.
     /// </exception>
-    Task TranslateDocumentAsync(
+    /// <exception cref="DocumentTranslationException">
+    ///   If an error occurs while translating the document. If the document was uploaded successfully, then the
+    ///   <see cref="DocumentTranslationException.DocumentHandle" /> contains the document ID and key that may be used
+    ///   to retrieve the document.
+    /// </exception>
+    Task<DocumentStatus> TranslateDocumentAsync(
           Stream inputFile,
           string inputFileName,
           Stream outputFile,
@@ -84,13 +85,17 @@ namespace DeepL {
     ///   is required.
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>The final <see cref="DocumentStatus" /> of the translation, with status done.</returns>
+    /// <exception cref="OperationCanceledException">
+    ///   If cancellation was requested through <paramref name="cancellationToken" />; it is not wrapped.
+    /// </exception>
     /// <exception cref="DocumentTranslationException">
-    ///   If cancellation was requested, the <see cref="DocumentTranslateOptions.Timeout" /> expired, or an error occurs
+    ///   If the <see cref="DocumentTranslateOptions.Timeout" /> expired, or an error occurs
     ///   while translating the document, including a missing <see cref="DocumentTranslateOptions.Filename" />. If the
     ///   document was uploaded successfully, then the <see cref="DocumentTranslationException.DocumentHandle" />
     ///   contains the document ID and key that may be used to retrieve the document.
     /// </exception>
-    Task TranslateDocumentAsync(
+    Task<DocumentStatus> TranslateDocumentAsync(
           Stream inputFile,
           Stream outputFile,
           string? sourceLanguageCode,
@@ -108,14 +113,14 @@ namespace DeepL {
     /// <param name="options"><see cref="DocumentTranslateOptions" /> influencing translation.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="DocumentHandle" /> object associated with the in-progress document translation.</returns>
-    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="ArgumentException">
+    ///   If any argument is invalid, or the input file does not exist or is not a file; raised before any request.
+    /// </exception>
     /// <exception cref="IOException">
-    ///   If the input cannot be opened; it is opened before any request, and the exception of
-    ///   <see cref="FileInfo.OpenRead" /> propagates: <see cref="FileNotFoundException" /> for a missing file,
-    ///   <see cref="DirectoryNotFoundException" /> for a missing directory.
+    ///   If the input cannot be opened; it is opened before any request.
     /// </exception>
     /// <exception cref="UnauthorizedAccessException">
-    ///   If the input is a directory or cannot be read due to permissions; raised before any request.
+    ///   If the input cannot be read due to permissions; raised before any request.
     /// </exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -197,11 +202,12 @@ namespace DeepL {
     /// </summary>
     /// <param name="handle"><see cref="DocumentHandle" /> associated with an in-progress document translation.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>The final <see cref="DocumentStatus" />, with status done.</returns>
     /// <exception cref="DeepLException">
-    ///   If any error occurs while communicating with the DeepL API, a
-    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    ///   If the document translation fails (status error, with the API's error message), or any error occurs while
+    ///   communicating with the DeepL API, a <see cref="DeepLException" /> or a derived class will be thrown.
     /// </exception>
-    Task TranslateDocumentWaitUntilDoneAsync(
+    Task<DocumentStatus> TranslateDocumentWaitUntilDoneAsync(
           DocumentHandle handle,
           CancellationToken cancellationToken = default);
 
@@ -212,12 +218,13 @@ namespace DeepL {
     /// <param name="handle"><see cref="DocumentHandle" /> associated with an in-progress document translation.</param>
     /// <param name="timeout">Maximum time to wait, or <c>null</c> to wait without a limit.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>The final <see cref="DocumentStatus" />, with status done.</returns>
     /// <exception cref="DeepLException">
     ///   If the document translation fails, the <paramref name="timeout" /> expires before it is complete, or any error
     ///   occurs while communicating with the DeepL API, a <see cref="DeepLException" /> or a derived class will be
     ///   thrown.
     /// </exception>
-    Task TranslateDocumentWaitUntilDoneAsync(
+    Task<DocumentStatus> TranslateDocumentWaitUntilDoneAsync(
           DocumentHandle handle,
           TimeSpan? timeout,
           CancellationToken cancellationToken = default);

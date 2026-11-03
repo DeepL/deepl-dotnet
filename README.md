@@ -318,24 +318,27 @@ objects, and provide the source and target language as above.
 Additional `DocumentTranslateOptions` are also available,
 see [Document translation options](#document-translation-options) below.
 Note that file paths are not accepted as strings, to avoid mixing up the file and language arguments.
-The input file is opened before any request is sent, and the exceptions of `FileInfo.OpenRead()`
-propagate: a missing file throws a `FileNotFoundException`, a missing directory a
-`DirectoryNotFoundException`, a directory as input or a file without permission an
-`UnauthorizedAccessException`. Output file errors throw the exception of the file operation: an
-existing output file an `IOException`, a missing output directory a `DirectoryNotFoundException`, an
-output path without permission an `UnauthorizedAccessException`. An existing output file is never overwritten or deleted. Errors while
-translating throw a `DocumentTranslationException`; its `HttpStatusCode` and `ShouldRetry` are copied
-from the `DeepLException` that caused it, if any.
+`TranslateDocumentAsync()` returns the final `DocumentStatus` of the translation, for example to read
+`BilledCharacters`.
+
+A missing input file (or a directory as input) throws an `ArgumentException` before any request is sent.
+The input and output files are opened before any request is sent; if the input cannot be read or the
+output file already exists or cannot be created, a `DocumentTranslationException` is thrown with the
+`IOException` or `UnauthorizedAccessException` as `InnerException`. An existing output file is never
+overwritten or deleted. Errors while translating also throw a `DocumentTranslationException`; its
+`HttpStatusCode` and `ShouldRetry` are copied from the `DeepLException` that caused it, if any.
+Cancellation through the `CancellationToken` is not wrapped: it throws the `OperationCanceledException`.
 
 ```c#
 // Translate a formal document from English to German
 try {
-  await client.TranslateDocumentAsync(
+  var status = await client.TranslateDocumentAsync(
         new FileInfo("Instruction Manual.docx"),
         new FileInfo("Bedienungsanleitung.docx"),
         "EN",
         "DE",
         new DocumentTranslateOptions { Formality = Formality.More });
+  Console.WriteLine($"Billed characters: {status.BilledCharacters}");
 } catch (DocumentTranslationException exception) {
   // If the error occurs *after* upload, the DocumentHandle will contain the document ID and key
   if (exception.DocumentHandle != null) {
@@ -373,13 +376,14 @@ determine the file type. Pass it as the `inputFileName` argument, or set the
 `TranslateDocumentAsync()` manages the upload, wait until translation is complete, and download steps. If your
 application needs to execute these steps individually, you can instead use the following functions directly:
 
-- `TranslateDocumentUploadAsync()` (given a `FileInfo` of a missing file, it throws a `FileNotFoundException` before
+- `TranslateDocumentUploadAsync()` (given a `FileInfo` of a missing file, it throws an `ArgumentException` before
   any request is sent),
 - `TranslateDocumentGetStatusAsync()` (or `TranslateDocumentWaitUntilDoneAsync()`), and
 - `TranslateDocumentDownloadAsync()`
 
-`TranslateDocumentWaitUntilDoneAsync()` polls the status every 5 seconds. Pass a `TimeSpan` timeout to limit the wait;
-when it expires, a `DeepLException` is thrown.
+`TranslateDocumentWaitUntilDoneAsync()` polls the status every 5 seconds and returns the final `DocumentStatus`
+once the translation is done. If the translation fails, it throws a `DeepLException` with the API's error message.
+Pass a `TimeSpan` timeout to limit the wait; when it expires, a `DeepLException` is thrown.
 
 `DocumentStatus.Status` is `DocumentStatus.StatusCode.Unknown` for a status this library does not know; the waiting
 methods keep polling then. `DocumentStatus.StatusValue` holds the status string as returned by the API. Because an
@@ -1059,8 +1063,9 @@ Use `ImportTranslationMemoryFromFilepathAsync()` to create a new translation
 memory from a TMX file. It reads the file, creates the import job, uploads the
 file, and waits for processing to finish. The returned job carries the ID of the
 new translation memory. A missing file throws an `ArgumentException`; a file
-that cannot be read throws the `IOException` or `UnauthorizedAccessException` of
-reading it. Both are thrown before the import job is created:
+that cannot be read throws a `DeepLException` with the `IOException` or
+`UnauthorizedAccessException` of reading it as `InnerException`. Both are thrown
+before the import job is created:
 
 ```c#
 var job = await client.ImportTranslationMemoryFromFilepathAsync(
@@ -1117,11 +1122,11 @@ the JSON request body).
 Use `ExportTranslationMemoryToFilepathAsync()` to export a translation memory as
 a TMX file. It creates the output file, creates the export job, waits for it to
 finish, and writes the result to the file. The output file must not exist yet.
-If it exists, an `IOException` is thrown; if its directory does not exist, a
-`DirectoryNotFoundException`; if it is not writable, an
-`UnauthorizedAccessException`. These are thrown before the export job is
-created. Errors writing the file throw their `IOException`. If the export fails,
-the file is deleted again:
+If it exists, its directory does not exist or it is not writable, a
+`DeepLException` is thrown before the export job is created, with the
+`IOException` or `UnauthorizedAccessException` as `InnerException`; errors
+writing the file are wrapped the same way. If the export fails, the file is
+deleted again:
 
 ```c#
 await client.ExportTranslationMemoryToFilepathAsync("YOUR_TM_ID", "exported.tmx");
@@ -1147,7 +1152,10 @@ await client.DownloadTranslationMemoryExportAsync(job, "exported.tmx");
 
 Use `GetTranslationMemoryJobAsync()` to query the status of an import or export
 job without waiting for it, and `WaitUntilTranslationMemoryJobDoneAsync()` to
-poll it until it finishes. Note that an import job keeps reporting
+poll it until it finishes. `Done` is `true` once the job has completed
+(`TranslationMemoryJobStatus.Completed`); a failed or expired job has `Ok` set
+to `false`, and the wait throws a `DeepLException` with the API's error message
+for it. Note that an import job keeps reporting
 `AwaitingInput` for a while after its file has been uploaded, because the DeepL
 API detects the upload asynchronously; that status is polled through like any
 other non-terminal one. A status this library does not know is reported as

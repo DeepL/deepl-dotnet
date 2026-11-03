@@ -198,15 +198,30 @@ namespace DeepLTests.Offline {
     [InlineData("awaiting_input", TranslationMemoryJobStatus.AwaitingInput, false)]
     [InlineData("processing", TranslationMemoryJobStatus.Processing, false)]
     [InlineData("completed", TranslationMemoryJobStatus.Completed, true)]
-    [InlineData("downloaded", TranslationMemoryJobStatus.Downloaded, true)]
-    [InlineData("failed", TranslationMemoryJobStatus.Failed, true)]
-    [InlineData("expired", TranslationMemoryJobStatus.Expired, true)]
+    [InlineData("failed", TranslationMemoryJobStatus.Failed, false)]
+    [InlineData("expired", TranslationMemoryJobStatus.Expired, false)]
     public async Task ParsesJobStatus(string status, TranslationMemoryJobStatus expected, bool done) {
       ExpectNoBody(HttpMethod.Get, "v3/translation_memories/jobs/j1")
             .RespondJson(JobReply("{\"status\":\"" + status + "\"}"));
       var job = await CreateClient().GetTranslationMemoryJobAsync("j1");
       Assert.Equal(expected, job.Status);
       Assert.Equal(done, job.Done);
+    }
+
+    [Fact]
+    public async Task ParsesDownloadedAsUnknownStatusAndKeepsPollingOnIt() {
+      ExpectNoBody(HttpMethod.Get, "v3/translation_memories/jobs/j1")
+            .RespondJson(JobReply("{\"status\":\"downloaded\"}", "export"));
+      ExpectNoBody(HttpMethod.Get, "v3/translation_memories/jobs/j1")
+            .RespondJson(JobReply("{\"status\":\"downloaded\"}", "export"));
+      ExpectNoBody(HttpMethod.Get, "v3/translation_memories/jobs/j1").RespondJson(JobReply(CompletedResult, "export"));
+      var client = CreateClient();
+      var job = await client.GetTranslationMemoryJobAsync("j1");
+      Assert.Equal(TranslationMemoryJobStatus.Unknown, job.Status);
+      Assert.Equal("downloaded", job.StatusValue);
+      Assert.False(job.Done);
+      var done = await client.WaitUntilTranslationMemoryJobDoneAsync("j1");
+      Assert.Equal(TranslationMemoryJobStatus.Completed, done.Status);
     }
 
     [Fact]
@@ -329,20 +344,24 @@ namespace DeepLTests.Offline {
                       Path.Combine(Fixtures.TempDir(), "missing.tmx")));
 
     [Fact]
-    public async Task ImportFromFilepathThrowsIOExceptionForUnreadableFileBeforeCreatingJob() {
+    public async Task ImportFromFilepathWrapsIOExceptionForUnreadableFileBeforeCreatingJob() {
       var path = TmxFile();
       // No request is declared: creating the import job would fail the test with a ConnectionException.
       using (new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None)) {
-        await Assert.ThrowsAsync<IOException>(() => CreateClient().ImportTranslationMemoryFromFilepathAsync(path));
+        var exception = await Assert.ThrowsAsync<DeepLException>(
+              () => CreateClient().ImportTranslationMemoryFromFilepathAsync(path));
+        Assert.IsAssignableFrom<IOException>(exception.InnerException);
       }
     }
 
     [Fact]
-    public async Task ExportToFilepathThrowsIOExceptionForExistingFileBeforeCreatingJob() {
+    public async Task ExportToFilepathWrapsIOExceptionForExistingFileBeforeCreatingJob() {
       var path = Path.Combine(Fixtures.TempDir(), "export.tmx");
       File.WriteAllText(path, "keep");
       // No request is declared: creating the export job would fail the test with a ConnectionException.
-      await Assert.ThrowsAsync<IOException>(() => CreateClient().ExportTranslationMemoryToFilepathAsync("tm1", path));
+      var exception = await Assert.ThrowsAsync<DeepLException>(
+            () => CreateClient().ExportTranslationMemoryToFilepathAsync("tm1", path));
+      Assert.IsAssignableFrom<IOException>(exception.InnerException);
       Assert.Equal("keep", File.ReadAllText(path));
     }
 

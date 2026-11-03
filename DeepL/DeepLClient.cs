@@ -185,17 +185,20 @@ namespace DeepL {
             .ConfigureAwait(false))[0];
 
     /// <inheritdoc />
-    public async Task TranslateDocumentAsync(
+    public async Task<DocumentStatus> TranslateDocumentAsync(
           FileInfo inputFileInfo,
           FileInfo outputFileInfo,
           string? sourceLanguageCode,
           string targetLanguageCode,
           DocumentTranslateOptions? options = null,
           CancellationToken cancellationToken = default) {
-      using var inputFile = inputFileInfo.OpenRead();
-      using var outputFile = outputFileInfo.Open(FileMode.CreateNew, FileAccess.Write);
+      CheckDocumentInputFile(inputFileInfo);
+      // Local file failures are wrapped like the failures of the translation itself. The output is opened with
+      // CreateNew and outside the try below, so an occupied path is never deleted.
+      using var inputFile = OpenLocalDocumentFile(inputFileInfo.OpenRead);
+      using var outputFile = OpenLocalDocumentFile(() => outputFileInfo.Open(FileMode.CreateNew, FileAccess.Write));
       try {
-        await TranslateDocumentAsync(
+        return await TranslateDocumentAsync(
               inputFile,
               options?.Filename ?? inputFileInfo.Name,
               outputFile,
@@ -214,8 +217,27 @@ namespace DeepL {
       }
     }
 
+    /// <summary>Throws <see cref="ArgumentException" /> if the document input file does not exist or is not a file.</summary>
+    private static void CheckDocumentInputFile(FileInfo inputFileInfo) {
+      if (!inputFileInfo.Exists) {
+        throw new ArgumentException($"File does not exist: {inputFileInfo.FullName}", nameof(inputFileInfo));
+      }
+    }
+
+    /// <summary>Opens a local file for TranslateDocumentAsync, wrapping a failure in DocumentTranslationException.</summary>
+    private static FileStream OpenLocalDocumentFile(Func<FileStream> open) {
+      try {
+        return open();
+      } catch (Exception exception) when (IsLocalFileException(exception)) {
+        throw new DocumentTranslationException(
+              $"Error occurred during document translation: {exception.Message}",
+              exception,
+              null);
+      }
+    }
+
     /// <inheritdoc />
-    public async Task TranslateDocumentAsync(
+    public async Task<DocumentStatus> TranslateDocumentAsync(
           Stream inputFile,
           string inputFileName,
           Stream outputFile,
@@ -233,9 +255,13 @@ namespace DeepL {
                     options,
                     cancellationToken)
               .ConfigureAwait(false);
-        await TranslateDocumentWaitUntilDoneAsync(handle.Value, options?.Timeout, cancellationToken)
+        var status = await TranslateDocumentWaitUntilDoneAsync(handle.Value, options?.Timeout, cancellationToken)
               .ConfigureAwait(false);
         await TranslateDocumentDownloadAsync(handle.Value, outputFile, cancellationToken).ConfigureAwait(false);
+        return status;
+      } catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) {
+        // Cancellation by the caller is not wrapped.
+        throw;
       } catch (Exception exception) {
         throw new DocumentTranslationException(
               $"Error occurred during document translation: {exception.Message}",
@@ -245,7 +271,7 @@ namespace DeepL {
     }
 
     /// <inheritdoc />
-    public Task TranslateDocumentAsync(
+    public Task<DocumentStatus> TranslateDocumentAsync(
           Stream inputFile,
           Stream outputFile,
           string? sourceLanguageCode,
@@ -268,6 +294,7 @@ namespace DeepL {
           string targetLanguageCode,
           DocumentTranslateOptions? options = null,
           CancellationToken cancellationToken = default) {
+      CheckDocumentInputFile(inputFileInfo);
       using var inputFileStream = inputFileInfo.OpenRead();
       return await TranslateDocumentUploadAsync(
             inputFileStream,
@@ -383,13 +410,13 @@ namespace DeepL {
     }
 
     /// <inheritdoc />
-    public Task TranslateDocumentWaitUntilDoneAsync(
+    public Task<DocumentStatus> TranslateDocumentWaitUntilDoneAsync(
           DocumentHandle handle,
           CancellationToken cancellationToken = default) =>
           TranslateDocumentWaitUntilDoneAsync(handle, null, cancellationToken);
 
     /// <inheritdoc />
-    public async Task TranslateDocumentWaitUntilDoneAsync(
+    public async Task<DocumentStatus> TranslateDocumentWaitUntilDoneAsync(
           DocumentHandle handle,
           TimeSpan? timeout,
           CancellationToken cancellationToken = default) {
@@ -415,6 +442,8 @@ namespace DeepL {
       if (!status.Ok) {
         throw new DeepLException(status.ErrorMessage ?? "Unknown error");
       }
+
+      return status;
     }
 
     /// <inheritdoc />
@@ -1450,7 +1479,8 @@ namespace DeepL {
           CancellationToken cancellationToken = default) {
       var deadline = timeout == null ? (DateTime?)null : DateTime.UtcNow + timeout.Value;
       var job = await GetTranslationMemoryJobAsync(jobId, cancellationToken).ConfigureAwait(false);
-      while (!job.Done) {
+      // Done means completed; a failed or expired job ends the wait through Ok. Any other status keeps polling.
+      while (!job.Done && job.Ok) {
         if (job.Result == null) {
           throw new DeepLException("Translation memory job status contained no result");
         }
@@ -1580,12 +1610,10 @@ namespace DeepL {
     ///   new translation memory.
     /// </returns>
     /// <exception cref="ArgumentException">If any argument is invalid, or the input file does not exist.</exception>
-    /// <exception cref="IOException">If the input file cannot be read; it is read before any job is created.</exception>
-    /// <exception cref="UnauthorizedAccessException">
-    ///   If the input file cannot be read due to permissions; it is read before any job is created.
-    /// </exception>
     /// <exception cref="DeepLException">
-    ///   If the import failed, the timeout expired, or any error occurs while communicating with the DeepL API.
+    ///   If the input file cannot be read (it is read before any job is created; the <see cref="IOException" /> or
+    ///   <see cref="System.UnauthorizedAccessException" /> is the <see cref="System.Exception.InnerException" />), the
+    ///   import failed, the timeout expired, or any error occurs while communicating with the DeepL API.
     /// </exception>
     public async Task<TranslationMemoryJob> ImportTranslationMemoryFromFilepathAsync(
           string inputFilePath,
@@ -1599,10 +1627,13 @@ namespace DeepL {
       // Read the file before creating the job, so that a file that cannot be read leaves no job awaiting input. The
       // upload buffers the whole file anyway.
       byte[] fileContent;
-      using (var inputFileStream = inputFileInfo.OpenRead())
-      using (var buffer = new MemoryStream()) {
+      try {
+        using var inputFileStream = inputFileInfo.OpenRead();
+        using var buffer = new MemoryStream();
         await inputFileStream.CopyToAsync(buffer, 81920, cancellationToken).ConfigureAwait(false);
         fileContent = buffer.ToArray();
+      } catch (Exception exception) when (IsLocalFileException(exception)) {
+        throw new DeepLException($"Failed to read input file {inputFilePath}: {exception.Message}", exception);
       }
 
       var createOptions = new CreateTranslationMemoryImportOptions {
@@ -1651,14 +1682,11 @@ namespace DeepL {
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="TranslationMemoryJob" /> object for the completed export.</returns>
     /// <exception cref="NotFoundException">If the specified translation memory was not found.</exception>
-    /// <exception cref="IOException">
-    ///   If the output file already exists, its directory does not exist (a <see cref="DirectoryNotFoundException" />)
-    ///   or writing it fails. The file is created before any job is created.
-    /// </exception>
-    /// <exception cref="UnauthorizedAccessException">If the output file cannot be created due to permissions.</exception>
     /// <exception cref="DeepLException">
-    ///   If the export failed, the <paramref name="timeout" /> expired, or any error occurs while communicating with
-    ///   the DeepL API.
+    ///   If the output file already exists, cannot be created or cannot be written (it is created before any job is
+    ///   created; the <see cref="IOException" /> or <see cref="System.UnauthorizedAccessException" /> is the
+    ///   <see cref="System.Exception.InnerException" />), the export failed, the <paramref name="timeout" /> expired,
+    ///   or any error occurs while communicating with the DeepL API.
     /// </exception>
     public async Task<TranslationMemoryJob> ExportTranslationMemoryToFilepathAsync(
           string translationMemoryId,
@@ -1670,7 +1698,12 @@ namespace DeepL {
       // the export runs. CreateNew rather than Create: the file is deleted again if the export fails, so truncating
       // an existing one would destroy the caller's data.
       var outputFileInfo = new FileInfo(outputFilePath);
-      var outputFileStream = outputFileInfo.Open(FileMode.CreateNew, FileAccess.Write);
+      FileStream outputFileStream;
+      try {
+        outputFileStream = outputFileInfo.Open(FileMode.CreateNew, FileAccess.Write);
+      } catch (Exception exception) when (IsLocalFileException(exception)) {
+        throw new DeepLException($"Failed to create output file {outputFilePath}: {exception.Message}", exception);
+      }
 
       try {
         using (outputFileStream) {
@@ -1686,16 +1719,27 @@ namespace DeepL {
 
           return job;
         }
-      } catch {
+      } catch (Exception exception) {
         try {
           outputFileInfo.Delete();
         } catch {
           // ignored
         }
 
+        if (IsLocalFileException(exception)) {
+          throw new DeepLException($"Failed to write output file {outputFilePath}: {exception.Message}", exception);
+        }
+
         throw;
       }
     }
+
+    /// <summary>
+    ///   <c>true</c> for the exceptions of local file access that the document and translation memory file helpers wrap
+    ///   in a <see cref="DeepLException" />.
+    /// </summary>
+    private static bool IsLocalFileException(Exception exception) =>
+          exception is IOException || exception is UnauthorizedAccessException;
 
     /// <inheritdoc />
     public async Task<TranslationMemoryJob> ExportTranslationMemoryToFilepathAsync(
@@ -1722,14 +1766,11 @@ namespace DeepL {
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="TranslationMemoryJob" /> object for the completed export.</returns>
     /// <exception cref="NotFoundException">If the specified translation memory was not found.</exception>
-    /// <exception cref="IOException">
-    ///   If the output file already exists, its directory does not exist (a <see cref="DirectoryNotFoundException" />)
-    ///   or writing it fails. The file is created before any job is created.
-    /// </exception>
-    /// <exception cref="UnauthorizedAccessException">If the output file cannot be created due to permissions.</exception>
     /// <exception cref="DeepLException">
-    ///   If the export failed, the <paramref name="timeout" /> expired, or any error occurs while communicating with
-    ///   the DeepL API.
+    ///   If the output file already exists, cannot be created or cannot be written (it is created before any job is
+    ///   created; the <see cref="IOException" /> or <see cref="System.UnauthorizedAccessException" /> is the
+    ///   <see cref="System.Exception.InnerException" />), the export failed, the <paramref name="timeout" /> expired,
+    ///   or any error occurs while communicating with the DeepL API.
     /// </exception>
     public async Task<TranslationMemoryJob> ExportTranslationMemoryToFilepathAsync(
           TranslationMemoryInfo translationMemory,
