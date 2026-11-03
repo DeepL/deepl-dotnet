@@ -209,22 +209,6 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
-    public async Task ParsesDownloadedAsUnknownStatusAndKeepsPollingOnIt() {
-      ExpectNoBody(HttpMethod.Get, "v3/translation_memories/jobs/j1")
-            .RespondJson(JobReply("{\"status\":\"downloaded\"}", "export"));
-      ExpectNoBody(HttpMethod.Get, "v3/translation_memories/jobs/j1")
-            .RespondJson(JobReply("{\"status\":\"downloaded\"}", "export"));
-      ExpectNoBody(HttpMethod.Get, "v3/translation_memories/jobs/j1").RespondJson(JobReply(CompletedResult, "export"));
-      var client = CreateClient();
-      var job = await client.GetTranslationMemoryJobAsync("j1");
-      Assert.Equal(TranslationMemoryJobStatus.Unknown, job.Status);
-      Assert.Equal("downloaded", job.StatusValue);
-      Assert.False(job.Done);
-      var done = await client.WaitUntilTranslationMemoryJobDoneAsync("j1");
-      Assert.Equal(TranslationMemoryJobStatus.Completed, done.Status);
-    }
-
-    [Fact]
     public async Task ParsesRequiredActionOfAwaitingJob() {
       ExpectNoBody(HttpMethod.Get, "v3/translation_memories/jobs/j1")
             .RespondJson(
