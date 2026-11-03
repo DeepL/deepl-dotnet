@@ -68,12 +68,13 @@ namespace DeepL.Model {
     public DateTime? EndTime { get; }
 
     /// <summary>
-    ///   <c>true</c> if the character, document or team document limit has been reached. The API Pro usage types
-    ///   (<see cref="ApiKeyCharacter" />, <see cref="SpeechToTextMinutes" />, <see cref="SpeechToSpeechMinutes" />)
-    ///   are not considered; check <see cref="Detail.LimitReached" /> on them directly.
+    ///   <c>true</c> if the character, document, team document or API key character (<see cref="ApiKeyCharacter" />)
+    ///   limit has been reached. The speech usage types (<see cref="SpeechToTextMinutes" />,
+    ///   <see cref="SpeechToSpeechMinutes" />) are not considered; check <see cref="Detail.LimitReached" /> on them
+    ///   directly.
     /// </summary>
     public bool AnyLimitReached => (Character?.LimitReached ?? false) || (Document?.LimitReached ?? false) ||
-                                   (TeamDocument?.LimitReached ?? false);
+                                   (TeamDocument?.LimitReached ?? false) || (ApiKeyCharacter?.LimitReached ?? false);
 
     /// <summary>Returns a string representing the usage.</summary>
     /// <returns>A string containing the usage for this billing period.</returns>

@@ -18,7 +18,7 @@ namespace DeepL.Model {
     ///   would be marked <see langword="internal" />, but needs to be <see langword="public" /> for JSON deserialization.
     ///   In future this function may have backwards-incompatible changes.
     /// </remarks>
-    public TextResult(string text, string detectedSourceLanguageCode, int billedCharacters, string? modelTypeUsed)
+    public TextResult(string text, string detectedSourceLanguageCode, long billedCharacters, string? modelTypeUsed)
           : this(text, detectedSourceLanguageCode, billedCharacters, modelTypeUsed, null) { }
 
     /// <summary>Initializes a new instance of <see cref="TextResult" />.</summary>
@@ -37,7 +37,7 @@ namespace DeepL.Model {
     public TextResult(
           string text,
           string detectedSourceLanguageCode,
-          int billedCharacters,
+          long billedCharacters,
           string? modelTypeUsed,
           string? tagHandlingVersion) {
       Text = text;
@@ -59,7 +59,7 @@ namespace DeepL.Model {
 
     /// <summary>The number of characters billed for the text.</summary>
     [JsonPropertyName("billed_characters")]
-    public int BilledCharacters { get; }
+    public long BilledCharacters { get; }
 
     /// <summary>Indicated translation model used, if available.</summary>
     [JsonPropertyName("model_type_used")]

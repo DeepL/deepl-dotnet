@@ -47,7 +47,10 @@ namespace DeepLTests.Offline {
           new TranslationMemoryJob(
                 "j1",
                 "export",
-                new[] { new TranslationMemoryJobResult(TranslationMemoryJobStatus.Completed, downloadUrl: downloadUrl) });
+                new[] { new TranslationMemoryJobResult(TranslationMemoryJobStatus.Completed, downloadUrl: downloadUrl) },
+                "translation_memory",
+                new DateTime(2025, 1, 2, 3, 4, 5, DateTimeKind.Utc),
+                new DateTime(2025, 1, 2, 3, 5, 5, DateTimeKind.Utc));
 
     [Fact]
     public async Task SendsPagingInQueryAndParsesList() {
@@ -192,6 +195,30 @@ namespace DeepLTests.Offline {
       Assert.Equal(2, job.Result.SkippedSegmentCount);
       Assert.Equal(DownloadUrl, job.Result.DownloadUrl);
       Assert.Equal(new DateTime(2025, 2, 1, 0, 0, 0, DateTimeKind.Utc), job.Result.ExpiresAt!.Value.ToUniversalTime());
+    }
+
+    [Fact]
+    public async Task ParsesRequiredJobFieldsAndSkippedSegmentCountAboveInt32() {
+      ExpectNoBody(HttpMethod.Get, "v3/translation_memories/jobs/j1")
+            .RespondJson(JobReply("{\"status\":\"completed\",\"skipped_segment_count\":3000000000}"));
+      var job = await CreateClient().GetTranslationMemoryJobAsync("j1");
+      Assert.Equal("translation_memory", job.Product);
+      Assert.Equal(new DateTime(2025, 1, 2, 3, 4, 5, DateTimeKind.Utc), job.CreationTime.ToUniversalTime());
+      Assert.Equal(new DateTime(2025, 1, 2, 3, 5, 5, DateTimeKind.Utc), job.UpdatedTime.ToUniversalTime());
+      Assert.Equal(3_000_000_000L, job.Result!.SkippedSegmentCount);
+    }
+
+    [Theory]
+    [InlineData("product")]
+    [InlineData("creation_time")]
+    [InlineData("updated_time")]
+    public async Task ThrowsDeepLExceptionWhenJobLacksRequiredField(string field) {
+      var reply = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(JobReply(CompletedResult))!;
+      reply.Remove(field);
+      ExpectNoBody(HttpMethod.Get, "v3/translation_memories/jobs/j1").RespondJson(JsonSerializer.Serialize(reply));
+      var exception = await Assert.ThrowsAsync<DeepLException>(
+            () => CreateClient().GetTranslationMemoryJobAsync("j1"));
+      Assert.Contains(field, exception.Message);
     }
 
     [Theory]
@@ -432,8 +459,9 @@ namespace DeepLTests.Offline {
     [Fact]
     public async Task IgnoresNonStringFieldsInNestedJobObjects() {
       var reply =
-            "{\"job_id\":\"j1\",\"operation\":\"import\",\"parameters\":{\"translation_memory_id\":\"tm1\"," +
-            "\"display_name\":\"My TM\",\"segment_limit\":5,\"strict\":true},\"results\":[{\"status\":\"failed\"," +
+            "{\"job_id\":\"j1\",\"operation\":\"import\",\"product\":\"translation_memory\"," +
+            "\"creation_time\":\"2025-01-02T03:04:05Z\",\"updated_time\":\"2025-01-02T03:05:05Z\"," +
+            "\"parameters\":{\"translation_memory_id\":\"tm1\",\"display_name\":\"My TM\",\"segment_limit\":5,\"strict\":true},\"results\":[{\"status\":\"failed\"," +
             "\"status_metadata\":{\"required_action\":\"none\",\"attempt\":{\"n\":2}}," +
             "\"error\":{\"message\":\"bad file\",\"code\":7,\"details\":[1,2]}}]}";
       ExpectNoBody(HttpMethod.Get, "v3/translation_memories/jobs/j1").RespondJson(reply);
@@ -587,5 +615,9 @@ namespace DeepLTests.Offline {
                   path,
                   new ImportTranslationMemoryOptions { Timeout = TimeSpan.Zero }));
     }
+
+    [Fact]
+    public void DeclaresAllClientOverloadsOnITranslationMemoryManager() =>
+          AssertClientOverloadsDeclaredOn<ITranslationMemoryManager>();
   }
 }

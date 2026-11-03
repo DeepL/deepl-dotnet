@@ -41,6 +41,15 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
+    public async Task ReportsApiKeyCharacterLimitReached() {
+      ExpectNoBody(HttpMethod.Get, "v2/usage")
+            .RespondJson(
+                  "{\"character_count\":1,\"character_limit\":10,\"api_key_character_count\":5," +
+                  "\"api_key_character_limit\":5}");
+      Assert.True((await CreateClient().GetUsageAsync()).AnyLimitReached);
+    }
+
+    [Fact]
     public async Task ReportsNoLimitReachedBelowLimits() {
       ExpectNoBody(HttpMethod.Get, "v2/usage").RespondJson("{\"character_count\":1,\"character_limit\":2}");
       Assert.False((await CreateClient().GetUsageAsync()).AnyLimitReached);

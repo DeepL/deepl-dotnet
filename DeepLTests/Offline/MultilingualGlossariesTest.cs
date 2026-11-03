@@ -402,5 +402,8 @@ namespace DeepLTests.Offline {
       await Assert.ThrowsAsync<ArgumentException>(
             () => client.UpdateMultilingualGlossaryDictionaryAsync("g1", "", "de", Apple));
     }
+
+    [Fact]
+    public void DeclaresAllClientOverloadsOnIGlossaryManager() => AssertClientOverloadsDeclaredOn<IGlossaryManager>();
   }
 }

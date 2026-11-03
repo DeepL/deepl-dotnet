@@ -50,7 +50,7 @@ namespace DeepL.Model {
     ///   In future this function may have backwards-incompatible changes.
     /// </remarks>
     [JsonConstructor]
-    public DocumentStatus(string documentId, StatusCode status, int? secondsRemaining, int? billedCharacters, string? errorMessage) {
+    public DocumentStatus(string documentId, StatusCode status, int? secondsRemaining, long? billedCharacters, string? errorMessage) {
       (DocumentId, Status, SecondsRemaining, BilledCharacters, ErrorMessage) =
             (documentId, status, secondsRemaining, billedCharacters, errorMessage);
       StatusValue = ToApiValue(status);
@@ -61,7 +61,7 @@ namespace DeepL.Model {
           string documentId,
           string statusValue,
           int? secondsRemaining,
-          int? billedCharacters,
+          long? billedCharacters,
           string? errorMessage) : this(
           documentId,
           FromApiValue(statusValue),
@@ -93,7 +93,7 @@ namespace DeepL.Model {
     ///   Number of characters billed for the translation of this document, only included
     ///   after document translation is finished and the state is done.
     /// </summary>
-    public int? BilledCharacters { get; }
+    public long? BilledCharacters { get; }
 
     /// <summary>Short description of the error, if available.</summary>
     public string? ErrorMessage { get; }
@@ -140,7 +140,7 @@ namespace DeepL.Model {
             GetString(root, "document_id") ?? "",
             GetString(root, "status") ?? "",
             GetInt(root, "seconds_remaining"),
-            GetInt(root, "billed_characters"),
+            GetLong(root, "billed_characters"),
             GetString(root, "error_message"));
     }
 
@@ -173,5 +173,11 @@ namespace DeepL.Model {
           element.TryGetInt32(out var value)
                 ? value
                 : (int?)null;
+
+    private static long? GetLong(JsonElement root, string name) =>
+          root.TryGetProperty(name, out var element) && element.ValueKind == JsonValueKind.Number &&
+          element.TryGetInt64(out var value)
+                ? value
+                : (long?)null;
   }
 }

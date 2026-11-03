@@ -10,6 +10,7 @@ using System.Net.Http;
 using System.Text.Json;
 using DeepL;
 using RichardSzalay.MockHttp;
+using Xunit;
 
 namespace DeepLTests.Offline {
   /// <summary>
@@ -31,6 +32,17 @@ namespace DeepLTests.Offline {
     protected MockHttpMessageHandler Http { get; } = new MockHttpMessageHandler();
 
     public void Dispose() => Http.VerifyNoOutstandingExpectation();
+
+    /// <summary>
+    ///   Asserts that every public <see cref="DeepLClient" /> overload of a method that <typeparamref name="T" /> declares
+    ///   is a member of <typeparamref name="T" />.
+    /// </summary>
+    protected static void AssertClientOverloadsDeclaredOn<T>() {
+      var map = typeof(DeepLClient).GetInterfaceMap(typeof(T));
+      var names = new HashSet<string>(map.InterfaceMethods.Select(method => method.Name));
+      var overloads = typeof(DeepLClient).GetMethods().Where(method => names.Contains(method.Name));
+      Assert.All(overloads, method => Assert.Contains(method, map.TargetMethods));
+    }
 
     /// <summary>Creates a client whose only HTTP handler is <see cref="Http" />.</summary>
     protected DeepLClient CreateClient(Action<DeepLClientOptions>? configure = null) {

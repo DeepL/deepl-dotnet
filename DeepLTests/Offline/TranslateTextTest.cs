@@ -48,6 +48,21 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
+    public async Task ParsesBilledCharactersAboveInt32() {
+      ExpectJsonFields(
+                  HttpMethod.Post,
+                  "v2/translate",
+                  ("target_lang", "de"),
+                  ("show_billed_characters", true),
+                  ("text", new[] { "Hello" }))
+            .RespondJson(
+                  "{\"translations\":[{\"detected_source_language\":\"EN\",\"text\":\"Hallo\"," +
+                  "\"billed_characters\":3000000000}]}");
+      var result = await CreateClient().TranslateTextAsync("Hello", null, "DE");
+      Assert.Equal(3_000_000_000L, result.BilledCharacters);
+    }
+
+    [Fact]
     public async Task SendsTextArrayInOrder() {
       ExpectJsonFields(
                   HttpMethod.Post,

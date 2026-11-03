@@ -68,7 +68,7 @@ with `:fx`). The client uses this to choose the server URL.
 `ITextTranslator` (`TranslateTextAsync()`), `IDocumentTranslator` (`TranslateDocumentAsync()` and the
 `TranslateDocument*Async()` steps), `ILanguageProvider` (`GetSourceLanguagesAsync()`, `GetTargetLanguagesAsync()`,
 `GetGlossaryLanguagesAsync()`), `IUsageProvider` (`GetUsageAsync()`), `IGlossaryManager` (glossaries), `IWriter`
-(`RephraseTextAsync()`), `IStyleRuleManager`, `IStyleProfileManager`, `ITranslationMemoryManager` and
+(`RephraseTextAsync()`, `CorrectTextAsync()`), `IStyleRuleManager`, `IStyleProfileManager`, `ITranslationMemoryManager` and
 `ISpokenTermsManager`. Some newer methods and overloads are members of `DeepLClient` only, as noted in their sections.
 
 ### Translating text
@@ -305,8 +305,6 @@ options, only `ExtraBodyParameters`:
 WriteResult result = await client.CorrectTextAsync("I has a apple.", "EN-US");
 Console.WriteLine(result);
 ```
-
-`CorrectTextAsync()` is a member of `DeepLClient`; the `IWriter` interface is unchanged.
 
 Both methods throw a `DeepLException` if the response does not hold one improvement per input text.
 
@@ -1175,12 +1173,8 @@ if (job.Status == TranslationMemoryJobStatus.AwaitingInput) {
 job = await client.WaitUntilTranslationMemoryJobDoneAsync(job, TimeSpan.FromMinutes(5));
 ```
 
-The overloads taking `TranslationMemorySegmentsOptions`,
-`CreateTranslationMemoryImportOptions`, `ImportTranslationMemoryOptions`, a
-timeout or a `TranslationMemoryJob` are members of `DeepLClient`; the
-`ITranslationMemoryManager` interface is unchanged. A `TranslationMemoryJob`
-converts implicitly to its job ID, so code using the interface can pass a job
-object wherever it takes a job ID.
+A `TranslationMemoryJob` converts implicitly to its job ID, so it can be passed
+wherever a job ID is taken.
 
 #### Deleting a translation memory
 
@@ -1263,8 +1257,8 @@ For API Pro accounts, `Usage` also contains the following fields; they are `null
   `"write"`, `"speechToText"`, `"speechToSpeech"`), `BillingUnit` (`"characters"` or `"minutes"`),
   `ApiKeyUnitCount` and `AccountUnitCount`. Each of these four is `null` when the response omits it.
 
-`AnyLimitReached` checks only `Character`, `Document` and `TeamDocument`. It does not consider these API Pro
-fields; check `LimitReached` on them directly, e.g. `usage.ApiKeyCharacter?.LimitReached`.
+`AnyLimitReached` checks `Character`, `Document`, `TeamDocument` and `ApiKeyCharacter`. It does not consider the
+speech fields; check `LimitReached` on them directly, e.g. `usage.SpeechToTextMinutes?.LimitReached`.
 
 ```c#
 var usage = await client.GetUsageAsync();

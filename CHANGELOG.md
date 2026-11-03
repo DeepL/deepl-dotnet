@@ -14,6 +14,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `IGlossaryManager` now also declares the v2 glossary methods `CreateGlossaryAsync()`, `CreateGlossaryFromCsvAsync()`,
   `GetGlossaryAsync()`, `WaitUntilGlossaryReadyAsync()`, `ListGlossariesAsync()`, `GetGlossaryEntriesAsync()` and
   `DeleteGlossaryAsync()`. Classes implementing `IGlossaryManager` themselves must add them.
+- `IGlossaryManager` now also declares the `DeepLClient` overloads that take `CreateMultilingualGlossaryOptions`,
+  `ReplaceMultilingualGlossaryDictionaryOptions` or `BaseRequestOptions`, the `MultilingualGlossaryInfo` overloads
+  of `GetMultilingualGlossaryAsync()` and `UpdateMultilingualGlossaryNameAsync()`, and both
+  `UpdateMultilingualGlossaryAsync()` overloads. Classes implementing `IGlossaryManager` themselves must add them.
+- `ITranslationMemoryManager` now also declares the `DeepLClient` overloads that take
+  `TranslationMemorySegmentsOptions`, `CreateTranslationMemoryImportOptions`, `ImportTranslationMemoryOptions`, a
+  timeout or a `TranslationMemoryJob`. Classes implementing `ITranslationMemoryManager` themselves must add them.
+- `IWriter` now also declares both `CorrectTextAsync()` overloads. Classes implementing `IWriter` themselves must
+  add them.
 
 ### Changed
 - The package now targets `net8.0` and `netstandard2.0`; the `net5.0` target is removed. .NET 5, 6 and 7
@@ -86,6 +95,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `InnerException`: an input file that cannot be read, an output file that already exists or cannot be created, and
   errors writing the output. The checks still run before any job is created, and a missing input file still throws
   an `ArgumentException`. Catch `DeepLException` instead of the I/O exceptions.
+- `TextResult.BilledCharacters` is now a `long` and `DocumentStatus.BilledCharacters` a `long?`, so counts above
+  `int.MaxValue` are kept; `DocumentStatus` read such a count as `null` before. The `TextResult` and
+  `DocumentStatus` constructors take `long` and `long?`. Code assigning the value to an `int` must cast or use
+  `long`.
+- `TranslationMemoryJobResult.SkippedSegmentCount` is now a `long?` instead of an `int?`. Code assigning it to an
+  `int?` must cast or use `long?`.
+- `TranslationMemoryJob.Product` is now a non-nullable `string`, and `CreationTime` and `UpdatedTime` are non-nullable
+  `DateTime`s; a job response without one of them throws a `DeepLException`. The `TranslationMemoryJob`
+  constructor takes them as required parameters after `results`. Remove null checks and `.Value` on these
+  properties.
+- `Usage.AnyLimitReached` now also checks the per-key character limit, `ApiKeyCharacter`, so it returns `true` for
+  an API Pro key that has used up its own character limit. The speech limits are still not considered. Code that
+  needs only the account-wide limits must check `Character`, `Document` and `TeamDocument` directly.
 
 ### Removed
 - Removed the `ConfiguredRules` class and the `DeepLClient.CreateStyleRuleAsync()` and

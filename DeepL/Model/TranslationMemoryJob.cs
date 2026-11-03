@@ -99,7 +99,7 @@ namespace DeepL.Model {
           DateTime? expiresAt = null,
           string? errorMessage = null,
           string? translationMemoryId = null,
-          int? skippedSegmentCount = null) {
+          long? skippedSegmentCount = null) {
       Status = status;
       RequiredAction = requiredAction;
       DownloadUrl = downloadUrl;
@@ -118,7 +118,7 @@ namespace DeepL.Model {
           DateTime? expiresAt,
           string? errorMessage,
           string? translationMemoryId,
-          int? skippedSegmentCount) : this(
+          long? skippedSegmentCount) : this(
           TranslationMemoryJobStatusConverter.FromApiValue(statusValue),
           requiredAction,
           downloadUrl,
@@ -154,7 +154,7 @@ namespace DeepL.Model {
     public string? TranslationMemoryId { get; }
 
     /// <summary>Number of segments an import skipped.</summary>
-    public int? SkippedSegmentCount { get; }
+    public long? SkippedSegmentCount { get; }
 
     /// <summary>
     ///   <c>true</c> if the job has completed successfully (<see cref="TranslationMemoryJobStatus.Completed" />),
@@ -182,9 +182,9 @@ namespace DeepL.Model {
           string jobId,
           string operation,
           TranslationMemoryJobResult[] results,
-          string? product = null,
-          DateTime? creationTime = null,
-          DateTime? updatedTime = null,
+          string product,
+          DateTime creationTime,
+          DateTime updatedTime,
           string? translationMemoryId = null,
           string? displayName = null,
           string? sourceContentType = null,
@@ -211,13 +211,13 @@ namespace DeepL.Model {
     public TranslationMemoryJobResult[] Results { get; }
 
     /// <summary>Product the job belongs to, always "translation_memory".</summary>
-    public string? Product { get; }
+    public string Product { get; }
 
     /// <summary>Time when the job was created.</summary>
-    public DateTime? CreationTime { get; }
+    public DateTime CreationTime { get; }
 
     /// <summary>Time when the job was last updated.</summary>
-    public DateTime? UpdatedTime { get; }
+    public DateTime UpdatedTime { get; }
 
     /// <summary>ID of the translation memory an export job reads from.</summary>
     public string? TranslationMemoryId { get; }

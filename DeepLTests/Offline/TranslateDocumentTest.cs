@@ -329,6 +329,14 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
+    public async Task ParsesBilledCharactersAboveInt32() {
+      ExpectForm(HttpMethod.Post, "v2/document/d1", ("document_key", "k1"))
+            .RespondJson("{\"document_id\":\"d1\",\"status\":\"done\",\"billed_characters\":3000000000}");
+      var status = await CreateClient().TranslateDocumentGetStatusAsync(Handle);
+      Assert.Equal(3_000_000_000L, status.BilledCharacters);
+    }
+
+    [Fact]
     public async Task ParsesErrorStatus() {
       ExpectForm(HttpMethod.Post, "v2/document/d1", ("document_key", "k1"))
             .RespondJson("{\"document_id\":\"d1\",\"status\":\"error\",\"error_message\":\"boom\"}");
