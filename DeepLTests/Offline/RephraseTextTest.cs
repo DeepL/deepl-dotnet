@@ -82,7 +82,7 @@ namespace DeepLTests.Offline {
             "en",
             new TextRephraseOptions {
                   WritingStyle = "business",
-                  ExtraBodyParameters = new Dictionary<string, string> { ["writing_style"] = "simple", ["extra"] = "1" }
+                  ExtraBodyParameters = new Dictionary<string, object?> { ["writing_style"] = "simple", ["extra"] = "1" }
             });
     }
 

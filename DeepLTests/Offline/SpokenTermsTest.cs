@@ -70,19 +70,19 @@ namespace DeepLTests.Offline {
             "Terms",
             new[] { en },
             new CreateSpokenTermsOptions {
-              ExtraBodyParameters = new Dictionary<string, string> { ["name"] = "Override", ["extra"] = "1" }
+              ExtraBodyParameters = new Dictionary<string, object?> { ["name"] = "Override", ["extra"] = "1" }
             });
       await client.UpdateSpokenTermsAsync(
             spokenTerms,
             new UpdateSpokenTermsOptions {
               Name = "Renamed",
-              ExtraBodyParameters = new Dictionary<string, string> { ["name"] = "Override", ["extra"] = "2" }
+              ExtraBodyParameters = new Dictionary<string, object?> { ["name"] = "Override", ["extra"] = "2" }
             });
       await client.ReplaceSpokenTermsListAsync(
             "st1",
             en,
             new ReplaceSpokenTermsListOptions {
-              ExtraBodyParameters = new Dictionary<string, string> { ["lang"] = "de", ["extra"] = "3" }
+              ExtraBodyParameters = new Dictionary<string, object?> { ["lang"] = "de", ["extra"] = "3" }
             });
     }
 

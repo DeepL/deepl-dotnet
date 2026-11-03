@@ -201,14 +201,14 @@ namespace DeepLTests.Offline {
             "Legal",
             new CreateStyleProfileOptions {
               Description = "D",
-              ExtraBodyParameters = new Dictionary<string, string> { ["description"] = "extra", ["beta"] = "on" }
+              ExtraBodyParameters = new Dictionary<string, object?> { ["description"] = "extra", ["beta"] = "on" }
             });
       await client.UpdateStyleProfileAsync(
             "sp1",
             new UpdateStyleProfileOptions {
               Name = "New",
               Industry = "I",
-              ExtraBodyParameters = new Dictionary<string, string> { ["name"] = "extra", ["beta"] = "on" }
+              ExtraBodyParameters = new Dictionary<string, object?> { ["name"] = "extra", ["beta"] = "on" }
             });
     }
 

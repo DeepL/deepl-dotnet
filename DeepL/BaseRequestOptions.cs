@@ -10,11 +10,14 @@ namespace DeepL {
   /// </summary>
   public class BaseRequestOptions {
     /// <summary>
-    ///   Additional key-value pairs to include in the JSON request body sent to the API. If provided, keys in this
-    ///   dictionary will be added to the request body and can override built-in parameters. This can be used to access
-    ///   beta features or override built-in parameters for testing purposes. Mostly used by DeepL employees to test
-    ///   functionality, or for beta programs.
+    ///   Additional key-value pairs to include in the request body sent to the API. They are added last and replace
+    ///   built-in parameters with the same key; a <c>null</c> value removes that key from the body. In JSON bodies each
+    ///   value is sent with its JSON type (string, boolean, number, array, object). In the multipart body of a document
+    ///   upload, strings are sent as given, collections comma-joined, booleans as <c>true</c>/<c>false</c>, numbers in
+    ///   the invariant culture and other values as their JSON text. This can be used to access beta features or
+    ///   override built-in parameters for testing purposes. Mostly used by DeepL employees to test functionality, or
+    ///   for beta programs.
     /// </summary>
-    public Dictionary<string, string>? ExtraBodyParameters { get; set; }
+    public Dictionary<string, object?>? ExtraBodyParameters { get; set; }
   }
 }

@@ -308,11 +308,18 @@ namespace DeepL {
             : throw new DeepLException($"{what} response has an unexpected format");
     }
 
-    /// <summary>Adds the extra body parameters of the options last, replacing fields with the same key.</summary>
+    /// <summary>
+    ///   Adds the extra body parameters of the options last, replacing fields with the same key; a <c>null</c> value
+    ///   removes the field.
+    /// </summary>
     private static void AddExtraBodyParameters(Dictionary<string, object?> requestData, BaseRequestOptions? options) {
       if (options?.ExtraBodyParameters == null) return;
       foreach (var pair in options.ExtraBodyParameters) {
-        requestData[pair.Key] = pair.Value;
+        if (pair.Value == null) {
+          requestData.Remove(pair.Key);
+        } else {
+          requestData[pair.Key] = pair.Value;
+        }
       }
     }
 

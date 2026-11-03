@@ -225,10 +225,11 @@ The following options are only used if `TagHandling` is set to `'xml'`:
   text into sentences. Format and default are the same as for splitting tags.
 - `IgnoreTags`: `List` of XML tags that containing content that should not be
   translated. Format and default are the same as for splitting tags.
-- `ExtraBodyParameters`: `Dictionary<string, string>` of extra parameters to pass in the JSON body of the HTTP
+- `ExtraBodyParameters`: `Dictionary<string, object?>` of extra parameters to pass in the JSON body of the HTTP
   request. Keys in this dictionary will be added to the request body and replace built-in parameters with the same
-  key, including `text`. Values are sent as JSON strings, so they cannot set fields the API types as boolean, number
-  or array. Mostly used by DeepL employees to test functionality, or for beta programs.
+  key, including `text`. Each value is sent with its JSON type, for example
+  `new Dictionary<string, object?> { ["show_billed_characters"] = false }`; a `null` value removes that key from the
+  body. Mostly used by DeepL employees to test functionality, or for beta programs.
 
 For a detailed explanation of the XML handling options, see the [API documentation][api-docs-xml-handling].
 
@@ -292,8 +293,8 @@ result = await client.RephraseTextAsync("A rainbouw has seven colours.", "EN-US"
 ```
 
 `targetLanguageCode` may be omitted (it defaults to `null`). `TextRephraseOptions` also has
-`ExtraBodyParameters`: key-value pairs added last to the JSON request body as strings, replacing
-built-in parameters with the same key.
+`ExtraBodyParameters`: key-value pairs added last to the JSON request body with their JSON types,
+replacing built-in parameters with the same key (a `null` value removes the key).
 
 To only fix grammar and spelling errors without otherwise rephrasing the text, use
 `CorrectTextAsync()`. It takes the same text argument (a string or a list of strings), an
@@ -414,9 +415,11 @@ unknown status keeps polling, pass a `TimeSpan` timeout to `TranslateDocumentWai
 - `EnableWatermark`: A `bool?` value. If set to `true`, the API adds a "Translated by DeepL" watermark to the
   translated document. Only supported for `docx` and `pdf` output; for other output formats the API ignores it. If
   unset (the default), the parameter is not sent.
-- `ExtraBodyParameters`: `Dictionary<string, string>` of extra parameters to pass in the body of the HTTP request. Keys
-  in this dictionary will be added to the request body and can override built-in parameters. Mostly used by DeepL
-  employees to test functionality, or for beta programs.
+- `ExtraBodyParameters`: `Dictionary<string, object?>` of extra parameters to pass in the multipart body of the HTTP
+  request. Keys in this dictionary will be added to the request body and can override built-in parameters; a `null`
+  value removes the key. Strings are sent as given, collections comma-joined, booleans as `true`/`false`, numbers in
+  the invariant culture and other values as their JSON text. Mostly used by DeepL employees to test functionality,
+  or for beta programs.
 
 ### Glossaries
 
@@ -738,8 +741,8 @@ await client.DeleteSpokenTermsListAsync(spokenTerms, "de");
 `ReplaceSpokenTermsListAsync()` take an optional options object
 (`CreateSpokenTermsOptions`, `UpdateSpokenTermsOptions` and
 `ReplaceSpokenTermsListOptions`) with `ExtraBodyParameters`: a
-`Dictionary<string, string>` of extra parameters added last to the JSON request
-body, replacing built-in parameters with the same key. Mostly used by DeepL
+`Dictionary<string, object?>` of extra parameters added last to the JSON request
+body with their JSON types, replacing built-in parameters with the same key. Mostly used by DeepL
 employees to test functionality, or for beta programs.
 
 #### Deleting a Spoken Terms collection
@@ -905,8 +908,8 @@ objects, call `SetGlossaries()` (with `GlossaryInfo` or
 `SetTranslationMemories()` (`TranslationMemoryInfo`).
 
 Both options classes also have `ExtraBodyParameters`: a
-`Dictionary<string, string>` of extra parameters added to the JSON body last,
-replacing built-in fields with the same key.
+`Dictionary<string, object?>` of extra parameters added to the JSON body last
+with their JSON types, replacing built-in fields with the same key.
 
 #### Creating a style profile
 

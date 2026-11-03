@@ -156,14 +156,14 @@ namespace DeepLTests.Offline {
       await client.UpdateMultilingualGlossaryNameAsync(
             "g1",
             "New name",
-            new BaseRequestOptions { ExtraBodyParameters = new Dictionary<string, string> { ["extra"] = "1" } });
+            new BaseRequestOptions { ExtraBodyParameters = new Dictionary<string, object?> { ["extra"] = "1" } });
       await client.UpdateMultilingualGlossaryDictionaryAsync(
             "g1",
             "en",
             "de",
             Apple,
             new BaseRequestOptions {
-              ExtraBodyParameters = new Dictionary<string, string> { ["extra"] = "1" }
+              ExtraBodyParameters = new Dictionary<string, object?> { ["extra"] = "1" }
             });
     }
 
@@ -208,7 +208,7 @@ namespace DeepLTests.Offline {
       ExpectJson(HttpMethod.Put, "v3/glossaries/g1/dictionaries", csvBody).RespondJson(DictionaryReply);
       ExpectJson(HttpMethod.Put, "v3/glossaries/g1/dictionaries", csvBody).RespondJson(DictionaryReply);
       var options = new ReplaceMultilingualGlossaryDictionaryOptions {
-        ExtraBodyParameters = new Dictionary<string, string> { ["entries_format"] = "x", ["extra"] = "1" }
+        ExtraBodyParameters = new Dictionary<string, object?> { ["entries_format"] = "x", ["extra"] = "1" }
       };
       var dictionary = new MultilingualGlossaryDictionaryEntries("en", "de", Apple);
       var client = CreateClient();
@@ -237,7 +237,7 @@ namespace DeepLTests.Offline {
                   ("extra", "1"))
             .RespondJson(GlossaryReply);
       var options = new CreateMultilingualGlossaryOptions {
-        ExtraBodyParameters = new Dictionary<string, string> { ["extra"] = "1" }
+        ExtraBodyParameters = new Dictionary<string, object?> { ["extra"] = "1" }
       };
       var client = CreateClient();
       await client.CreateMultilingualGlossaryAsync(
@@ -286,7 +286,7 @@ namespace DeepLTests.Offline {
             new UpdateMultilingualGlossaryOptions {
               Name = "New name",
               Dictionaries = new[] { new MultilingualGlossaryDictionaryEntries("en", "de", Apple) },
-              ExtraBodyParameters = new Dictionary<string, string> { ["extra"] = "1" }
+              ExtraBodyParameters = new Dictionary<string, object?> { ["extra"] = "1" }
             });
       Assert.Equal("g1", updated.GlossaryId);
       await client.UpdateMultilingualGlossaryAsync(Info(), new UpdateMultilingualGlossaryOptions { Name = "New name" });

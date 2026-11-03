@@ -281,7 +281,43 @@ namespace DeepLTests.Offline {
             null,
             "DE",
             new TextTranslateOptions {
-              ExtraBodyParameters = new Dictionary<string, string> { { "target_lang", "FR" }, { "debug", "1" } }
+              ExtraBodyParameters = new Dictionary<string, object?> { { "target_lang", "FR" }, { "debug", "1" } }
+            });
+    }
+
+    [Fact]
+    public async Task SendsExtraBodyParametersWithTheirJsonTypes() {
+      ExpectJsonFields(
+                  HttpMethod.Post,
+                  "v2/translate",
+                  ("target_lang", "de"),
+                  ("translation_memory_id", "tm1"),
+                  ("show_billed_characters", false),
+                  ("translation_memory_threshold", 80),
+                  ("text", new[] { "Hello" }))
+            .RespondJson(Reply);
+      await CreateClient().TranslateTextAsync(
+            "Hello",
+            null,
+            "DE",
+            new TextTranslateOptions {
+              TranslationMemory = "tm1",
+              ExtraBodyParameters = new Dictionary<string, object?> {
+                ["show_billed_characters"] = false, ["translation_memory_threshold"] = 80
+              }
+            });
+    }
+
+    [Fact]
+    public async Task NullExtraBodyParameterRemovesTheField() {
+      ExpectJsonFields(HttpMethod.Post, "v2/translate", ("target_lang", "de"), ("text", new[] { "Hello" }))
+            .RespondJson(Reply);
+      await CreateClient().TranslateTextAsync(
+            "Hello",
+            null,
+            "DE",
+            new TextTranslateOptions {
+              ExtraBodyParameters = new Dictionary<string, object?> { ["show_billed_characters"] = null }
             });
     }
 
@@ -298,7 +334,7 @@ namespace DeepLTests.Offline {
             new[] { "a", "b" },
             null,
             "DE",
-            new TextTranslateOptions { ExtraBodyParameters = new Dictionary<string, string> { { "text", "x" } } });
+            new TextTranslateOptions { ExtraBodyParameters = new Dictionary<string, object?> { { "text", "x" } } });
     }
 
     [Theory]

@@ -183,27 +183,27 @@ namespace DeepLTests.Offline {
       ExpectJson(HttpMethod.Put, "v2/admin/developer-keys/limits", $@"{{""key_id"":""{KeyId}"",""characters"":""2""}}")
             .RespondJson(DeveloperKeyJson);
       var client = CreateAdminClient();
-      var extra = new Dictionary<string, string> { ["extra"] = "1" };
+      var extra = new Dictionary<string, object?> { ["extra"] = "1" };
       var limits = new DeveloperKeyUsageLimitsUpdate { Characters = 1 };
 
       await client.CreateDeveloperKeyAsync(
             new CreateDeveloperKeyOptions {
               Label = "label",
-              ExtraBodyParameters = new Dictionary<string, string> { ["label"] = "override", ["extra"] = "1" }
+              ExtraBodyParameters = new Dictionary<string, object?> { ["label"] = "override", ["extra"] = "1" }
             });
       await client.CreateDeveloperKeyAsync(new CreateDeveloperKeyOptions { ExtraBodyParameters = extra });
       await client.DeactivateDeveloperKeyAsync(KeyId, new DeactivateDeveloperKeyOptions { ExtraBodyParameters = extra });
       await client.DeactivateDeveloperKeyAsync(
             Key,
             new DeactivateDeveloperKeyOptions {
-              ExtraBodyParameters = new Dictionary<string, string> { ["key_id"] = "other" }
+              ExtraBodyParameters = new Dictionary<string, object?> { ["key_id"] = "other" }
             });
       await client.RenameDeveloperKeyAsync(Key, "x", new RenameDeveloperKeyOptions { ExtraBodyParameters = extra });
       await client.RenameDeveloperKeyAsync(
             KeyId,
             "x",
             new RenameDeveloperKeyOptions {
-              ExtraBodyParameters = new Dictionary<string, string> { ["label"] = "override" }
+              ExtraBodyParameters = new Dictionary<string, object?> { ["label"] = "override" }
             });
       await client.SetDeveloperKeyUsageLimitsAsync(
             KeyId,
@@ -213,7 +213,7 @@ namespace DeepLTests.Offline {
             Key,
             limits,
             new SetDeveloperKeyUsageLimitsOptions {
-              ExtraBodyParameters = new Dictionary<string, string> { ["characters"] = "2" }
+              ExtraBodyParameters = new Dictionary<string, object?> { ["characters"] = "2" }
             });
     }
 

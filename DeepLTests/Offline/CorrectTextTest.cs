@@ -64,7 +64,7 @@ namespace DeepLTests.Offline {
             "typo",
             "de",
             new CorrectTextOptions {
-                  ExtraBodyParameters = new Dictionary<string, string> { ["target_lang"] = "en-GB", ["extra"] = "1" }
+                  ExtraBodyParameters = new Dictionary<string, object?> { ["target_lang"] = "en-GB", ["extra"] = "1" }
             });
     }
 

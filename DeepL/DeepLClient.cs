@@ -3,7 +3,9 @@
 // license that can be found in the LICENSE file.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -4421,11 +4423,18 @@ namespace DeepL {
       return new Dictionary<string, string> { ["lang"] = entries.Lang, ["entries"] = string.Join("\n", terms) };
     }
 
-    /// <summary>Adds the extra body parameters of the options last, replacing fields with the same key.</summary>
+    /// <summary>
+    ///   Adds the extra body parameters of the options last, replacing fields with the same key; a <c>null</c> value
+    ///   removes the field.
+    /// </summary>
     private static void AddExtraBodyParameters(Dictionary<string, object> requestData, BaseRequestOptions? options) {
       if (options?.ExtraBodyParameters == null) return;
       foreach (var pair in options.ExtraBodyParameters) {
-        requestData[pair.Key] = pair.Value;
+        if (pair.Value == null) {
+          requestData.Remove(pair.Key);
+        } else {
+          requestData[pair.Key] = pair.Value;
+        }
       }
     }
 
@@ -4435,14 +4444,42 @@ namespace DeepL {
     /// <summary>Returns the ID of the given custom instruction, or an empty string if it or its ID is <c>null</c>.</summary>
     private static string InstructionId(CustomInstruction? instruction) => instruction?.Id ?? string.Empty;
 
-    /// <summary>Adds the extra body parameters of the options last to form fields, replacing fields with the same key.</summary>
+    /// <summary>
+    ///   Adds the extra body parameters of the options last to form fields, replacing fields with the same key; a
+    ///   <c>null</c> value removes the field.
+    /// </summary>
     private static void AddExtraBodyParameters(List<(string Key, string Value)> bodyParams, BaseRequestOptions? options) {
       if (options?.ExtraBodyParameters == null) return;
       foreach (var pair in options.ExtraBodyParameters) {
         bodyParams.RemoveAll(param => param.Key == pair.Key);
-        bodyParams.Add((pair.Key, pair.Value));
+        if (pair.Value != null) {
+          bodyParams.Add((pair.Key, FormValue(pair.Value)));
+        }
       }
     }
+
+    /// <summary>
+    ///   Returns the form field text of an extra body parameter: strings as given, collections comma-joined, booleans as
+    ///   <c>true</c>/<c>false</c>, numbers in the invariant culture, anything else as its JSON text.
+    /// </summary>
+    private static string FormValue(object value) {
+      switch (value) {
+        case string text:
+          return text;
+        case bool flag:
+          return flag ? "true" : "false";
+        case IEnumerable collection:
+          return string.Join(",", collection.Cast<object?>().Select(item => item == null ? "" : FormValue(item)));
+        case IFormattable number when IsNumber(number):
+          return number.ToString(null, CultureInfo.InvariantCulture);
+        default:
+          return JsonSerializer.Serialize(value, value.GetType(), SerializationOptions);
+      }
+    }
+
+    private static bool IsNumber(object value) =>
+          value is byte || value is sbyte || value is short || value is ushort || value is int || value is uint ||
+          value is long || value is ulong || value is float || value is double || value is decimal;
 
     /// <summary>Returns the JSON <c>term_lists</c> array for the given term lists.</summary>
     /// <param name="termLists">The language and terms of each term list.</param>

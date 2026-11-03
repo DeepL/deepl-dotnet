@@ -288,10 +288,23 @@ namespace DeepLTests.Offline {
           Upload(
                 new DocumentTranslateOptions {
                   Formality = Formality.Less,
-                  ExtraBodyParameters = new System.Collections.Generic.Dictionary<string, string> { { "debug", "1" } }
+                  ExtraBodyParameters = new System.Collections.Generic.Dictionary<string, object?> { { "debug", "1" } }
                 },
                 ("formality", null, "less"),
                 ("debug", null, "1"));
+
+    [Fact]
+    public Task FormatsTypedExtraBodyParametersAsFormFieldsAndRemovesNullOnes() =>
+          Upload(
+                new DocumentTranslateOptions {
+                  Formality = Formality.Less,
+                  ExtraBodyParameters = new System.Collections.Generic.Dictionary<string, object?> {
+                    ["formality"] = null, ["enable_watermark"] = true, ["ratio"] = 0.5, ["tags"] = new[] { "a", "b" }
+                  }
+                },
+                ("enable_watermark", null, "true"),
+                ("ratio", null, "0.5"),
+                ("tags", null, "a,b"));
 
     [Fact]
     public async Task ParsesHandle() {

@@ -523,7 +523,7 @@ namespace DeepLTests.Offline {
       var options = new CreateTranslationMemoryImportOptions {
         ContentType = "text/xml",
         DisplayName = "My TM",
-        ExtraBodyParameters = new Dictionary<string, string> { ["parameters"] = "replaced", ["beta"] = "on" }
+        ExtraBodyParameters = new Dictionary<string, object?> { ["parameters"] = "replaced", ["beta"] = "on" }
       };
       var created = await CreateClient().CreateTranslationMemoryImportAsync("a.tmx", 5, options);
       Assert.Equal("j1", created.JobId);
@@ -560,7 +560,7 @@ namespace DeepLTests.Offline {
         DisplayName = "My TM",
         ContentType = "text/xml",
         Timeout = TimeSpan.FromMinutes(1),
-        ExtraBodyParameters = new Dictionary<string, string> { ["beta"] = "on" }
+        ExtraBodyParameters = new Dictionary<string, object?> { ["beta"] = "on" }
       };
       var job = await CreateClient().ImportTranslationMemoryFromFilepathAsync(path, options);
       Assert.Equal("tm1", job.Result!.TranslationMemoryId);

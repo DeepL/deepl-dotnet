@@ -49,12 +49,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `UpdateMultilingualGlossaryNameAsync()`, `UpdateMultilingualGlossaryDictionaryAsync()` and
   `UpdateMultilingualGlossaryDictionaryFromCsvAsync()`) now send JSON request bodies instead of form-encoded ones.
   `text`, the tag lists, `custom_instructions` and `glossary_ids` are sent as JSON arrays, the v3 `dictionaries` as
-  an array of objects, and booleans and numbers with their JSON types. The API does not convert types, so
-  `ExtraBodyParameters` on these methods now reach it as JSON strings: a value for a field the API types as boolean,
-  number or array (for example `["outline_detection"] = "0"`) is rejected now. Remove such entries, or use the
-  matching option (`OutlineDetection = false`). Code that intercepts or asserts on request bodies (proxies, test
-  doubles) sees JSON with `Content-Type: application/json`. Document upload stays multipart, with `glossary_ids`
-  comma-separated as before.
+  an array of objects, and booleans and numbers with their JSON types. Code that intercepts or asserts on request
+  bodies (proxies, test doubles) sees JSON with `Content-Type: application/json`. Document upload stays multipart,
+  with `glossary_ids` comma-separated as before.
+- `BaseRequestOptions.ExtraBodyParameters` (on every options class, including those of `DeepLAdminClient`) is now a
+  `Dictionary<string, object?>`, so extra parameters can be booleans, numbers, arrays or objects. In JSON bodies each
+  value is sent with its JSON type, and a `null` value removes that key from the body. In the multipart document
+  upload, strings are sent as given, collections comma-joined, booleans as `true`/`false`, numbers in the invariant
+  culture and other values as their JSON text. The API does not convert types, so a string for a field it types as
+  boolean, number or array (for example `["outline_detection"] = "0"`) is now rejected: pass the typed value
+  (`["outline_detection"] = false`) or use the matching option. Collection initializers with string values compile
+  unchanged; variables or helpers declared as `Dictionary<string, string>` must be declared as
+  `Dictionary<string, object?>`.
 
 ### Removed
 - Removed the `ConfiguredRules` class and the `DeepLClient.CreateStyleRuleAsync()` and

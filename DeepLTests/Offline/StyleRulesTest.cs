@@ -32,7 +32,7 @@ namespace DeepLTests.Offline {
 
     private static CustomInstruction Instruction() => new CustomInstruction("L", "P", "de", "i1");
 
-    private static Dictionary<string, string> Extra() => new Dictionary<string, string> { ["extra"] = "1" };
+    private static Dictionary<string, object?> Extra() => new Dictionary<string, object?> { ["extra"] = "1" };
 
     [Fact]
     public async Task AcceptsStyleRuleObjectInAllEightMethods() {
@@ -121,10 +121,23 @@ namespace DeepLTests.Offline {
             null,
             new[] { new CustomInstruction("L", "P") },
             new CreateStyleRuleOptions {
-              ExtraBodyParameters = new Dictionary<string, string> { ["name"] = "Override", ["extra"] = "1" }
+              ExtraBodyParameters = new Dictionary<string, object?> { ["name"] = "Override", ["extra"] = "1" }
             });
       await client.UpdateStyleRuleNameAsync("s1", "New", new UpdateStyleRuleNameOptions { ExtraBodyParameters = Extra() });
       await client.UpdateStyleRuleNameAsync(Info(), "New", new UpdateStyleRuleNameOptions { ExtraBodyParameters = Extra() });
+    }
+
+    [Fact]
+    public async Task SendsTypedExtraBodyParametersAsJson() {
+      ExpectJson(Patch, "v3/style_rules/s1", "{\"flag\":true,\"count\":2,\"ids\":[\"a\",\"b\"]}").RespondJson(RuleReply);
+      await CreateClient().UpdateStyleRuleNameAsync(
+            "s1",
+            "New",
+            new UpdateStyleRuleNameOptions {
+              ExtraBodyParameters = new Dictionary<string, object?> {
+                ["name"] = null, ["flag"] = true, ["count"] = 2, ["ids"] = new[] { "a", "b" }
+              }
+            });
     }
 
     [Fact]
