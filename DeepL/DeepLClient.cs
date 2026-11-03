@@ -2046,19 +2046,6 @@ namespace DeepL {
                       cancellationToken)
                 .ConfigureAwait(false);
 
-    /// <inheritdoc />
-    [Obsolete(
-          "Use the overload taking the configured rules as a Dictionary<string, Dictionary<string, string>> instead. " +
-          "Will be removed in the next major version.")]
-    public async Task<StyleRuleInfo> CreateStyleRuleAsync(
-          string name,
-          string language,
-          ConfiguredRules? configuredRules,
-          CustomInstruction[]? customInstructions = null,
-          CancellationToken cancellationToken = default) =>
-          await CreateStyleRuleAsync(name, language, configuredRules, customInstructions, null, cancellationToken)
-                .ConfigureAwait(false);
-
     /// <summary>Creates a new style rule.</summary>
     /// <param name="name">Name for the new style rule.</param>
     /// <param name="language">Language code for the style rule.</param>
@@ -2286,41 +2273,6 @@ namespace DeepL {
           CancellationToken cancellationToken = default) =>
           await DeleteStyleRuleAsync(StyleRuleId(styleRule), cancellationToken).ConfigureAwait(false);
 
-    /// <inheritdoc />
-    [Obsolete(
-          "Use the overload taking the configured rules as a Dictionary<string, Dictionary<string, string>> instead. " +
-          "Will be removed in the next major version.")]
-    public async Task<StyleRuleInfo> UpdateStyleRuleConfiguredRulesAsync(
-          string styleId,
-          ConfiguredRules configuredRules,
-          CancellationToken cancellationToken = default) =>
-          await UpdateStyleRuleConfiguredRulesCoreAsync(styleId, configuredRules, null, cancellationToken)
-                .ConfigureAwait(false);
-
-    /// <summary>
-    ///   Updates the configured rules of the given style rule, like
-    ///   <see cref="UpdateStyleRuleConfiguredRulesAsync(string, ConfiguredRules, CancellationToken)" />.
-    /// </summary>
-    /// <param name="styleRule">The style rule to update.</param>
-    /// <param name="configuredRules">The new configured rules.</param>
-    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
-    /// <returns>A <see cref="StyleRuleInfo" /> object for the updated style rule.</returns>
-    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
-    /// <exception cref="NotFoundException">If the specified style rule was not found.</exception>
-    /// <exception cref="DeepLException">
-    ///   If any error occurs while communicating with the DeepL API, a
-    ///   <see cref="DeepLException" /> or a derived class will be thrown.
-    /// </exception>
-    [Obsolete(
-          "Use the overload taking the configured rules as a Dictionary<string, Dictionary<string, string>> instead. " +
-          "Will be removed in the next major version.")]
-    public async Task<StyleRuleInfo> UpdateStyleRuleConfiguredRulesAsync(
-          StyleRuleInfo styleRule,
-          ConfiguredRules configuredRules,
-          CancellationToken cancellationToken = default) =>
-          await UpdateStyleRuleConfiguredRulesCoreAsync(StyleRuleId(styleRule), configuredRules, null, cancellationToken)
-                .ConfigureAwait(false);
-
     /// <summary>Updates the configured rules of a style rule.</summary>
     /// <param name="styleId">The ID of the style rule to update.</param>
     /// <param name="configuredRules">
@@ -2368,19 +2320,7 @@ namespace DeepL {
           string styleId,
           Dictionary<string, Dictionary<string, string>> configuredRules,
           UpdateStyleRuleConfiguredRulesOptions? options,
-          CancellationToken cancellationToken = default) =>
-          await UpdateStyleRuleConfiguredRulesCoreAsync(styleId, configuredRules, options, cancellationToken)
-                .ConfigureAwait(false);
-
-    /// <summary>
-    ///   Sends the configured rules of a style rule; shared by the overloads taking a map and the deprecated overloads
-    ///   taking a <see cref="ConfiguredRules" />, which pass the converted map (<c>null</c> for a <c>null</c> object).
-    /// </summary>
-    private async Task<StyleRuleInfo> UpdateStyleRuleConfiguredRulesCoreAsync(
-          string styleId,
-          Dictionary<string, Dictionary<string, string>>? configuredRules,
-          UpdateStyleRuleConfiguredRulesOptions? options,
-          CancellationToken cancellationToken) {
+          CancellationToken cancellationToken = default) {
       if (string.IsNullOrWhiteSpace(styleId)) {
         throw new ArgumentException($"Parameter {nameof(styleId)} must not be empty");
       }

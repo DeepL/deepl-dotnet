@@ -777,9 +777,8 @@ code. You can optionally provide `configuredRules` and `customInstructions`.
 The configured rules are a `Dictionary<string, Dictionary<string, string>>`
 mapping each category to its rules and their values, keyed by the API names
 (for example `dates_and_times`), and are sent as given, so categories and rules
-this library does not know can be used. The overloads taking a
-`ConfiguredRules` object are deprecated; a `ConfiguredRules` object converts
-implicitly to this map.
+this library does not know can be used. `StyleRuleInfo.ConfiguredRules` returns
+the configured rules in the same shape, as the API sends them.
 
 ```c#
 var rule = await client.CreateStyleRuleAsync("My Style Rule", "en");
@@ -803,7 +802,8 @@ Use `GetStyleRuleAsync()` to retrieve a single style rule by ID or
 corresponding to all of your stored style rules. The method accepts optional
 parameters: `page` (page number for pagination, 0-indexed), `pageSize` (number
 of items per page), and `detailed`. When `true`, the response includes
-`ConfiguredRules` and `CustomInstructions` for each style rule. When `false`
+`ConfiguredRules` (a `Dictionary<string, Dictionary<string, string>>` keyed by
+the API category names) and `CustomInstructions` for each style rule. When `false`
 (default), these fields are omitted for faster responses.
 
 ```c#
@@ -820,8 +820,8 @@ foreach (var r in styleRules) {
 // List with detailed configuration
 var styleRulesDetailed = await client.GetAllStyleRulesAsync(detailed: true);
 foreach (var r in styleRulesDetailed) {
-  if (r.ConfiguredRules?.Numbers != null) {
-    Console.WriteLine($"  Number formatting: {string.Join(", ", r.ConfiguredRules.Numbers.Keys)}");
+  if (r.ConfiguredRules != null && r.ConfiguredRules.TryGetValue("numbers", out var numbers)) {
+    Console.WriteLine($"  Number formatting: {string.Join(", ", numbers.Keys)}");
   }
 }
 ```
@@ -830,8 +830,7 @@ foreach (var r in styleRulesDetailed) {
 
 Use `UpdateStyleRuleNameAsync()` to rename a style rule, and
 `UpdateStyleRuleConfiguredRulesAsync()` to replace its configured rules with a
-`Dictionary<string, Dictionary<string, string>>`, sent as given (the overloads
-taking a `ConfiguredRules` object are deprecated).
+`Dictionary<string, Dictionary<string, string>>`, sent as given.
 
 ```c#
 // Update the name

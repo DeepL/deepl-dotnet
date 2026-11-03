@@ -22,8 +22,10 @@ namespace DeepLTests.Offline {
 
     private const string InstructionReply = "{\"id\":\"i1\",\"label\":\"L\",\"prompt\":\"P\",\"source_language\":\"de\"}";
 
-    private static ConfiguredRules Rules() =>
-          new ConfiguredRules(datesAndTimes: new Dictionary<string, string> { { "calendar_era", "use_bc_and_ad" } });
+    private static Dictionary<string, Dictionary<string, string>> Rules() =>
+          new Dictionary<string, Dictionary<string, string>> {
+            ["dates_and_times"] = new Dictionary<string, string> { ["calendar_era"] = "use_bc_and_ad" }
+          };
 
     private static StyleRuleInfo Info() =>
           new StyleRuleInfo("s1", "My rule", DateTime.UtcNow, DateTime.UtcNow, "en", 3, null, null);
@@ -103,15 +105,6 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
-    public void ConvertsConfiguredRulesToTheMapOfSetCategories() {
-      Dictionary<string, Dictionary<string, string>>? map = Rules();
-      Assert.NotNull(map);
-      var category = Assert.Single(map!);
-      Assert.Equal("dates_and_times", category.Key);
-      Assert.Equal("use_bc_and_ad", category.Value["calendar_era"]);
-    }
-
-    [Fact]
     public async Task SendsExtraBodyParametersLastWhenCreatingAndRenaming() {
       ExpectJson(
                   HttpMethod.Post,
@@ -186,13 +179,18 @@ namespace DeepLTests.Offline {
 
     [Fact]
     public async Task ParsesStyleRule() {
-      ExpectNoBody(HttpMethod.Get, "v3/style_rules/s1").RespondJson(RuleReply);
+      ExpectNoBody(HttpMethod.Get, "v3/style_rules/s1")
+            .RespondJson(
+                  RuleReply.Replace(
+                        "\"configured_rules\":{",
+                        "\"configured_rules\":{\"new_category\":{\"some_rule\":\"some_value\"},"));
       var rule = await CreateClient().GetStyleRuleAsync("s1");
       Assert.Equal("s1", rule.StyleId);
       Assert.Equal(new DateTime(2025, 1, 2, 3, 4, 5, DateTimeKind.Utc), rule.CreationTime.ToUniversalTime());
       Assert.Equal(new DateTime(2025, 1, 3, 3, 4, 5, DateTimeKind.Utc), rule.UpdatedTime.ToUniversalTime());
-      Assert.Equal("use_bc_and_ad", rule.ConfiguredRules!.DatesAndTimes!["calendar_era"]);
-      Assert.Null(rule.ConfiguredRules.Numbers);
+      Assert.Equal(2, rule.ConfiguredRules!.Count);
+      Assert.Equal("use_bc_and_ad", rule.ConfiguredRules["dates_and_times"]["calendar_era"]);
+      Assert.Equal("some_value", rule.ConfiguredRules["new_category"]["some_rule"]);
       var instruction = Assert.Single(rule.CustomInstructions!);
       Assert.Equal("de", instruction.SourceLanguage);
     }
@@ -206,13 +204,11 @@ namespace DeepLTests.Offline {
                   "\"configured_rules\":{\"dates_and_times\":{\"calendar_era\":\"use_bc_and_ad\"}}," +
                   "\"custom_instructions\":[{\"label\":\"Tone\",\"prompt\":\"Be formal\",\"source_language\":\"de\"}]}")
             .RespondJson(RuleReply);
-#pragma warning disable CS0618 // The deprecated ConfiguredRules overloads stay covered by the existing tests.
       await CreateClient().CreateStyleRuleAsync(
             "My rule",
             "en",
             Rules(),
             new[] { new CustomInstruction("Tone", "Be formal", "de") });
-#pragma warning restore CS0618
     }
 
     [Fact]
@@ -225,18 +221,6 @@ namespace DeepLTests.Offline {
     public async Task SendsJsonNameWhenRenaming() {
       ExpectJson(Patch, "v3/style_rules/s1", "{\"name\":\"New\"}").RespondJson(RuleReply);
       await CreateClient().UpdateStyleRuleNameAsync("s1", "New");
-    }
-
-    [Fact]
-    public async Task SendsJsonRulesWhenUpdatingConfiguredRules() {
-      ExpectJson(
-                  HttpMethod.Put,
-                  "v3/style_rules/s1/configured_rules",
-                  "{\"dates_and_times\":{\"calendar_era\":\"use_bc_and_ad\"}}")
-            .RespondJson(RuleReply);
-#pragma warning disable CS0618
-      await CreateClient().UpdateStyleRuleConfiguredRulesAsync("s1", Rules());
-#pragma warning restore CS0618
     }
 
     [Fact]
@@ -296,9 +280,7 @@ namespace DeepLTests.Offline {
       await Assert.ThrowsAsync<ArgumentException>(() => client.UpdateStyleRuleNameAsync("", "n"));
       await Assert.ThrowsAsync<ArgumentException>(() => client.UpdateStyleRuleNameAsync("s1", ""));
       await Assert.ThrowsAsync<ArgumentException>(() => client.DeleteStyleRuleAsync(""));
-#pragma warning disable CS0618
       await Assert.ThrowsAsync<ArgumentException>(() => client.UpdateStyleRuleConfiguredRulesAsync("", Rules()));
-#pragma warning restore CS0618
       await Assert.ThrowsAsync<ArgumentException>(() => client.CreateStyleRuleCustomInstructionAsync("", "L", "P"));
       await Assert.ThrowsAsync<ArgumentException>(() => client.CreateStyleRuleCustomInstructionAsync("s1", "", "P"));
       await Assert.ThrowsAsync<ArgumentException>(() => client.CreateStyleRuleCustomInstructionAsync("s1", "L", ""));
@@ -314,9 +296,7 @@ namespace DeepLTests.Offline {
 
     [Fact]
     public async Task ThrowsArgumentNullExceptionWhenConfiguredRulesAreNull() =>
-#pragma warning disable CS0618
           await Assert.ThrowsAsync<ArgumentNullException>(
-                () => CreateClient().UpdateStyleRuleConfiguredRulesAsync("s1", null!));
-#pragma warning restore CS0618
+                () => CreateClient().UpdateStyleRuleConfiguredRulesAsync("s1", (Dictionary<string, Dictionary<string, string>>)null!));
   }
 }

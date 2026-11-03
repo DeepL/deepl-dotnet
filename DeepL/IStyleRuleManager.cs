@@ -1,6 +1,7 @@
 // Copyright 2025 DeepL SE (https://www.deepl.com)
 // Use of this source code is governed by an MIT
 // license that can be found in the LICENSE file.
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using DeepL.Model;
@@ -28,7 +29,10 @@ namespace DeepL {
     /// <summary>Creates a new style rule.</summary>
     /// <param name="name">Name for the new style rule.</param>
     /// <param name="language">Language code for the style rule.</param>
-    /// <param name="configuredRules">Optional configured rules.</param>
+    /// <param name="configuredRules">
+    ///   Optional configured rules: category to rule to value, keyed by the API names (for example
+    ///   <c>dates_and_times</c>), sent as given.
+    /// </param>
     /// <param name="customInstructions">Optional custom instructions.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="StyleRuleInfo" /> object for the newly created style rule.</returns>
@@ -39,7 +43,7 @@ namespace DeepL {
     Task<StyleRuleInfo> CreateStyleRuleAsync(
           string name,
           string language,
-          ConfiguredRules? configuredRules = null,
+          Dictionary<string, Dictionary<string, string>>? configuredRules = null,
           CustomInstruction[]? customInstructions = null,
           CancellationToken cancellationToken = default);
 
@@ -85,7 +89,10 @@ namespace DeepL {
 
     /// <summary>Updates the configured rules of a style rule.</summary>
     /// <param name="styleId">The ID of the style rule to update.</param>
-    /// <param name="configuredRules">The new configured rules.</param>
+    /// <param name="configuredRules">
+    ///   The new configured rules: category to rule to value, keyed by the API names (for example
+    ///   <c>dates_and_times</c>), sent as given.
+    /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="StyleRuleInfo" /> object for the updated style rule.</returns>
     /// <exception cref="NotFoundException">If the specified style rule was not found.</exception>
@@ -95,7 +102,7 @@ namespace DeepL {
     /// </exception>
     Task<StyleRuleInfo> UpdateStyleRuleConfiguredRulesAsync(
           string styleId,
-          ConfiguredRules configuredRules,
+          Dictionary<string, Dictionary<string, string>> configuredRules,
           CancellationToken cancellationToken = default);
 
     /// <summary>Creates a custom instruction for a style rule.</summary>

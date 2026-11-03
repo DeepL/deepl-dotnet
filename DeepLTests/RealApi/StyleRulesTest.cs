@@ -14,16 +14,15 @@ namespace DeepLTests.RealApi {
     public async Task SendsTheStyleRuleRequestsCreateGetListRenameConfigureInstructionsAndDelete() {
       var client = RealApiClient.CreateClient();
       var name = RealApiHelpers.GetUniqueName("style-rule");
-      var rules = new ConfiguredRules(
-            datesAndTimes: new Dictionary<string, string> { { "calendar_era", "use_bc_and_ad" } });
+      var rules = new Dictionary<string, Dictionary<string, string>> {
+        ["dates_and_times"] = new Dictionary<string, string> { ["calendar_era"] = "use_bc_and_ad" }
+      };
 
-#pragma warning disable CS0618 // The deprecated ConfiguredRules overloads stay covered by the existing test.
       var styleRule = await client.CreateStyleRuleAsync(
             name,
             "en",
             rules,
             new[] { new CustomInstruction("Init", "Be formal", "de") });
-#pragma warning restore CS0618
       try {
         Assert.NotEmpty(styleRule.StyleId);
         Assert.Equal(name, styleRule.Name);
@@ -48,9 +47,7 @@ namespace DeepLTests.RealApi {
         var renamed = await client.UpdateStyleRuleNameAsync(styleRule.StyleId, name + "-renamed");
         Assert.Equal(name + "-renamed", renamed.Name);
 
-#pragma warning disable CS0618
         var configured = await client.UpdateStyleRuleConfiguredRulesAsync(styleRule.StyleId, rules);
-#pragma warning restore CS0618
         Assert.Equal(styleRule.StyleId, configured.StyleId);
 
         var instruction = await client.CreateStyleRuleCustomInstructionAsync(styleRule.StyleId, "Label", "Prompt", "de");

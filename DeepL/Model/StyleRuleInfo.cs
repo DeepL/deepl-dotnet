@@ -8,80 +8,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
 namespace DeepL.Model {
-  /// <summary>Configuration rules for a style rule list.</summary>
-  public sealed class ConfiguredRules {
-    /// <summary>Initializes a new instance of <see cref="ConfiguredRules" />.</summary>
-    [JsonConstructor]
-    public ConfiguredRules(
-          Dictionary<string, string>? datesAndTimes = null,
-          Dictionary<string, string>? formatting = null,
-          Dictionary<string, string>? numbers = null,
-          Dictionary<string, string>? punctuation = null,
-          Dictionary<string, string>? spellingAndGrammar = null,
-          Dictionary<string, string>? styleAndTone = null,
-          Dictionary<string, string>? vocabulary = null) {
-      DatesAndTimes = datesAndTimes;
-      Formatting = formatting;
-      Numbers = numbers;
-      Punctuation = punctuation;
-      SpellingAndGrammar = spellingAndGrammar;
-      StyleAndTone = styleAndTone;
-      Vocabulary = vocabulary;
-    }
-
-    /// <summary>Date and time formatting rules.</summary>
-    [JsonPropertyName("dates_and_times")]
-    public Dictionary<string, string>? DatesAndTimes { get; }
-
-    /// <summary>Text formatting rules.</summary>
-    [JsonPropertyName("formatting")]
-    public Dictionary<string, string>? Formatting { get; }
-
-    /// <summary>Number formatting rules.</summary>
-    [JsonPropertyName("numbers")]
-    public Dictionary<string, string>? Numbers { get; }
-
-    /// <summary>Punctuation rules.</summary>
-    [JsonPropertyName("punctuation")]
-    public Dictionary<string, string>? Punctuation { get; }
-
-    /// <summary>Spelling and grammar rules.</summary>
-    [JsonPropertyName("spelling_and_grammar")]
-    public Dictionary<string, string>? SpellingAndGrammar { get; }
-
-    /// <summary>Style and tone rules.</summary>
-    [JsonPropertyName("style_and_tone")]
-    public Dictionary<string, string>? StyleAndTone { get; }
-
-    /// <summary>Vocabulary rules.</summary>
-    [JsonPropertyName("vocabulary")]
-    public Dictionary<string, string>? Vocabulary { get; }
-
-    /// <summary>
-    ///   Implicitly converts the <see cref="ConfiguredRules" /> to the configured rules map: category to rule to value,
-    ///   keyed by the API names (for example <c>dates_and_times</c>). Categories that are <c>null</c> are left out.
-    /// </summary>
-    /// <param name="configuredRules"><see cref="ConfiguredRules" /> object to convert.</param>
-    /// <returns>A new map of the set categories, or <c>null</c> if <paramref name="configuredRules" /> is <c>null</c>.</returns>
-    [return: NotNullIfNotNull("configuredRules")]
-    public static implicit operator Dictionary<string, Dictionary<string, string>>?(ConfiguredRules? configuredRules) {
-      if (configuredRules == null) return null;
-      var result = new Dictionary<string, Dictionary<string, string>>();
-      void Add(string category, Dictionary<string, string>? rules) {
-        if (rules != null) result[category] = rules;
-      }
-
-      Add("dates_and_times", configuredRules.DatesAndTimes);
-      Add("formatting", configuredRules.Formatting);
-      Add("numbers", configuredRules.Numbers);
-      Add("punctuation", configuredRules.Punctuation);
-      Add("spelling_and_grammar", configuredRules.SpellingAndGrammar);
-      Add("style_and_tone", configuredRules.StyleAndTone);
-      Add("vocabulary", configuredRules.Vocabulary);
-      return result;
-    }
-  }
-
   /// <summary>Custom instruction for a style rule.</summary>
   public sealed class CustomInstruction {
     /// <summary>Initializes a new instance of <see cref="CustomInstruction" />.</summary>
@@ -129,7 +55,7 @@ namespace DeepL.Model {
           DateTime updatedTime,
           string language,
           int version,
-          ConfiguredRules? configuredRules,
+          Dictionary<string, Dictionary<string, string>>? configuredRules,
           CustomInstruction[]? customInstructions) {
       StyleId = styleId;
       Name = name;
@@ -165,9 +91,12 @@ namespace DeepL.Model {
     [JsonPropertyName("version")]
     public int Version { get; }
 
-    /// <summary>The predefined rules that have been enabled.</summary>
+    /// <summary>
+    ///   The predefined rules that have been enabled, as the API returns them: category to rule to value, keyed by the
+    ///   API names (for example <c>dates_and_times</c>), the same shape the create and update methods take.
+    /// </summary>
     [JsonPropertyName("configured_rules")]
-    public ConfiguredRules? ConfiguredRules { get; }
+    public Dictionary<string, Dictionary<string, string>>? ConfiguredRules { get; }
 
     /// <summary>Optional list of custom instructions.</summary>
     [JsonPropertyName("custom_instructions")]

@@ -27,8 +27,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `MultilingualGlossaryDictionaryEntries` constructor taking a `MultilingualGlossaryDictionaryEntriesResult` are now
   internal. Construct `MultilingualGlossaryDictionaryEntries` from the language codes and a `GlossaryEntries`
   object instead.
+- `StyleRuleInfo.ConfiguredRules` is now a `Dictionary<string, Dictionary<string, string>>`, the API's
+  `configured_rules` object as sent (category to rule to value, keyed by the API names), the same shape
+  `CreateStyleRuleAsync()` and `UpdateStyleRuleConfiguredRulesAsync()` take. Categories the removed
+  `ConfiguredRules` class lacked are no longer dropped. Replace `rule.ConfiguredRules.DatesAndTimes` with
+  `rule.ConfiguredRules["dates_and_times"]` (or `TryGetValue("dates_and_times", ...)`), and likewise for the other
+  categories. The `IStyleRuleManager` methods `CreateStyleRuleAsync()` and `UpdateStyleRuleConfiguredRulesAsync()`
+  now take this map too.
 
 ### Removed
+- Removed the `ConfiguredRules` class and the `DeepLClient.CreateStyleRuleAsync()` and
+  `UpdateStyleRuleConfiguredRulesAsync()` overloads taking it. Pass the configured rules as a
+  `Dictionary<string, Dictionary<string, string>>` keyed by the API names instead, for example
+  `new() { ["dates_and_times"] = new() { ["calendar_era"] = "use_bc_and_ad" } }` for
+  `new ConfiguredRules(datesAndTimes: ...)`.
 - Removed the `Translator` class, its `ITranslator` interface and `TranslatorOptions`. `DeepLClient` no longer
   derives from `Translator` and now holds all of its methods. Replace `new Translator(authKey, new TranslatorOptions
   { ... })` with `new DeepLClient(authKey, new DeepLClientOptions { ... })`, and variables or parameters typed
