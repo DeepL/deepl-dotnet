@@ -3,14 +3,18 @@
 // license that can be found in the LICENSE file.
 
 using System;
-using System.Net;
-using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
 using DeepL;
 
 namespace DeepLTests.RealApi {
   internal static class RealApiClient {
+    /// <summary>The server URL from <c>DEEPL_SERVER_URL</c>, or <c>null</c> to use the default server.</summary>
+    internal static string? ServerUrl {
+      get {
+        var serverUrl = Environment.GetEnvironmentVariable("DEEPL_SERVER_URL");
+        return string.IsNullOrEmpty(serverUrl) ? null : serverUrl;
+      }
+    }
+
     /// <summary>
     ///   Creates a client for the API at <c>DEEPL_SERVER_URL</c> (the default server if unset), authenticating with
     ///   <c>DEEPL_AUTH_KEY</c>.
@@ -23,25 +27,8 @@ namespace DeepLTests.RealApi {
       }
 
       options ??= new DeepLClientOptions();
-      var serverUrl = Environment.GetEnvironmentVariable("DEEPL_SERVER_URL");
-      options.ServerUrl = string.IsNullOrEmpty(serverUrl) ? null : serverUrl;
+      options.ServerUrl = ServerUrl;
       return new DeepLClient(authKey, options);
-    }
-
-    /// <summary>
-    ///   The URL of the request that a client from <see cref="CreateClient" /> sends for <c>GetUsageAsync()</c>, found
-    ///   without contacting the API.
-    /// </summary>
-    internal static async Task<Uri> GetUsageRequestUrlAsync() {
-      var handler = new RecordingHandler();
-      using var client = CreateClient(
-            new DeepLClientOptions {
-              ClientFactory = () => new HttpClientAndDisposeFlag {
-                HttpClient = new HttpClient(handler), DisposeClient = true
-              }
-            });
-      await client.GetUsageAsync();
-      return handler.RequestUri!;
     }
 
     /// <summary>
@@ -55,22 +42,7 @@ namespace DeepLTests.RealApi {
               "The DEEPL_ADMIN_KEY environment variable must be set to run the real-API admin tests.");
       }
 
-      var serverUrl = Environment.GetEnvironmentVariable("DEEPL_SERVER_URL");
-      return new DeepLAdminClient(
-            adminKey,
-            new DeepLAdminClientOptions { ServerUrl = string.IsNullOrEmpty(serverUrl) ? null : serverUrl });
-    }
-
-    /// <summary>Records the request URL and answers with an empty usage.</summary>
-    private sealed class RecordingHandler : HttpMessageHandler {
-      internal Uri? RequestUri { get; private set; }
-
-      protected override Task<HttpResponseMessage> SendAsync(
-            HttpRequestMessage request,
-            CancellationToken cancellationToken) {
-        RequestUri = request.RequestUri;
-        return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("{}") });
-      }
+      return new DeepLAdminClient(adminKey, new DeepLAdminClientOptions { ServerUrl = ServerUrl });
     }
   }
 }

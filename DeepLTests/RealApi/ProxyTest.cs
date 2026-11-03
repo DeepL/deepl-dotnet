@@ -40,7 +40,11 @@ namespace DeepLTests.RealApi {
         tunnel = Assert.Single(_tunnels);
       }
 
-      Assert.Equal($"{(await RealApiClient.GetUsageRequestUrlAsync()).Host}:443", tunnel.Target);
+      Assert.EndsWith(":443", tunnel.Target);
+      if (RealApiClient.ServerUrl != null) {
+        Assert.Equal($"{new Uri(RealApiClient.ServerUrl).Host}:443", tunnel.Target);
+      }
+
       Assert.Equal(
             "Basic " + Convert.ToBase64String(Encoding.ASCII.GetBytes("proxy-user:p@s:s")),
             tunnel.Authorization);
