@@ -86,8 +86,12 @@ namespace DeepLTests.Offline {
 
     [Fact]
     public async Task KeepsTechnicalHeadersOfTheRequest() {
-      ExpectForm(HttpMethod.Post, "v2/translate", ("text", "a"), ("target_lang", "de"), ("show_billed_characters", "1"))
-            .WithHeaders("Content-Type", "application/x-www-form-urlencoded")
+      ExpectJsonFields(
+                  HttpMethod.Post,
+                  "v2/translate",
+                  ("text", new[] { "a" }),
+                  ("target_lang", "de"),
+                  ("show_billed_characters", true))
             .With(request => request.Headers.Host == null && request.Headers.TransferEncodingChunked != true)
             .RespondJson("{\"translations\":[{\"detected_source_language\":\"EN\",\"text\":\"b\"}]}");
       var client = CreateClient(

@@ -18,26 +18,26 @@ namespace DeepLTests.Offline {
 
     [Fact]
     public async Task SendsTargetLanguageAndText() {
-      ExpectForm(HttpMethod.Post, "v2/write/rephrase", ("target_lang", "en-US"), ("text", "good"))
+      ExpectJsonFields(HttpMethod.Post, "v2/write/rephrase", ("target_lang", "en-US"), ("text", new[] { "good" }))
             .RespondJson(Reply);
       await CreateClient().RephraseTextAsync("good", "en-US");
     }
 
     [Fact]
     public async Task SendsOnlyTextWhenTargetLanguageIsNull() {
-      ExpectForm(HttpMethod.Post, "v2/write/rephrase", ("text", "good")).RespondJson(Reply);
+      ExpectJsonFields(HttpMethod.Post, "v2/write/rephrase", ("text", new[] { "good" })).RespondJson(Reply);
       await CreateClient().RephraseTextAsync("good", null);
     }
 
     [Fact]
     public async Task SendsWritingStyleAndTone() {
-      ExpectForm(
+      ExpectJsonFields(
                   HttpMethod.Post,
                   "v2/write/rephrase",
                   ("target_lang", "en"),
                   ("writing_style", "business"),
                   ("tone", "friendly"),
-                  ("text", "good"))
+                  ("text", new[] { "good" }))
             .RespondJson(Reply);
       await CreateClient().RephraseTextAsync(
             "good",
@@ -47,8 +47,7 @@ namespace DeepLTests.Offline {
 
     [Fact]
     public async Task SendsTextArrayInOrder() {
-      Expect(HttpMethod.Post, "v2/write/rephrase")
-            .WithContent("target_lang=en-US&text=a&text=b")
+      ExpectJsonFields(HttpMethod.Post, "v2/write/rephrase", ("target_lang", "en-US"), ("text", new[] { "a", "b" }))
             .RespondJson(
                   "{\"improvements\":[{\"text\":\"x\",\"target_language\":\"EN-US\",\"detected_source_language\":\"EN\"}," +
                   "{\"text\":\"y\",\"target_language\":\"EN-US\",\"detected_source_language\":\"DE\"}]}");
@@ -57,21 +56,26 @@ namespace DeepLTests.Offline {
 
     [Fact]
     public async Task ParsesImprovement() {
-      ExpectForm(HttpMethod.Post, "v2/write/rephrase", ("text", "good")).RespondJson(Reply);
+      ExpectJsonFields(HttpMethod.Post, "v2/write/rephrase", ("text", new[] { "good" })).RespondJson(Reply);
       var result = await CreateClient().RephraseTextAsync("good", null);
       Assert.Equal("en", result.DetectedSourceLanguageCode);
     }
 
     [Fact]
     public async Task SendsOnlyTextWhenTargetLanguageIsOmitted() {
-      ExpectForm(HttpMethod.Post, "v2/write/rephrase", ("text", "good")).RespondJson(Reply);
+      ExpectJsonFields(HttpMethod.Post, "v2/write/rephrase", ("text", new[] { "good" })).RespondJson(Reply);
       await CreateClient().RephraseTextAsync("good");
     }
 
     [Fact]
     public async Task SendsExtraBodyParametersLastReplacingFields() {
-      Expect(HttpMethod.Post, "v2/write/rephrase")
-            .WithContent("target_lang=en&text=good&writing_style=simple&extra=1")
+      ExpectJsonFields(
+                  HttpMethod.Post,
+                  "v2/write/rephrase",
+                  ("target_lang", "en"),
+                  ("text", new[] { "good" }),
+                  ("writing_style", "simple"),
+                  ("extra", "1"))
             .RespondJson(Reply);
       await CreateClient().RephraseTextAsync(
             "good",
@@ -84,14 +88,14 @@ namespace DeepLTests.Offline {
 
     [Fact]
     public async Task SendsWritingStyleEnumAsApiValue() {
-      ExpectForm(HttpMethod.Post, "v2/write/rephrase", ("writing_style", "prefer_simple"), ("text", "good"))
+      ExpectJsonFields(HttpMethod.Post, "v2/write/rephrase", ("writing_style", "prefer_simple"), ("text", new[] { "good" }))
             .RespondJson(Reply);
       await CreateClient().RephraseTextAsync("good", null, new TextRephraseOptions(WritingStyle.PreferSimple));
     }
 
     [Fact]
     public async Task SendsWritingToneEnumAsApiValue() {
-      ExpectForm(HttpMethod.Post, "v2/write/rephrase", ("tone", "prefer_enthusiastic"), ("text", "good"))
+      ExpectJsonFields(HttpMethod.Post, "v2/write/rephrase", ("tone", "prefer_enthusiastic"), ("text", new[] { "good" }))
             .RespondJson(Reply);
       await CreateClient().RephraseTextAsync("good", null, new TextRephraseOptions(WritingTone.PreferEnthusiastic));
     }
@@ -116,19 +120,19 @@ namespace DeepLTests.Offline {
     [InlineData("{}")]
     [InlineData("{\"improvements\":[]}")]
     public async Task ThrowsDeepLExceptionWhenImprovementsAreMissing(string reply) {
-      ExpectForm(HttpMethod.Post, "v2/write/rephrase", ("text", "good")).RespondJson(reply);
+      ExpectJsonFields(HttpMethod.Post, "v2/write/rephrase", ("text", new[] { "good" })).RespondJson(reply);
       await Assert.ThrowsAsync<DeepLException>(() => CreateClient().RephraseTextAsync("good"));
     }
 
     [Fact]
     public async Task ThrowsDeepLExceptionWhenImprovementsAreFewerThanTexts() {
-      Expect(HttpMethod.Post, "v2/write/rephrase").WithContent("text=a&text=b").RespondJson(Reply);
+      ExpectJsonFields(HttpMethod.Post, "v2/write/rephrase", ("text", new[] { "a", "b" })).RespondJson(Reply);
       await Assert.ThrowsAsync<DeepLException>(() => CreateClient().RephraseTextAsync(new[] { "a", "b" }));
     }
 
     [Fact]
     public async Task ThrowsDeepLExceptionWhenDetectedSourceLanguageIsMissing() {
-      ExpectForm(HttpMethod.Post, "v2/write/rephrase", ("text", "good"))
+      ExpectJsonFields(HttpMethod.Post, "v2/write/rephrase", ("text", new[] { "good" }))
             .RespondJson("{\"improvements\":[{\"text\":\"better\",\"target_language\":\"EN-US\"}]}");
       await Assert.ThrowsAsync<DeepLException>(() => CreateClient().RephraseTextAsync("good"));
     }

@@ -44,6 +44,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `rule.ConfiguredRules["dates_and_times"]` (or `TryGetValue("dates_and_times", ...)`), and likewise for the other
   categories. The `IStyleRuleManager` methods `CreateStyleRuleAsync()` and `UpdateStyleRuleConfiguredRulesAsync()`
   now take this map too.
+- Text translation, rephrasing and correction, v2 glossary creation, and v3 glossary creation, renaming and
+  dictionary updates (`CreateMultilingualGlossaryAsync()`, `CreateMultilingualGlossaryFromCsvAsync()`,
+  `UpdateMultilingualGlossaryNameAsync()`, `UpdateMultilingualGlossaryDictionaryAsync()` and
+  `UpdateMultilingualGlossaryDictionaryFromCsvAsync()`) now send JSON request bodies instead of form-encoded ones.
+  `text`, the tag lists, `custom_instructions` and `glossary_ids` are sent as JSON arrays, the v3 `dictionaries` as
+  an array of objects, and booleans and numbers with their JSON types. The API does not convert types, so
+  `ExtraBodyParameters` on these methods now reach it as JSON strings: a value for a field the API types as boolean,
+  number or array (for example `["outline_detection"] = "0"`) is rejected now. Remove such entries, or use the
+  matching option (`OutlineDetection = false`). Code that intercepts or asserts on request bodies (proxies, test
+  doubles) sees JSON with `Content-Type: application/json`. Document upload stays multipart, with `glossary_ids`
+  comma-separated as before.
 
 ### Removed
 - Removed the `ConfiguredRules` class and the `DeepLClient.CreateStyleRuleAsync()` and

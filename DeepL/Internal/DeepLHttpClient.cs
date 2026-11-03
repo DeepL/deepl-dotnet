@@ -631,27 +631,6 @@ namespace DeepL.Internal {
       return await ApiCallAsync(requestMessage, cancellationToken);
     }
 
-    /// <summary>Internal function to perform HTTP PUT requests with form-encoded body.</summary>
-    /// <param name="relativeUri">Endpoint URL relative to server base URL.</param>
-    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
-    /// <param name="bodyParams">Parameters to embed in the HTTP request body.</param>
-    /// <returns><see cref="HttpResponseMessage" /> received from DeepL API.</returns>
-    /// <exception cref="ConnectionException">If any failure occurs while sending the request.</exception>
-    public async Task<HttpResponseMessage> ApiPutAsync(
-          string relativeUri,
-          CancellationToken cancellationToken,
-          IEnumerable<(string Key, string Value)>? bodyParams = null) {
-      using var requestMessage = new HttpRequestMessage {
-        RequestUri = new Uri(_serverUrl, relativeUri),
-        Method = HttpMethod.Put,
-        Content = bodyParams != null
-                  ? new LargeFormUrlEncodedContent(
-                        bodyParams.Select(pair => new KeyValuePair<string, string>(pair.Key, pair.Value)))
-                  : null
-      };
-      return await ApiCallAsync(requestMessage, cancellationToken);
-    }
-
     /// <summary>Internal function to perform HTTP PUT requests with JSON body.</summary>
     /// <param name="relativeUri">Endpoint URL relative to server base URL.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
@@ -669,27 +648,6 @@ namespace DeepL.Internal {
         RequestUri = new Uri(_serverUrl, relativeUri),
         Method = HttpMethod.Put,
         Content = new StringContent(jsonBody, Encoding.UTF8, "application/json")
-      };
-      return await ApiCallAsync(requestMessage, cancellationToken);
-    }
-
-    /// <summary>Internal function to perform HTTP PATCH requests with form-encoded body.</summary>
-    /// <param name="relativeUri">Endpoint URL relative to server base URL.</param>
-    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
-    /// <param name="bodyParams">Parameters to embed in the HTTP request body.</param>
-    /// <returns><see cref="HttpResponseMessage" /> received from DeepL API.</returns>
-    /// <exception cref="ConnectionException">If any failure occurs while sending the request.</exception>
-    public async Task<HttpResponseMessage> ApiPatchAsync(
-          string relativeUri,
-          CancellationToken cancellationToken,
-          IEnumerable<(string Key, string Value)>? bodyParams = null) {
-      using var requestMessage = new HttpRequestMessage {
-        RequestUri = new Uri(_serverUrl, relativeUri),
-        Method = new HttpMethod("PATCH"),
-        Content = bodyParams != null
-                  ? new LargeFormUrlEncodedContent(
-                        bodyParams.Select(pair => new KeyValuePair<string, string>(pair.Key, pair.Value)))
-                  : null
       };
       return await ApiCallAsync(requestMessage, cancellationToken);
     }

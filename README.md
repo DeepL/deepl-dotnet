@@ -225,9 +225,10 @@ The following options are only used if `TagHandling` is set to `'xml'`:
   text into sentences. Format and default are the same as for splitting tags.
 - `IgnoreTags`: `List` of XML tags that containing content that should not be
   translated. Format and default are the same as for splitting tags.
-- `ExtraBodyParameters`: `Dictionary<string, string>` of extra parameters to pass in the body of the HTTP request. Keys
-  in this dictionary will be added to the request body and replace built-in parameters with the same key, including
-  `text`. Mostly used by DeepL employees to test functionality, or for beta programs.
+- `ExtraBodyParameters`: `Dictionary<string, string>` of extra parameters to pass in the JSON body of the HTTP
+  request. Keys in this dictionary will be added to the request body and replace built-in parameters with the same
+  key, including `text`. Values are sent as JSON strings, so they cannot set fields the API types as boolean, number
+  or array. Mostly used by DeepL employees to test functionality, or for beta programs.
 
 For a detailed explanation of the XML handling options, see the [API documentation][api-docs-xml-handling].
 
@@ -291,8 +292,8 @@ result = await client.RephraseTextAsync("A rainbouw has seven colours.", "EN-US"
 ```
 
 `targetLanguageCode` may be omitted (it defaults to `null`). `TextRephraseOptions` also has
-`ExtraBodyParameters`: key-value pairs added last to the request body, replacing built-in
-parameters with the same key.
+`ExtraBodyParameters`: key-value pairs added last to the JSON request body as strings, replacing
+built-in parameters with the same key.
 
 To only fix grammar and spelling errors without otherwise rephrasing the text, use
 `CorrectTextAsync()`. It takes the same text argument (a string or a list of strings), an
@@ -480,7 +481,7 @@ var csvGlossary = await client.CreateMultilingualGlossaryFromCsvAsync("My CSV gl
 The [API documentation][api-docs-csv-format] explains the expected CSV format in detail.
 
 Both create methods have an overload taking a `CreateMultilingualGlossaryOptions` object after the dictionaries
-(or the CSV stream); its `ExtraBodyParameters` are added last to the request body.
+(or the CSV stream); its `ExtraBodyParameters` are added last to the JSON request body.
 
 #### Getting, listing and deleting stored glossaries
 
@@ -556,7 +557,7 @@ Functions to edit stored glossaries are also provided:
 - Each overload of `UpdateMultilingualGlossaryDictionaryAsync()`,
   `UpdateMultilingualGlossaryDictionaryFromCsvAsync()` and `UpdateMultilingualGlossaryNameAsync()`
   has a `DeepLClient` variant taking a `BaseRequestOptions` object before the cancellation token; its
-  `ExtraBodyParameters` are added last to the request body.
+  `ExtraBodyParameters` are added last to the JSON request body.
 - `ReplaceMultilingualGlossaryDictionaryAsync()` takes a glossary ID or `MultilingualGlossaryInfo`
   object, plus a source language, target language, and a dictionary of entries.
   It will then either set the entries to the parameter value, completely

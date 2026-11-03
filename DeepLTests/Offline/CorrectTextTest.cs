@@ -18,21 +18,20 @@ namespace DeepLTests.Offline {
 
     [Fact]
     public async Task SendsTargetLanguageAndText() {
-      ExpectForm(HttpMethod.Post, "v2/write/correct", ("target_lang", "de"), ("text", "typo"))
+      ExpectJsonFields(HttpMethod.Post, "v2/write/correct", ("target_lang", "de"), ("text", new[] { "typo" }))
             .RespondJson(Reply);
       await CreateClient().CorrectTextAsync("typo", "de");
     }
 
     [Fact]
     public async Task SendsOnlyTextWhenTargetLanguageIsNull() {
-      ExpectForm(HttpMethod.Post, "v2/write/correct", ("text", "typo")).RespondJson(Reply);
+      ExpectJsonFields(HttpMethod.Post, "v2/write/correct", ("text", new[] { "typo" })).RespondJson(Reply);
       await CreateClient().CorrectTextAsync("typo", null);
     }
 
     [Fact]
     public async Task SendsTextArrayInOrder() {
-      Expect(HttpMethod.Post, "v2/write/correct")
-            .WithContent("text=a&text=b")
+      ExpectJsonFields(HttpMethod.Post, "v2/write/correct", ("text", new[] { "a", "b" }))
             .RespondJson(
                   "{\"improvements\":[{\"text\":\"x\",\"target_language\":\"DE\",\"detected_source_language\":\"DE\"}," +
                   "{\"text\":\"y\",\"target_language\":\"DE\",\"detected_source_language\":\"DE\"}]}");
@@ -41,21 +40,25 @@ namespace DeepLTests.Offline {
 
     [Fact]
     public async Task ParsesCorrection() {
-      ExpectForm(HttpMethod.Post, "v2/write/correct", ("text", "typo")).RespondJson(Reply);
+      ExpectJsonFields(HttpMethod.Post, "v2/write/correct", ("text", new[] { "typo" })).RespondJson(Reply);
       var result = await CreateClient().CorrectTextAsync("typo", null);
       Assert.Equal("de", result.DetectedSourceLanguageCode);
     }
 
     [Fact]
     public async Task SendsOnlyTextWhenTargetLanguageIsOmitted() {
-      ExpectForm(HttpMethod.Post, "v2/write/correct", ("text", "typo")).RespondJson(Reply);
+      ExpectJsonFields(HttpMethod.Post, "v2/write/correct", ("text", new[] { "typo" })).RespondJson(Reply);
       await CreateClient().CorrectTextAsync("typo");
     }
 
     [Fact]
     public async Task SendsExtraBodyParametersLastReplacingFields() {
-      Expect(HttpMethod.Post, "v2/write/correct")
-            .WithContent("text=typo&target_lang=en-GB&extra=1")
+      ExpectJsonFields(
+                  HttpMethod.Post,
+                  "v2/write/correct",
+                  ("text", new[] { "typo" }),
+                  ("target_lang", "en-GB"),
+                  ("extra", "1"))
             .RespondJson(Reply);
       await CreateClient().CorrectTextAsync(
             "typo",
@@ -67,7 +70,7 @@ namespace DeepLTests.Offline {
 
     [Fact]
     public async Task ThrowsDeepLExceptionWhenImprovementsAreFewerThanTexts() {
-      Expect(HttpMethod.Post, "v2/write/correct").WithContent("text=a&text=b").RespondJson(Reply);
+      ExpectJsonFields(HttpMethod.Post, "v2/write/correct", ("text", new[] { "a", "b" })).RespondJson(Reply);
       await Assert.ThrowsAsync<DeepLException>(() => CreateClient().CorrectTextAsync(new[] { "a", "b" }));
     }
 

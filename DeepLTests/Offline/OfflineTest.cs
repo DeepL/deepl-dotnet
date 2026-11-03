@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Text.Json;
 using DeepL;
 using RichardSzalay.MockHttp;
 
@@ -61,6 +62,28 @@ namespace DeepLTests.Offline {
     protected MockedRequest ExpectForm(HttpMethod method, string path, params (string Key, string Value)[] fields) =>
           Expect(method, path)
                 .WithExactFormData(fields.Select(field => new KeyValuePair<string, string>(field.Key, field.Value)));
+
+    /// <summary>
+    ///   Declares a request whose JSON body is an object with exactly the given fields, in any order. Each value must
+    ///   serialize to the same JSON as the field in the body, so <c>true</c> does not match <c>"true"</c>.
+    /// </summary>
+    protected MockedRequest ExpectJsonFields(HttpMethod method, string path, params (string Key, object Value)[] fields) {
+      var expected = fields.Select(field => (field.Key, JsonSerializer.Serialize(field.Value)))
+            .OrderBy(field => field.Key, StringComparer.Ordinal)
+            .ToList();
+      return Expect(method, path)
+            .WithHeaders("Content-Type", "application/json; charset=utf-8")
+            .With(request => JsonFields(request.Content!.ReadAsStringAsync().Result).SequenceEqual(expected));
+    }
+
+    /// <summary>Returns the top-level fields of a JSON object as (name, raw JSON value) pairs, ordered by name.</summary>
+    private static List<(string Key, string Value)> JsonFields(string json) {
+      using var document = JsonDocument.Parse(json);
+      return document.RootElement.EnumerateObject()
+            .Select(property => (property.Name, property.Value.GetRawText()))
+            .OrderBy(field => field.Name, StringComparer.Ordinal)
+            .ToList();
+    }
 
     /// <summary>Declares a request whose body is exactly the given JSON text.</summary>
     protected MockedRequest ExpectJson(HttpMethod method, string path, string json) =>

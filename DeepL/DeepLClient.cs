@@ -141,23 +141,24 @@ namespace DeepL {
           string targetLanguageCode,
           TextTranslateOptions? options = null,
           CancellationToken cancellationToken = default) {
-      var bodyParams = CreateHttpParams(sourceLanguageCode, targetLanguageCode, options);
-      var textParams = texts
-            .Select(text => text.Length > 0 ? ("text", text) : throw new ArgumentException("text must not be empty"))
-            .ToList();
-      bodyParams.AddRange(textParams);
+      var requestData = CreateHttpParams(sourceLanguageCode, targetLanguageCode, options);
+      var textList = texts
+            .Select(text => text.Length > 0 ? text : throw new ArgumentException("text must not be empty"))
+            .ToArray();
+      requestData["text"] = textList;
       // Added after the texts, so that an extra "text" parameter replaces them like any other field.
-      AddExtraBodyParameters(bodyParams, options);
+      AddExtraBodyParameters(requestData, options);
 
       using var responseMessage = await _client
-            .ApiPostAsync("v2/translate", cancellationToken, bodyParams).ConfigureAwait(false);
+            .ApiPostJsonAsync("v2/translate", cancellationToken, requestData, SerializationOptions)
+            .ConfigureAwait(false);
 
       await DeepLHttpClient.CheckStatusCodeAsync(responseMessage).ConfigureAwait(false);
       var translatedTexts =
             await JsonUtils.DeserializeAsync<TextTranslateResult>(responseMessage).ConfigureAwait(false);
       var translations = translatedTexts.Translations;
       // An extra "text" parameter may change the number of texts sent; require at least one translation then.
-      var expectedCount = options?.ExtraBodyParameters?.ContainsKey("text") == true ? 1 : textParams.Count;
+      var expectedCount = options?.ExtraBodyParameters?.ContainsKey("text") == true ? 1 : textList.Length;
       if (translations == null || translations.Length < Math.Max(expectedCount, 1)) {
         throw new DeepLException(
               $"Expected {expectedCount} translations in the response, received {translations?.Length ?? 0}");
@@ -310,15 +311,18 @@ namespace DeepL {
         throw new ArgumentException($"{nameof(sourceLanguageCode)} is required if using a glossary");
       }
 
+      // The multipart upload takes form fields: glossary_ids is comma-joined there.
       var bodyParams = CreateCommonHttpParams(
-            sourceLanguageCode,
-            targetLanguageCode,
-            options?.FormalityValue != null ? null : options?.Formality,
-            options?.Glossary,
-            options?.StyleRule,
-            options?.TranslationMemory,
-            options?.GlossaryIds,
-            options?.StyleProfile);
+                  sourceLanguageCode,
+                  targetLanguageCode,
+                  options?.FormalityValue != null ? null : options?.Formality,
+                  options?.Glossary,
+                  options?.StyleRule,
+                  options?.TranslationMemory,
+                  options?.GlossaryIds,
+                  options?.StyleProfile)
+            .Select(pair => (pair.Key, pair.Value is string[] values ? string.Join(",", values) : (string)pair.Value))
+            .ToList();
 
       if (options?.FormalityValue != null) {
         bodyParams.Add(("formality", options.FormalityValue));
@@ -613,11 +617,11 @@ namespace DeepL {
     /// <param name="options">Extra <see cref="TextTranslateOptions" /> influencing translation.</param>
     /// <returns>Enumerable of tuples containing the parameters to include in HTTP request.</returns>
     /// <exception cref="ArgumentException">If the specified languages or options are invalid.</exception>
-    private static List<(string Key, string Value)> CreateHttpParams(
+    private static Dictionary<string, object> CreateHttpParams(
           string? sourceLanguageCode,
           string targetLanguageCode,
           TextTranslateOptions? options) {
-      var bodyParams = CreateCommonHttpParams(
+      var requestData = CreateCommonHttpParams(
             sourceLanguageCode,
             targetLanguageCode,
             options?.FormalityValue != null ? null : options?.Formality,
@@ -628,14 +632,14 @@ namespace DeepL {
             options?.StyleProfile);
 
       if (options?.FormalityValue != null) {
-        bodyParams.Add(("formality", options.FormalityValue));
+        requestData["formality"] = options.FormalityValue;
       }
 
-      // Always send show_billed_characters=1, remove when the API default is changed to true
-      bodyParams.Add(("show_billed_characters", "1"));
+      // Always send show_billed_characters=true, remove when the API default is changed to true
+      requestData["show_billed_characters"] = true;
 
       if (options == null) {
-        return bodyParams;
+        return requestData;
       }
 
       if (options.TranslationMemoryThreshold != null) {
@@ -650,66 +654,70 @@ namespace DeepL {
                 $"{nameof(options.TranslationMemoryThreshold)} must be between 0 and 100");
         }
 
-        bodyParams.Add(("translation_memory_threshold", options.TranslationMemoryThreshold.Value.ToString()));
+        requestData["translation_memory_threshold"] = options.TranslationMemoryThreshold.Value;
       }
 
       if (options.Context != null) {
-        bodyParams.Add(("context", options.Context));
+        requestData["context"] = options.Context;
       }
 
       if (options.SplitSentences != null) {
-        bodyParams.Add(("split_sentences", options.SplitSentences));
+        requestData["split_sentences"] = options.SplitSentences;
       } else if (options.SentenceSplittingMode != SentenceSplittingMode.All) {
-        bodyParams.Add(
-              ("split_sentences", options.SentenceSplittingMode == SentenceSplittingMode.Off ? "0" : "nonewlines"));
+        requestData["split_sentences"] = options.SentenceSplittingMode == SentenceSplittingMode.Off ? "0" : "nonewlines";
       }
 
       if (options.PreserveFormatting) {
-        bodyParams.Add(("preserve_formatting", "1"));
+        requestData["preserve_formatting"] = true;
       }
 
       if (options.TagHandling != null) {
-        bodyParams.Add(("tag_handling", options.TagHandling));
+        requestData["tag_handling"] = options.TagHandling;
       }
 
       if (options.TagHandlingVersion != null) {
-        bodyParams.Add(("tag_handling_version", options.TagHandlingVersion));
+        requestData["tag_handling_version"] = options.TagHandlingVersion;
       }
 
       if (!options.OutlineDetection) {
-        bodyParams.Add(("outline_detection", "0"));
+        requestData["outline_detection"] = false;
       }
 
       if (options.NonSplittingTags.Count > 0) {
-        bodyParams.Add(("non_splitting_tags", string.Join(",", options.NonSplittingTags)));
+        requestData["non_splitting_tags"] = SplitTags(options.NonSplittingTags);
       }
 
       if (options.SplittingTags.Count > 0) {
-        bodyParams.Add(("splitting_tags", string.Join(",", options.SplittingTags)));
+        requestData["splitting_tags"] = SplitTags(options.SplittingTags);
       }
 
       if (options.IgnoreTags.Count > 0) {
-        bodyParams.Add(("ignore_tags", string.Join(",", options.IgnoreTags)));
+        requestData["ignore_tags"] = SplitTags(options.IgnoreTags);
       }
 
       if (options.ModelTypeValue != null) {
-        bodyParams.Add(("model_type", options.ModelTypeValue));
+        requestData["model_type"] = options.ModelTypeValue;
       } else if (options.ModelType != null) {
-        bodyParams.Add(("model_type", options.ModelType.Value.ToApiValue()));
+        requestData["model_type"] = options.ModelType.Value.ToApiValue();
       }
 
       if (options.CustomInstructions.Count > 0) {
-        foreach (var instruction in options.CustomInstructions) {
-          bodyParams.Add(("custom_instructions", instruction));
-        }
+        requestData["custom_instructions"] = options.CustomInstructions.ToArray();
       }
 
-      return bodyParams;
+      return requestData;
     }
 
+    /// <summary>Returns the tags of a tag list option as an array, splitting entries that hold comma-separated tags.</summary>
+    private static string[] SplitTags(IEnumerable<string> tags) =>
+          tags.SelectMany(tag => tag.Split(','))
+                .Select(tag => tag.Trim())
+                .Where(tag => tag.Length > 0)
+                .ToArray();
+
     /// <summary>
-    ///   Checks the specified languages and options are valid, and returns a list of tuples containing the parameters
-    ///   to include in HTTP request.
+    ///   Checks the specified languages and options are valid, and returns the parameters common to text and document
+    ///   translation; list values are string arrays.
     /// </summary>
     /// <param name="sourceLanguageCode">
     ///   Language code of translation source language, or null if auto-detection should be
@@ -725,9 +733,9 @@ namespace DeepL {
     ///   <paramref name="glossaryId" />.
     /// </param>
     /// <param name="styleProfileId">Optional ID of style profile to use for translation.</param>
-    /// <returns>List of tuples containing the parameters to include in HTTP request.</returns>
+    /// <returns>Dictionary of the parameters, in insertion order.</returns>
     /// <exception cref="ArgumentException">If the specified languages or options are invalid.</exception>
-    private static List<(string Key, string Value)> CreateCommonHttpParams(
+    private static Dictionary<string, object> CreateCommonHttpParams(
           string? sourceLanguageCode,
           string targetLanguageCode,
           Formality? formality,
@@ -741,9 +749,9 @@ namespace DeepL {
 
       CheckValidLanguages(sourceLanguageCode, targetLanguageCode);
 
-      var bodyParams = new List<(string Key, string Value)> { ("target_lang", targetLanguageCode) };
+      var bodyParams = new Dictionary<string, object> { ["target_lang"] = targetLanguageCode };
       if (sourceLanguageCode != null) {
-        bodyParams.Add(("source_lang", sourceLanguageCode));
+        bodyParams["source_lang"] = sourceLanguageCode;
       }
 
       var hasGlossaryIds = glossaryIds != null && glossaryIds.Count > 0;
@@ -753,7 +761,7 @@ namespace DeepL {
       }
 
       if (glossaryId != null) {
-        bodyParams.Add(("glossary_id", glossaryId));
+        bodyParams["glossary_id"] = glossaryId;
       }
 
       if (hasGlossaryIds) {
@@ -761,19 +769,19 @@ namespace DeepL {
           throw new ArgumentException("GlossaryIds must not contain more than 5 glossary IDs");
         }
 
-        bodyParams.Add(("glossary_ids", string.Join(",", glossaryIds)));
+        bodyParams["glossary_ids"] = glossaryIds.ToArray();
       }
 
       if (styleId != null) {
-        bodyParams.Add(("style_id", styleId));
+        bodyParams["style_id"] = styleId;
       }
 
       if (styleProfileId != null) {
-        bodyParams.Add(("style_profile_id", styleProfileId));
+        bodyParams["style_profile_id"] = styleProfileId;
       }
 
       if (translationMemoryId != null) {
-        bodyParams.Add(("translation_memory_id", translationMemoryId));
+        bodyParams["translation_memory_id"] = translationMemoryId;
       }
 
       switch (formality) {
@@ -781,16 +789,16 @@ namespace DeepL {
         case Formality.Default:
           break;
         case Formality.Less:
-          bodyParams.Add(("formality", "less"));
+          bodyParams["formality"] = "less";
           break;
         case Formality.More:
-          bodyParams.Add(("formality", "more"));
+          bodyParams["formality"] = "more";
           break;
         case Formality.PreferLess:
-          bodyParams.Add(("formality", "prefer_less"));
+          bodyParams["formality"] = "prefer_less";
           break;
         case Formality.PreferMore:
-          bodyParams.Add(("formality", "prefer_more"));
+          bodyParams["formality"] = "prefer_more";
           break;
         default:
           throw new ArgumentException($"{nameof(formality)} value is out of range");
@@ -840,12 +848,16 @@ namespace DeepL {
       sourceLanguageCode = LanguageCode.RemoveRegionalVariant(sourceLanguageCode);
       targetLanguageCode = LanguageCode.RemoveRegionalVariant(targetLanguageCode);
 
-      var bodyParams = new (string Key, string Value)[] {
-            ("name", name), ("source_lang", sourceLanguageCode), ("target_lang", targetLanguageCode),
-            ("entries_format", entriesFormat), ("entries", entries)
+      var requestData = new Dictionary<string, object> {
+            ["name"] = name,
+            ["source_lang"] = sourceLanguageCode,
+            ["target_lang"] = targetLanguageCode,
+            ["entries_format"] = entriesFormat,
+            ["entries"] = entries
       };
-      using var responseMessage =
-            await _client.ApiPostAsync("v2/glossaries", cancellationToken, bodyParams).ConfigureAwait(false);
+      using var responseMessage = await _client
+            .ApiPostJsonAsync("v2/glossaries", cancellationToken, requestData, SerializationOptions)
+            .ConfigureAwait(false);
 
       await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.Glossary).ConfigureAwait(false);
       return await JsonUtils.DeserializeAsync<GlossaryInfo>(responseMessage).ConfigureAwait(false);
@@ -926,23 +938,23 @@ namespace DeepL {
           string? targetLanguageCode = null,
           TextRephraseOptions? options = null,
           CancellationToken cancellationToken = default) {
-      var bodyParams = new List<(string Key, string Value)>();
+      var requestData = new Dictionary<string, object>();
       if (targetLanguageCode != null) {
         CheckValidLanguages(null, targetLanguageCode);
-        bodyParams.Add(("target_lang", targetLanguageCode));
+        requestData["target_lang"] = targetLanguageCode;
       }
 
       var textList = CheckWriteTexts(texts);
       if (options != null && options.WritingStyle != null) {
-        bodyParams.Add(("writing_style", options.WritingStyle));
+        requestData["writing_style"] = options.WritingStyle;
       }
 
       if (options != null && options.WritingTone != null) {
-        bodyParams.Add(("tone", options.WritingTone));
+        requestData["tone"] = options.WritingTone;
       }
       // TODO add `show_billed_characters` once write API supports it.
 
-      return await WriteAsync("v2/write/rephrase", bodyParams, textList, options, cancellationToken)
+      return await WriteAsync("v2/write/rephrase", requestData, textList, options, cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -984,14 +996,14 @@ namespace DeepL {
           string? targetLanguageCode = null,
           CorrectTextOptions? options = null,
           CancellationToken cancellationToken = default) {
-      var bodyParams = new List<(string Key, string Value)>();
+      var requestData = new Dictionary<string, object>();
       if (targetLanguageCode != null) {
         CheckValidLanguages(null, targetLanguageCode);
-        bodyParams.Add(("target_lang", targetLanguageCode));
+        requestData["target_lang"] = targetLanguageCode;
       }
 
       var textList = CheckWriteTexts(texts);
-      return await WriteAsync("v2/write/correct", bodyParams, textList, options, cancellationToken)
+      return await WriteAsync("v2/write/correct", requestData, textList, options, cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -1008,20 +1020,15 @@ namespace DeepL {
     /// <exception cref="DeepLException">If the response holds fewer improvements than texts were sent.</exception>
     private async Task<WriteResult[]> WriteAsync(
           string path,
-          List<(string Key, string Value)> bodyParams,
+          Dictionary<string, object> requestData,
           List<string> texts,
           BaseRequestOptions? options,
           CancellationToken cancellationToken) {
-      bodyParams.AddRange(texts.Select(text => ("text", text)));
-      if (options?.ExtraBodyParameters != null) {
-        foreach (var pair in options.ExtraBodyParameters) {
-          bodyParams.RemoveAll(param => param.Key == pair.Key);
-          bodyParams.Add((pair.Key, pair.Value));
-        }
-      }
+      requestData["text"] = texts.ToArray();
+      AddExtraBodyParameters(requestData, options);
 
       using var responseMessage = await _client
-            .ApiPostAsync(path, cancellationToken, bodyParams)
+            .ApiPostJsonAsync(path, cancellationToken, requestData, SerializationOptions)
             .ConfigureAwait(false);
 
       await DeepLHttpClient.CheckStatusCodeAsync(responseMessage).ConfigureAwait(false);
@@ -2969,10 +2976,20 @@ namespace DeepL {
 
       if (!glossaryDicts.Any()) throw new ArgumentException("Parameter dictionaries must not be empty");
 
-      var bodyParams = CreateGlossaryHttpParams(name, glossaryDicts);
-      AddExtraBodyParameters(bodyParams, options);
+      var requestData = new Dictionary<string, object> {
+            ["name"] = name,
+            ["dictionaries"] = glossaryDicts
+                  .Select(dictionary => CreateGlossaryDictionaryBody(
+                        dictionary.SourceLanguageCode,
+                        dictionary.TargetLanguageCode,
+                        dictionary.Entries.ToTsv(),
+                        "tsv"))
+                  .ToArray()
+      };
+      AddExtraBodyParameters(requestData, options);
       using var responseMessage = await _client
-            .ApiPostAsync("v3/glossaries", cancellationToken, bodyParams).ConfigureAwait(false);
+            .ApiPostJsonAsync("v3/glossaries", cancellationToken, requestData, SerializationOptions)
+            .ConfigureAwait(false);
 
       await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.Glossary).ConfigureAwait(false);
       var glossary =
@@ -3034,11 +3051,16 @@ namespace DeepL {
       }
 
       var csvString = await new StreamReader(csvFile).ReadToEndAsync().ConfigureAwait(false);
-      var bodyParams = CreateGlossaryDictionariesHttpParams(sourceLanguageCode, targetLanguageCode, csvString, "csv");
-      bodyParams.Add(("name", name));
-      AddExtraBodyParameters(bodyParams, options);
+      var requestData = new Dictionary<string, object> {
+            ["name"] = name,
+            ["dictionaries"] = new[] {
+                  CreateGlossaryDictionaryBody(sourceLanguageCode, targetLanguageCode, csvString, "csv")
+            }
+      };
+      AddExtraBodyParameters(requestData, options);
       using var responseMessage = await _client
-            .ApiPostAsync("v3/glossaries", cancellationToken, bodyParams).ConfigureAwait(false);
+            .ApiPostJsonAsync("v3/glossaries", cancellationToken, requestData, SerializationOptions)
+            .ConfigureAwait(false);
 
       await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.Glossary).ConfigureAwait(false);
       var glossary =
@@ -3597,11 +3619,11 @@ namespace DeepL {
         throw new ArgumentException($"Parameter {nameof(name)} must not be empty");
       }
 
-      var bodyParams = new List<(string Key, string Value)> { ("name", name) };
-      AddExtraBodyParameters(bodyParams, options);
-      using var responseMessage =
-            await _client.ApiPatchAsync(MultilingualGlossaryPath(glossaryId), cancellationToken, bodyParams)
-                  .ConfigureAwait(false);
+      var requestData = new Dictionary<string, object> { ["name"] = name };
+      AddExtraBodyParameters(requestData, options);
+      using var responseMessage = await _client
+            .ApiPatchJsonAsync(MultilingualGlossaryPath(glossaryId), cancellationToken, requestData, SerializationOptions)
+            .ConfigureAwait(false);
 
       await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.Glossary).ConfigureAwait(false);
       return await JsonUtils.DeserializeAsync<MultilingualGlossaryInfo>(responseMessage).ConfigureAwait(false);
@@ -3682,12 +3704,11 @@ namespace DeepL {
       if (options?.Name != null) requestData["name"] = options.Name;
       if (options?.Dictionaries != null) {
         requestData["dictionaries"] = options.Dictionaries.Select(
-                    dictionary => new Dictionary<string, string> {
-                          ["source_lang"] = dictionary.SourceLanguageCode,
-                          ["target_lang"] = dictionary.TargetLanguageCode,
-                          ["entries"] = dictionary.Entries.ToTsv(),
-                          ["entries_format"] = "tsv"
-                    })
+                    dictionary => CreateGlossaryDictionaryBody(
+                          dictionary.SourceLanguageCode,
+                          dictionary.TargetLanguageCode,
+                          dictionary.Entries.ToTsv(),
+                          "tsv"))
               .ToList();
       }
 
@@ -4035,15 +4056,15 @@ namespace DeepL {
         throw new ArgumentException($"Parameter {nameof(targetLanguageCode)} must not be empty");
       }
 
-      var bodyParams = CreateGlossaryDictionariesHttpParams(
-            sourceLanguageCode,
-            targetLanguageCode,
-            entries,
-            entriesFormat);
-      AddExtraBodyParameters(bodyParams, options);
-      using var responseMessage =
-            await _client.ApiPatchAsync(MultilingualGlossaryPath(glossaryId), cancellationToken, bodyParams)
-                  .ConfigureAwait(false);
+      var requestData = new Dictionary<string, object> {
+            ["dictionaries"] = new[] {
+                  CreateGlossaryDictionaryBody(sourceLanguageCode, targetLanguageCode, entries, entriesFormat)
+            }
+      };
+      AddExtraBodyParameters(requestData, options);
+      using var responseMessage = await _client
+            .ApiPatchJsonAsync(MultilingualGlossaryPath(glossaryId), cancellationToken, requestData, SerializationOptions)
+            .ConfigureAwait(false);
 
       await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.Glossary).ConfigureAwait(false);
       return await JsonUtils.DeserializeAsync<MultilingualGlossaryInfo>(responseMessage).ConfigureAwait(false);
@@ -4299,55 +4320,23 @@ namespace DeepL {
       };
     }
 
-    /// <summary>
-    ///   Returns a list of tuples containing the parameters to include in HTTP request.
-    /// </summary>
-    /// <param name="name"> The name of the glossary </param>
-    /// <param name="glossaryDicts">
-    ///   A list of glossary dictionaries, each with a source and target language code and
-    ///   entries
-    /// </param>
-    /// <returns>List of tuples containing the parameters to include in HTTP request.</returns>
-    private static List<(string Key, string Value)> CreateGlossaryHttpParams(
-          string name,
-          MultilingualGlossaryDictionaryEntries[] glossaryDicts) {
-      var bodyParams = new List<(string Key, string Value)> { ("name", name) };
-      for (var i = 0; i < glossaryDicts.Length; i++) {
-        bodyParams.Add(($"dictionaries[{i}].source_lang", glossaryDicts[i].SourceLanguageCode));
-        bodyParams.Add(($"dictionaries[{i}].target_lang", glossaryDicts[i].TargetLanguageCode));
-        bodyParams.Add(($"dictionaries[{i}].entries", glossaryDicts[i].Entries.ToTsv()));
-        bodyParams.Add(($"dictionaries[{i}].entries_format", "tsv"));
-      }
-
-      return bodyParams;
-    }
-
-    /// <summary>
-    ///   Returns a list of tuples containing the parameters to include in HTTP request. Used to create a dictionary
-    ///   with the glossary dictionaries information including its entries and source and target language pair
-    /// </summary>
-    /// <param name="sourceLanguageCode">
-    ///   Language code of translation source language, or null if auto-detection should be
-    ///   used.
-    /// </param>
-    /// <param name="targetLanguageCode">Language code of translation target language.</param>
-    /// <param name="entries">The entries represented as a string in TSV or CSV delimited</param>
-    /// <param name="entriesFormat">The format of the entries (either TSV or CSV).</param>
-    /// <returns>List of tuples containing the parameters to include in HTTP request.</returns>
-    private static List<(string Key, string Value)> CreateGlossaryDictionariesHttpParams(
+    /// <summary>Returns the JSON object of one glossary dictionary.</summary>
+    /// <param name="sourceLanguageCode">Language code of the source terms.</param>
+    /// <param name="targetLanguageCode">Language code of the target terms.</param>
+    /// <param name="entries">The entries as TSV or CSV text.</param>
+    /// <param name="entriesFormat">The format of the entries, <c>tsv</c> or <c>csv</c>.</param>
+    /// <returns>Dictionary to serialize as one entry of the JSON <c>dictionaries</c> array.</returns>
+    private static Dictionary<string, string> CreateGlossaryDictionaryBody(
           string sourceLanguageCode,
           string targetLanguageCode,
           string entries,
-          string entriesFormat) {
-      var bodyParams = new List<(string Key, string Value)> {
-            ("dictionaries[0].source_lang", sourceLanguageCode),
-            ("dictionaries[0].target_lang", targetLanguageCode),
-            ("dictionaries[0].entries", entries),
-            ("dictionaries[0].entries_format", entriesFormat)
-      };
-
-      return bodyParams;
-    }
+          string entriesFormat) =>
+          new Dictionary<string, string> {
+                ["source_lang"] = sourceLanguageCode,
+                ["target_lang"] = targetLanguageCode,
+                ["entries"] = entries,
+                ["entries_format"] = entriesFormat
+          };
 
     /// <summary>Returns the API path of the given v3 glossary, with the ID URL-encoded.</summary>
     /// <param name="glossaryId">ID of the glossary.</param>

@@ -43,9 +43,19 @@ namespace DeepLTests.Offline {
 
     [Fact]
     public async Task RetriesPostWithTheSameBody() {
-      ExpectForm(HttpMethod.Post, "v2/translate", ("target_lang", "de"), ("show_billed_characters", "1"), ("text", "a"))
+      ExpectJsonFields(
+                  HttpMethod.Post,
+                  "v2/translate",
+                  ("target_lang", "de"),
+                  ("show_billed_characters", true),
+                  ("text", new[] { "a" }))
             .RespondJson("{}", (HttpStatusCode)429);
-      ExpectForm(HttpMethod.Post, "v2/translate", ("target_lang", "de"), ("show_billed_characters", "1"), ("text", "a"))
+      ExpectJsonFields(
+                  HttpMethod.Post,
+                  "v2/translate",
+                  ("target_lang", "de"),
+                  ("show_billed_characters", true),
+                  ("text", new[] { "a" }))
             .RespondJson("{\"translations\":[{\"detected_source_language\":\"EN\",\"text\":\"b\",\"billed_characters\":1}]}");
       await CreateClientWithRetries(1, PerRetryTimeout).TranslateTextAsync("a", null, "DE");
     }

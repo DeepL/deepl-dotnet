@@ -28,25 +28,30 @@ namespace DeepLTests.Offline {
 
     private static readonly GlossaryEntries Apple = new GlossaryEntries(new[] { ("Apple", "Apfel") });
 
+    /// <summary>Returns the JSON <c>dictionaries</c> array of the given (source, target, entries, format) tuples.</summary>
+    private static Dictionary<string, string>[] Dictionaries(
+          params (string Source, string Target, string Entries, string Format)[] dictionaries) =>
+          Array.ConvertAll(
+                dictionaries,
+                dictionary => new Dictionary<string, string> {
+                      ["source_lang"] = dictionary.Source,
+                      ["target_lang"] = dictionary.Target,
+                      ["entries"] = dictionary.Entries,
+                      ["entries_format"] = dictionary.Format
+                });
+
     private static MemoryStream CsvStream() => new MemoryStream(Encoding.UTF8.GetBytes(Csv));
 
     private static MultilingualGlossaryInfo Info() =>
           new MultilingualGlossaryInfo("g1", "n", new MultilingualGlossaryDictionaryInfo[0], DateTime.UtcNow);
 
     [Fact]
-    public async Task SendsBracketedDictionaryFieldsWhenCreating() {
-      ExpectForm(
+    public async Task SendsDictionariesAsJsonArrayWhenCreating() {
+      ExpectJsonFields(
                   HttpMethod.Post,
                   "v3/glossaries",
                   ("name", "My glossary"),
-                  ("dictionaries[0].source_lang", "en"),
-                  ("dictionaries[0].target_lang", "de"),
-                  ("dictionaries[0].entries", "Apple\tApfel"),
-                  ("dictionaries[0].entries_format", "tsv"),
-                  ("dictionaries[1].source_lang", "en"),
-                  ("dictionaries[1].target_lang", "fr"),
-                  ("dictionaries[1].entries", "Apple\tPomme"),
-                  ("dictionaries[1].entries_format", "tsv"))
+                  ("dictionaries", Dictionaries(("en", "de", "Apple\tApfel", "tsv"), ("en", "fr", "Apple\tPomme", "tsv"))))
             .RespondJson(GlossaryReply);
       var glossary = await CreateClient().CreateMultilingualGlossaryAsync(
             "My glossary",
@@ -65,14 +70,11 @@ namespace DeepLTests.Offline {
 
     [Fact]
     public async Task SendsTrimmedTsvTermsWhenCreatingFromTsv() {
-      ExpectForm(
+      ExpectJsonFields(
                   HttpMethod.Post,
                   "v3/glossaries",
                   ("name", "My glossary"),
-                  ("dictionaries[0].source_lang", "en"),
-                  ("dictionaries[0].target_lang", "de"),
-                  ("dictionaries[0].entries", "Apple\tApfel\nPear\tBirne"),
-                  ("dictionaries[0].entries_format", "tsv"))
+                  ("dictionaries", Dictionaries(("en", "de", "Apple\tApfel\nPear\tBirne", "tsv"))))
             .RespondJson(GlossaryReply);
       await CreateClient().CreateMultilingualGlossaryAsync(
             "My glossary",
@@ -86,14 +88,11 @@ namespace DeepLTests.Offline {
 
     [Fact]
     public async Task SendsCsvDictionaryWhenCreatingFromCsv() {
-      ExpectForm(
+      ExpectJsonFields(
                   HttpMethod.Post,
                   "v3/glossaries",
                   ("name", "n"),
-                  ("dictionaries[0].source_lang", "en"),
-                  ("dictionaries[0].target_lang", "de"),
-                  ("dictionaries[0].entries", Csv),
-                  ("dictionaries[0].entries_format", "csv"))
+                  ("dictionaries", Dictionaries(("en", "de", Csv, "csv"))))
             .RespondJson(GlossaryReply);
       await CreateClient().CreateMultilingualGlossaryFromCsvAsync("n", "en", "de", CsvStream());
     }
@@ -109,19 +108,19 @@ namespace DeepLTests.Offline {
 
     [Fact]
     public async Task SendsNameWhenRenaming() {
-      ExpectForm(Patch, "v3/glossaries/g1", ("name", "New name")).RespondJson(GlossaryReply);
+      ExpectJsonFields(
+                  Patch,
+                  "v3/glossaries/g1",
+                  ("name", "New name")).RespondJson(GlossaryReply);
       await CreateClient().UpdateMultilingualGlossaryNameAsync("g1", "New name");
     }
 
     [Fact]
-    public async Task SendsBracketedDictionaryWhenUpdatingDictionary() {
-      var fields = new[] {
-        ("dictionaries[0].source_lang", "en"), ("dictionaries[0].target_lang", "de"),
-        ("dictionaries[0].entries", "Apple\tApfel"), ("dictionaries[0].entries_format", "tsv")
-      };
-      ExpectForm(Patch, "v3/glossaries/g1", fields).RespondJson(GlossaryReply);
-      ExpectForm(Patch, "v3/glossaries/g1", fields).RespondJson(GlossaryReply);
-      ExpectForm(Patch, "v3/glossaries/g1", fields).RespondJson(GlossaryReply);
+    public async Task SendsDictionaryAsJsonArrayWhenUpdatingDictionary() {
+      for (var i = 0; i < 3; i++) {
+        ExpectJsonFields(Patch, "v3/glossaries/g1", ("dictionaries", Dictionaries(("en", "de", "Apple\tApfel", "tsv"))))
+              .RespondJson(GlossaryReply);
+      }
       var client = CreateClient();
       await client.UpdateMultilingualGlossaryDictionaryAsync("g1", "en", "de", Apple);
       await client.UpdateMultilingualGlossaryDictionaryAsync(Info(), "en", "de", Apple);
@@ -132,27 +131,25 @@ namespace DeepLTests.Offline {
 
     [Fact]
     public async Task SendsCsvDictionaryWhenUpdatingDictionaryFromCsv() {
-      ExpectForm(
+      ExpectJsonFields(
                   Patch,
                   "v3/glossaries/g1",
-                  ("dictionaries[0].source_lang", "en"),
-                  ("dictionaries[0].target_lang", "de"),
-                  ("dictionaries[0].entries", Csv),
-                  ("dictionaries[0].entries_format", "csv"))
+                  ("dictionaries", Dictionaries(("en", "de", Csv, "csv"))))
             .RespondJson(GlossaryReply);
       await CreateClient().UpdateMultilingualGlossaryDictionaryFromCsvAsync("g1", "en", "de", CsvStream());
     }
 
     [Fact]
     public async Task SendsExtraBodyParametersLastInPatchBodyWhenUpdatingWithOptions() {
-      ExpectForm(Patch, "v3/glossaries/g1", ("name", "New name"), ("extra", "1")).RespondJson(GlossaryReply);
-      ExpectForm(
+      ExpectJsonFields(
                   Patch,
                   "v3/glossaries/g1",
-                  ("dictionaries[0].source_lang", "en"),
-                  ("dictionaries[0].target_lang", "de"),
-                  ("dictionaries[0].entries", "Apple\tApfel"),
-                  ("dictionaries[0].entries_format", "x"),
+                  ("name", "New name"),
+                  ("extra", "1")).RespondJson(GlossaryReply);
+      ExpectJsonFields(
+                  Patch,
+                  "v3/glossaries/g1",
+                  ("dictionaries", Dictionaries(("en", "de", "Apple\tApfel", "tsv"))),
                   ("extra", "1"))
             .RespondJson(GlossaryReply);
       var client = CreateClient();
@@ -166,9 +163,7 @@ namespace DeepLTests.Offline {
             "de",
             Apple,
             new BaseRequestOptions {
-              ExtraBodyParameters = new Dictionary<string, string> {
-                ["dictionaries[0].entries_format"] = "x", ["extra"] = "1"
-              }
+              ExtraBodyParameters = new Dictionary<string, string> { ["extra"] = "1" }
             });
     }
 
@@ -227,24 +222,18 @@ namespace DeepLTests.Offline {
 
     [Fact]
     public async Task SendsExtraBodyParametersWhenCreatingWithOptions() {
-      ExpectForm(
+      ExpectJsonFields(
                   HttpMethod.Post,
                   "v3/glossaries",
                   ("name", "n"),
-                  ("dictionaries[0].source_lang", "en"),
-                  ("dictionaries[0].target_lang", "de"),
-                  ("dictionaries[0].entries", "Apple\tApfel"),
-                  ("dictionaries[0].entries_format", "tsv"),
+                  ("dictionaries", Dictionaries(("en", "de", "Apple\tApfel", "tsv"))),
                   ("extra", "1"))
             .RespondJson(GlossaryReply);
-      ExpectForm(
+      ExpectJsonFields(
                   HttpMethod.Post,
                   "v3/glossaries",
                   ("name", "n"),
-                  ("dictionaries[0].source_lang", "en"),
-                  ("dictionaries[0].target_lang", "de"),
-                  ("dictionaries[0].entries", Csv),
-                  ("dictionaries[0].entries_format", "csv"),
+                  ("dictionaries", Dictionaries(("en", "de", Csv, "csv"))),
                   ("extra", "1"))
             .RespondJson(GlossaryReply);
       var options = new CreateMultilingualGlossaryOptions {
@@ -260,23 +249,17 @@ namespace DeepLTests.Offline {
 
     [Fact]
     public async Task ThrowsNotFoundExceptionWhenCreateReturns404() {
-      ExpectForm(
+      ExpectJsonFields(
                   HttpMethod.Post,
                   "v3/glossaries",
                   ("name", "n"),
-                  ("dictionaries[0].source_lang", "en"),
-                  ("dictionaries[0].target_lang", "de"),
-                  ("dictionaries[0].entries", "Apple\tApfel"),
-                  ("dictionaries[0].entries_format", "tsv"))
+                  ("dictionaries", Dictionaries(("en", "de", "Apple\tApfel", "tsv"))))
             .RespondJson("{}", HttpStatusCode.NotFound);
-      ExpectForm(
+      ExpectJsonFields(
                   HttpMethod.Post,
                   "v3/glossaries",
                   ("name", "n"),
-                  ("dictionaries[0].source_lang", "en"),
-                  ("dictionaries[0].target_lang", "de"),
-                  ("dictionaries[0].entries", Csv),
-                  ("dictionaries[0].entries_format", "csv"))
+                  ("dictionaries", Dictionaries(("en", "de", Csv, "csv"))))
             .RespondJson("{}", HttpStatusCode.NotFound);
       var client = CreateClient();
       await Assert.ThrowsAsync<NotFoundException>(
@@ -313,7 +296,10 @@ namespace DeepLTests.Offline {
     [Fact]
     public async Task AcceptsGlossaryObjectWhenGettingAndRenaming() {
       ExpectNoBody(HttpMethod.Get, "v3/glossaries/g1").RespondJson(GlossaryReply);
-      ExpectForm(Patch, "v3/glossaries/g1", ("name", "New name")).RespondJson(GlossaryReply);
+      ExpectJsonFields(
+                  Patch,
+                  "v3/glossaries/g1",
+                  ("name", "New name")).RespondJson(GlossaryReply);
       var client = CreateClient();
       await client.GetMultilingualGlossaryAsync(Info());
       await client.UpdateMultilingualGlossaryNameAsync(Info(), "New name");

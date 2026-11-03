@@ -23,7 +23,7 @@ namespace DeepLTests.Offline {
 
     [Fact]
     public async Task SendsTsvEntriesWhenCreating() {
-      ExpectForm(
+      ExpectJsonFields(
                   HttpMethod.Post,
                   "v2/glossaries",
                   ("name", "My glossary"),
@@ -37,7 +37,7 @@ namespace DeepLTests.Offline {
 
     [Fact]
     public async Task SendsLanguageCodesWithoutRegionWhenCreating() {
-      ExpectForm(
+      ExpectJsonFields(
                   HttpMethod.Post,
                   "v2/glossaries",
                   ("name", "n"),
@@ -52,7 +52,7 @@ namespace DeepLTests.Offline {
     [Fact]
     public async Task SendsCsvEntriesWhenCreatingFromCsv() {
       const string csv = "sourceEntry1,targetEntry1,en,de\n\"source\"\"Entry\",\"target,Entry\",en,de";
-      ExpectForm(
+      ExpectJsonFields(
                   HttpMethod.Post,
                   "v2/glossaries",
                   ("name", "n"),
@@ -73,7 +73,7 @@ namespace DeepLTests.Offline {
 
       var entries = new GlossaryEntries(pairs);
       Assert.True(entries.ToTsv().Length > 100000);
-      ExpectForm(
+      ExpectJsonFields(
                   HttpMethod.Post,
                   "v2/glossaries",
                   ("name", "n"),

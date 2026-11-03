@@ -19,12 +19,12 @@ namespace DeepLTests.Offline {
           "{\"translations\":[{\"detected_source_language\":\"EN\",\"text\":\"Hallo\",\"billed_characters\":5," +
           "\"model_type_used\":\"quality_optimized\"}]}";
 
-    private Task<TextResult> Translate(TextTranslateOptions? options, params (string Key, string Value)[] expected) {
-      var fields = new List<(string Key, string Value)> {
-        ("target_lang", "de"), ("show_billed_characters", "1"), ("text", "Hello")
+    private Task<TextResult> Translate(TextTranslateOptions? options, params (string Key, object Value)[] expected) {
+      var fields = new List<(string Key, object Value)> {
+        ("target_lang", "de"), ("show_billed_characters", true), ("text", new[] { "Hello" })
       };
       fields.AddRange(expected);
-      ExpectForm(HttpMethod.Post, "v2/translate", fields.ToArray()).RespondJson(Reply);
+      ExpectJsonFields(HttpMethod.Post, "v2/translate", fields.ToArray()).RespondJson(Reply);
       return CreateClient().TranslateTextAsync("Hello", null, "DE", options);
     }
 
@@ -36,21 +36,25 @@ namespace DeepLTests.Offline {
 
     [Fact]
     public async Task SendsLanguageCodesStandardized() {
-      ExpectForm(
+      ExpectJsonFields(
                   HttpMethod.Post,
                   "v2/translate",
                   ("source_lang", "de"),
                   ("target_lang", "en-US"),
-                  ("show_billed_characters", "1"),
-                  ("text", "Hallo"))
+                  ("show_billed_characters", true),
+                  ("text", new[] { "Hallo" }))
             .RespondJson(Reply);
       await CreateClient().TranslateTextAsync("Hallo", "dE", "EN-us");
     }
 
     [Fact]
     public async Task SendsTextArrayInOrder() {
-      Expect(HttpMethod.Post, "v2/translate")
-            .WithContent("target_lang=de&show_billed_characters=1&text=a+b&text=%C3%A4")
+      ExpectJsonFields(
+                  HttpMethod.Post,
+                  "v2/translate",
+                  ("target_lang", "de"),
+                  ("show_billed_characters", true),
+                  ("text", new[] { "a b", "ä" }))
             .RespondJson(
                   "{\"translations\":[{\"detected_source_language\":\"EN\",\"text\":\"x\",\"billed_characters\":3}," +
                   "{\"detected_source_language\":\"DE\",\"text\":\"y\",\"billed_characters\":1}]}");
@@ -81,11 +85,11 @@ namespace DeepLTests.Offline {
 
     [Fact]
     public Task SendsPreserveFormatting() =>
-          Translate(new TextTranslateOptions { PreserveFormatting = true }, ("preserve_formatting", "1"));
+          Translate(new TextTranslateOptions { PreserveFormatting = true }, ("preserve_formatting", true));
 
     [Fact]
     public Task SendsOutlineDetectionOnlyWhenDisabled() =>
-          Translate(new TextTranslateOptions { OutlineDetection = false }, ("outline_detection", "0"));
+          Translate(new TextTranslateOptions { OutlineDetection = false }, ("outline_detection", false));
 
     [Fact]
     public Task SendsContext() => Translate(new TextTranslateOptions { Context = "a knife" }, ("context", "a knife"));
@@ -120,7 +124,7 @@ namespace DeepLTests.Offline {
                 ("model_type", "new_model"));
 
     [Fact]
-    public Task SendsTagListsCommaSeparated() =>
+    public Task SendsTagListsAsArrays() =>
           Translate(
                 new TextTranslateOptions {
                   TagHandling = "xml",
@@ -129,16 +133,22 @@ namespace DeepLTests.Offline {
                   SplittingTags = { "title", "par" }
                 },
                 ("tag_handling", "xml"),
-                ("ignore_tags", "raw,code"),
-                ("non_splitting_tags", "span"),
-                ("splitting_tags", "title,par"));
+                ("ignore_tags", new[] { "raw", "code" }),
+                ("non_splitting_tags", new[] { "span" }),
+                ("splitting_tags", new[] { "title", "par" }));
+
+    [Fact]
+    public Task SplitsCommaSeparatedTagsIntoArrayEntries() =>
+          Translate(
+                new TextTranslateOptions { TagHandling = "xml", IgnoreTags = { "raw, code", "pre" } },
+                ("tag_handling", "xml"),
+                ("ignore_tags", new[] { "raw", "code", "pre" }));
 
     [Fact]
     public Task SendsCustomInstructions() =>
           Translate(
                 new TextTranslateOptions { CustomInstructions = { "Use informal language", "Be concise" } },
-                ("custom_instructions", "Use informal language"),
-                ("custom_instructions", "Be concise"));
+                ("custom_instructions", new[] { "Use informal language", "Be concise" }));
 
 #pragma warning disable CS0618 // The deprecated *Id properties stay covered by the existing tests.
     [Fact]
@@ -176,7 +186,7 @@ namespace DeepLTests.Offline {
       // The C# 8 compiler of the .NET Core 3.1 SDK ignores [NotNullIfNotNull] on the conversion, hence the "!".
       var options = new TextTranslateOptions { GlossaryIds = { "g1", ((string)glossary)! } };
       options.GlossaryIds.Add(((string)multilingualGlossary)!);
-      return Translate(options, ("glossary_ids", "g1,g2,g3"));
+      return Translate(options, ("glossary_ids", new[] { "g1", "g2", "g3" }));
     }
 
     [Fact]
@@ -186,8 +196,8 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
-    public Task SendsGlossaryIdsCommaSeparated() =>
-          Translate(new TextTranslateOptions { GlossaryIds = { "g1", "g2" } }, ("glossary_ids", "g1,g2"));
+    public Task SendsGlossaryIdsAsArray() =>
+          Translate(new TextTranslateOptions { GlossaryIds = { "g1", "g2" } }, ("glossary_ids", new[] { "g1", "g2" }));
 
     [Fact]
     public Task SendsGlossaryIdsOfMultilingualGlossaryInfos() {
@@ -195,7 +205,7 @@ namespace DeepLTests.Offline {
         new MultilingualGlossaryInfo("g1", "a", new MultilingualGlossaryDictionaryInfo[0], DateTime.UtcNow),
         new MultilingualGlossaryInfo("g2", "b", new MultilingualGlossaryDictionaryInfo[0], DateTime.UtcNow)
       };
-      return Translate(new TextTranslateOptions(glossaries), ("glossary_ids", "g1,g2"));
+      return Translate(new TextTranslateOptions(glossaries), ("glossary_ids", new[] { "g1", "g2" }));
     }
 
 #pragma warning disable CS0618
@@ -238,7 +248,7 @@ namespace DeepLTests.Offline {
           Translate(
                 new TextTranslateOptions { TranslationMemoryId = "tm1", TranslationMemoryThreshold = 80 },
                 ("translation_memory_id", "tm1"),
-                ("translation_memory_threshold", "80"));
+                ("translation_memory_threshold", 80));
 #pragma warning restore CS0618
 
     [Fact]
@@ -247,7 +257,7 @@ namespace DeepLTests.Offline {
       return Translate(
             new TextTranslateOptions { TranslationMemory = translationMemory, TranslationMemoryThreshold = 80 },
             ("translation_memory_id", "tm1"),
-            ("translation_memory_threshold", "80"));
+            ("translation_memory_threshold", 80));
     }
 
     [Fact]
@@ -258,12 +268,12 @@ namespace DeepLTests.Offline {
 
     [Fact]
     public async Task SendsExtraBodyParametersLast() {
-      ExpectForm(
+      ExpectJsonFields(
                   HttpMethod.Post,
                   "v2/translate",
                   ("target_lang", "FR"),
-                  ("show_billed_characters", "1"),
-                  ("text", "Hello"),
+                  ("show_billed_characters", true),
+                  ("text", new[] { "Hello" }),
                   ("debug", "1"))
             .RespondJson(Reply);
       await CreateClient().TranslateTextAsync(
@@ -277,8 +287,12 @@ namespace DeepLTests.Offline {
 
     [Fact]
     public async Task ExtraTextParameterReplacesTexts() {
-      Expect(HttpMethod.Post, "v2/translate")
-            .WithContent("target_lang=de&show_billed_characters=1&text=x")
+      ExpectJsonFields(
+                  HttpMethod.Post,
+                  "v2/translate",
+                  ("target_lang", "de"),
+                  ("show_billed_characters", true),
+                  ("text", "x"))
             .RespondJson(Reply);
       await CreateClient().TranslateTextAsync(
             new[] { "a", "b" },
@@ -329,7 +343,12 @@ namespace DeepLTests.Offline {
 
     [Fact]
     public async Task ParsesResult() {
-      ExpectForm(HttpMethod.Post, "v2/translate", ("target_lang", "de"), ("show_billed_characters", "1"), ("text", "Hello"))
+      ExpectJsonFields(
+                  HttpMethod.Post,
+                  "v2/translate",
+                  ("target_lang", "de"),
+                  ("show_billed_characters", true),
+                  ("text", new[] { "Hello" }))
             .RespondJson(
                   "{\"translations\":[{\"detected_source_language\":\"PT-BR\",\"text\":\"Hallo\"," +
                   "\"billed_characters\":5,\"model_type_used\":\"latency_optimized\"}]}");
