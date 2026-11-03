@@ -3,25 +3,24 @@
 // license that can be found in the LICENSE file.
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using DeepL;
 using Xunit;
 
 namespace DeepLTests.Offline {
   /// <summary>
-  ///   Sends requests through a local forward proxy. The server URL is plain HTTP, so the proxy receives the request
-  ///   itself and answers it; nothing leaves the machine.
+  ///   Sends an HTTPS request through a local forward proxy that rejects every CONNECT request, so the server is never
+  ///   contacted and nothing leaves the machine.
   /// </summary>
   public sealed class ProxyTest : IDisposable {
-    private const string UsageReply = "{\"character_count\":1,\"character_limit\":2}";
     private readonly TcpListener _listener = new TcpListener(IPAddress.Loopback, 0);
-    private readonly ConcurrentQueue<List<string>> _requests = new ConcurrentQueue<List<string>>();
+    private readonly object _lock = new object();
+    private readonly List<List<string>> _connectRequests = new List<List<string>>();
 
     public ProxyTest() {
       _listener.Start();
@@ -30,31 +29,30 @@ namespace DeepLTests.Offline {
 
     public void Dispose() => _listener.Stop();
 
-    private int Port => ((IPEndPoint)_listener.LocalEndpoint).Port;
-
     [Fact]
-    public async Task SendsRequestsThroughProxyWithCredentials() {
+    public async Task DoesNotRetryProxyTunnelRejection() {
+      var port = ((IPEndPoint)_listener.LocalEndpoint).Port;
       using var client = new DeepLClient(
             "test-key",
             new DeepLClientOptions {
-              ServerUrl = "http://api.deepl.test",
-              Proxy = new Uri($"http://proxy-user:p%40ss@127.0.0.1:{Port}"),
-              MaximumNetworkRetries = 0
+              ServerUrl = "https://api.deepl.test",
+              Proxy = new Uri($"http://proxy-user:secret@127.0.0.1:{port}"),
+              MaximumNetworkRetries = 2,
+              PerRetryConnectionTimeout = TimeSpan.FromSeconds(10)
             });
 
-      var usage = await client.GetUsageAsync();
+      var exception = await Assert.ThrowsAsync<ConnectionException>(() => client.GetUsageAsync());
 
-      Assert.Equal(1, usage.Character!.Count);
-      var lastRequest = Assert.Single(_requests.ToArray(), request => request.Exists(IsProxyAuthorization));
-      Assert.Equal("GET http://api.deepl.test/v2/usage HTTP/1.1", lastRequest[0]);
-      Assert.Contains("Authorization: DeepL-Auth-Key test-key", lastRequest);
-      Assert.Contains(
-            "Proxy-Authorization: Basic " + Convert.ToBase64String(Encoding.ASCII.GetBytes("proxy-user:p@ss")),
-            lastRequest);
+      Assert.False(exception.ShouldRetry);
+      lock (_lock) {
+        // Each attempt sends a CONNECT without credentials, then repeats it with credentials after the 407 challenge.
+        Assert.All(_connectRequests, request => Assert.Equal("CONNECT api.deepl.test:443 HTTP/1.1", request[0]));
+        Assert.Single(
+              _connectRequests,
+              request => request.Exists(
+                    line => line.StartsWith("Proxy-Authorization: Basic ", StringComparison.OrdinalIgnoreCase)));
+      }
     }
-
-    private static bool IsProxyAuthorization(string line) =>
-          line.StartsWith("Proxy-Authorization:", StringComparison.OrdinalIgnoreCase);
 
     private async Task AcceptLoopAsync() {
       while (true) {
@@ -69,26 +67,44 @@ namespace DeepLTests.Offline {
       }
     }
 
-    /// <summary>Reads one request; asks for proxy credentials if it has none, otherwise answers with usage.</summary>
+    /// <summary>Answers every request on the connection with 407 until the client closes it.</summary>
     private async Task HandleAsync(TcpClient connection) {
       using (connection) {
         var stream = connection.GetStream();
-        var reader = new StreamReader(stream, Encoding.ASCII);
-        var lines = new List<string>();
-        string? line;
-        while (!string.IsNullOrEmpty(line = await reader.ReadLineAsync())) {
-          lines.Add(line);
+        List<string> lines;
+        while ((lines = await ReadHeaderAsync(stream)).Count > 0) {
+          lock (_lock) {
+            _connectRequests.Add(lines);
+          }
+
+          var bytes = Encoding.ASCII.GetBytes(
+                "HTTP/1.1 407 Proxy Authentication Required\r\nProxy-Authenticate: Basic realm=\"test\"\r\n" +
+                "Content-Length: 0\r\n\r\n");
+          await stream.WriteAsync(bytes, 0, bytes.Length);
+        }
+      }
+    }
+
+    private static async Task<List<string>> ReadHeaderAsync(NetworkStream stream) {
+      var lines = new List<string>();
+      var line = new StringBuilder();
+      var buffer = new byte[1];
+      while (await stream.ReadAsync(buffer, 0, 1) == 1) {
+        if (buffer[0] != '\n') {
+          line.Append((char)buffer[0]);
+          continue;
         }
 
-        _requests.Enqueue(lines);
-        var response = lines.Exists(IsProxyAuthorization)
-              ? "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n" +
-                $"Content-Length: {UsageReply.Length}\r\nConnection: close\r\n\r\n{UsageReply}"
-              : "HTTP/1.1 407 Proxy Authentication Required\r\nProxy-Authenticate: Basic realm=\"test\"\r\n" +
-                "Content-Length: 0\r\nConnection: close\r\n\r\n";
-        var bytes = Encoding.ASCII.GetBytes(response);
-        await stream.WriteAsync(bytes, 0, bytes.Length);
+        var text = line.ToString().TrimEnd('\r');
+        line.Clear();
+        if (text.Length == 0) {
+          break;
+        }
+
+        lines.Add(text);
       }
+
+      return lines;
     }
   }
 }

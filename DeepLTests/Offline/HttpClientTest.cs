@@ -176,18 +176,6 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
-    public async Task DoesNotRetryProxyTunnelRejection() {
-      // SocketsHttpHandler reports a rejected CONNECT as an HttpRequestException without an inner exception.
-      var attempts = ThrowOnUsage(
-            new HttpRequestException(
-                  "The proxy tunnel request to proxy 'http://proxy:3128/' failed with status code '403'."));
-      var exception = await Assert.ThrowsAsync<ConnectionException>(
-            () => CreateClientWithRetries(2, PerRetryTimeout).GetUsageAsync());
-      Assert.Equal(1, attempts());
-      Assert.False(exception.ShouldRetry);
-    }
-
-    [Fact]
     public async Task RetriesConnectionReset() {
       var attempts = ThrowOnUsage(
             new HttpRequestException(
