@@ -5,6 +5,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Added the interfaces `ITextTranslator` (`TranslateTextAsync()`), `IDocumentTranslator` (`TranslateDocumentAsync()`,
+  `TranslateDocumentUploadAsync()`, `TranslateDocumentGetStatusAsync()`, `TranslateDocumentWaitUntilDoneAsync()`,
+  `TranslateDocumentDownloadAsync()`, all overloads), `ILanguageProvider` (`GetSourceLanguagesAsync()`,
+  `GetTargetLanguagesAsync()`, `GetGlossaryLanguagesAsync()`) and `IUsageProvider` (`GetUsageAsync()`), implemented
+  by `DeepLClient`. They take the place of the removed `ITranslator`, for example for mocking.
+- `IGlossaryManager` now also declares the v2 glossary methods `CreateGlossaryAsync()`, `CreateGlossaryFromCsvAsync()`,
+  `GetGlossaryAsync()`, `WaitUntilGlossaryReadyAsync()`, `ListGlossariesAsync()`, `GetGlossaryEntriesAsync()` and
+  `DeleteGlossaryAsync()`. Classes implementing `IGlossaryManager` themselves must add them.
+
 ### Changed
 - The package now targets `net8.0` and `netstandard2.0`; the `net5.0` target is removed. .NET 5, 6 and 7
   applications now use the `netstandard2.0` build, which has no separate connect timeout (see
@@ -44,7 +54,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed the `Translator` class, its `ITranslator` interface and `TranslatorOptions`. `DeepLClient` no longer
   derives from `Translator` and now holds all of its methods. Replace `new Translator(authKey, new TranslatorOptions
   { ... })` with `new DeepLClient(authKey, new DeepLClientOptions { ... })`, and variables or parameters typed
-  `Translator` or `ITranslator` with `DeepLClient`. `DeepLClientOptions` now derives from `BaseClientOptions`.
+  `Translator` or `ITranslator` with `DeepLClient` or the interfaces listed under Added. `DeepLClientOptions` now
+  derives from `BaseClientOptions`.
 - Removed `Translator.AuthKeyIsFreeAccount()`; use `DeepLClient.IsFreeAccountAuthKey()` instead.
 - Removed `TranslateDocumentStatusAsync()`; use `TranslateDocumentGetStatusAsync()` instead.
 - Removed `GlossaryNotFoundException`; catch `NotFoundException` instead.

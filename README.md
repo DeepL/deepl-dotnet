@@ -64,6 +64,13 @@ but instead fetched from a configuration file or environment variable.
 `DeepLClient.IsFreeAccountAuthKey(authKey)` returns `true` if the key belongs to a DeepL API Free account (it ends
 with `:fx`). The client uses this to choose the server URL.
 
+`DeepLClient` implements one interface per API area, so code can depend on the area it uses and tests can mock it:
+`ITextTranslator` (`TranslateTextAsync()`), `IDocumentTranslator` (`TranslateDocumentAsync()` and the
+`TranslateDocument*Async()` steps), `ILanguageProvider` (`GetSourceLanguagesAsync()`, `GetTargetLanguagesAsync()`,
+`GetGlossaryLanguagesAsync()`), `IUsageProvider` (`GetUsageAsync()`), `IGlossaryManager` (glossaries), `IWriter`
+(`RephraseTextAsync()`), `IStyleRuleManager`, `IStyleProfileManager`, `ITranslationMemoryManager` and
+`ISpokenTermsManager`. Some newer methods and overloads are members of `DeepLClient` only, as noted in their sections.
+
 ### Translating text
 
 To translate text, call `TranslateTextAsync()`. The first argument is a string containing the text to translate, or

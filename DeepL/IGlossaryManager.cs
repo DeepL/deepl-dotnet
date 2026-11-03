@@ -560,5 +560,144 @@ namespace DeepL {
           MultilingualGlossaryInfo glossary,
           MultilingualGlossaryDictionaryInfo glossaryDict,
           CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///   Creates a v2 glossary in your DeepL account with the specified details and returns a
+    ///   <see cref="GlossaryInfo" /> object with details about the newly created glossary. The glossary can be used
+    ///   in translations to override translations for specific terms (words). The glossary source and target languages
+    ///   must match the languages of translations for which it will be used.
+    /// </summary>
+    /// <param name="name">User-defined name to assign to the glossary; must not be empty.</param>
+    /// <param name="sourceLanguageCode">Language code of the source terms language.</param>
+    /// <param name="targetLanguageCode">Language code of the target terms language.</param>
+    /// <param name="entries">Glossary entry list.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns><see cref="GlossaryInfo" /> object with details about the newly created glossary.</returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    Task<GlossaryInfo> CreateGlossaryAsync(
+          string name,
+          string sourceLanguageCode,
+          string targetLanguageCode,
+          GlossaryEntries entries,
+          CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///   Creates a v2 glossary in your DeepL account with the specified details and returns a
+    ///   <see cref="GlossaryInfo" /> object with details about the newly created glossary. The glossary can be used
+    ///   in translations to override translations for specific terms (words). The glossary source and target languages
+    ///   must match the languages of translations for which it will be used.
+    /// </summary>
+    /// <param name="name">User-defined name to assign to the glossary; must not be empty.</param>
+    /// <param name="sourceLanguageCode">Language code of the source terms language.</param>
+    /// <param name="targetLanguageCode">Language code of the target terms language.</param>
+    /// <param name="csvFile"><see cref="Stream" /> containing CSV content.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns><see cref="GlossaryInfo" /> object with details about the newly created glossary.</returns>
+    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    Task<GlossaryInfo> CreateGlossaryFromCsvAsync(
+          string name,
+          string sourceLanguageCode,
+          string targetLanguageCode,
+          Stream csvFile,
+          CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///   Retrieves information about the glossary with the specified ID and returns a <see cref="GlossaryInfo" />
+    ///   object containing details. This does not retrieve the glossary entries; to retrieve entries use
+    ///   <see cref="GetGlossaryEntriesAsync(string,System.Threading.CancellationToken)" />
+    /// </summary>
+    /// <param name="glossaryId">ID of glossary to retrieve.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns><see cref="GlossaryInfo" /> object with details about the specified glossary.</returns>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    Task<GlossaryInfo> GetGlossaryAsync(
+          string glossaryId,
+          CancellationToken cancellationToken = default);
+
+    /// <summary>Asynchronously waits until the given glossary is ready to be used for translations.</summary>
+    /// <param name="glossaryId">ID of glossary to ensure ready.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    Task<GlossaryInfo> WaitUntilGlossaryReadyAsync(
+          string glossaryId,
+          CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///   Retrieves information about all glossaries and returns an array of <see cref="GlossaryInfo" /> objects
+    ///   containing details. This does not retrieve the glossary entries; to retrieve entries use
+    ///   <see cref="GetGlossaryEntriesAsync(string,System.Threading.CancellationToken)" />
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns>Array of <see cref="GlossaryInfo" /> objects with details about each glossary.</returns>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    Task<GlossaryInfo[]> ListGlossariesAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///   Retrieves the entries containing within the glossary with the specified ID and returns them as a
+    ///   <see cref="GlossaryEntries" />.
+    /// </summary>
+    /// <param name="glossaryId">ID of glossary for which to retrieve entries.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns><see cref="GlossaryEntries" /> containing entry pairs of the glossary.</returns>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    Task<GlossaryEntries> GetGlossaryEntriesAsync(
+          string glossaryId,
+          CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///   Retrieves the entries containing within the glossary and returns them as a <see cref="GlossaryEntries" />.
+    /// </summary>
+    /// <param name="glossary"><see cref="GlossaryInfo" /> object corresponding to glossary for which to retrieve entries.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <returns><see cref="GlossaryEntries" /> containing entry pairs of the glossary.</returns>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    Task<GlossaryEntries> GetGlossaryEntriesAsync(
+          GlossaryInfo glossary,
+          CancellationToken cancellationToken = default);
+
+    /// <summary>Deletes the glossary with the specified ID.</summary>
+    /// <param name="glossaryId">ID of glossary to delete.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    Task DeleteGlossaryAsync(
+          string glossaryId,
+          CancellationToken cancellationToken = default);
+
+    /// <summary>Deletes the specified glossary.</summary>
+    /// <param name="glossary"><see cref="GlossaryInfo" /> object corresponding to glossary to delete.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <exception cref="DeepLException">
+    ///   If any error occurs while communicating with the DeepL API, a
+    ///   <see cref="DeepLException" /> or a derived class will be thrown.
+    /// </exception>
+    Task DeleteGlossaryAsync(
+          GlossaryInfo glossary,
+          CancellationToken cancellationToken = default);
   }
 }
