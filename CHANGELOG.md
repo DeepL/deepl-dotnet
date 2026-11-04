@@ -121,6 +121,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   create their jobs the same way.
 - **Breaking:** a response body cut off mid-read (the connection breaks after the status line) is now retried like a
   connection reset, by every method except the resource creates above. It was not retried before.
+- **Breaking:** a response body cut off mid-read now throws a `ConnectionException` with `ShouldRetry` `true` for the
+  resource creates above and `DeepLAdminClient.CreateDeveloperKeyAsync()` too, which do not retry it themselves; it
+  was `false` for them before. This also applies to an `HttpClient` from `ClientFactory`: the client now reads the
+  response body after the headers, so a cut-off body is told apart from a failure to send.
 
 ### Removed
 - Removed `Usage.Document` and `Usage.TeamDocument`; the API no longer returns document usage. `Usage.ToString()` no

@@ -787,6 +787,8 @@ namespace DeepL.Internal {
           KeyValuePair<string, string?>[]? headers = null) {
       var retryOnlyUnprocessed =
             requestMessage.GetPolicyExecutionContext()?.OperationKey == RetryOnlyUnprocessedOperationKey;
+      var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+      HttpResponseMessage response;
       try {
         var sdkSetsAccept = requestMessage.Headers.Accept.Count > 0;
         foreach (var header in headers ?? _headers) {
@@ -798,7 +800,10 @@ namespace DeepL.Internal {
           requestMessage.Headers.Add(header.Key, header.Value);
         }
 
-        return await _httpClient.SendAsync(requestMessage, cancellationToken).ConfigureAwait(false);
+        // The body is read below, so that a body cut off mid-read is told apart from a failure to send.
+        response = await _httpClient
+              .SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
+              .ConfigureAwait(false);
         // Distinguish cancellation due to user-provided token or request time-out
       } catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) {
         throw;
@@ -808,11 +813,52 @@ namespace DeepL.Internal {
         throw new ConnectionException($"Request timed out: {ex.Message}", ex) { ShouldRetry = !retryOnlyUnprocessed };
       } catch (HttpRequestException ex) {
         throw new ConnectionException($"Request failed: {ex.Message}", ex) {
-          ShouldRetry = retryOnlyUnprocessed ? IsCertainlyNotSent(ex) : IsTransientNetworkFailure(ex)
+          ShouldRetry = IsResponseBodyCutOff(ex) ||
+                        (retryOnlyUnprocessed ? IsCertainlyNotSent(ex) : IsTransientNetworkFailure(ex))
         };
       } catch (Exception ex) {
         throw new ConnectionException($"Unexpected request failure: {ex.Message}", ex);
       }
+
+      // The default client has read the body already; a client from ClientFactory has not.
+      using var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+      if (_httpClient.Timeout != System.Threading.Timeout.InfiniteTimeSpan) {
+        var remaining = _httpClient.Timeout - stopwatch.Elapsed;
+        timeoutSource.CancelAfter(remaining > TimeSpan.Zero ? remaining : TimeSpan.FromTicks(1));
+      }
+
+      try {
+        await ResponseBufferingHandler.LoadIntoBufferAsync(response, timeoutSource.Token).ConfigureAwait(false);
+        return response;
+      } catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) {
+        response.Dispose();
+        throw;
+      } catch (OperationCanceledException ex) {
+        response.Dispose();
+        throw new ConnectionException($"Request timed out: {ex.Message}", ex) { ShouldRetry = !retryOnlyUnprocessed };
+      } catch (Exception ex) when (ex is IOException || ex is HttpRequestException) {
+        response.Dispose();
+        throw new ConnectionException($"Request failed: Response body cut off: {ex.Message}", ex) {
+          ShouldRetry = true
+        };
+      } catch (Exception ex) {
+        response.Dispose();
+        throw new ConnectionException($"Unexpected request failure: {ex.Message}", ex);
+      }
+    }
+
+    /// <summary>
+    ///   Whether the response body was cut off mid-read. The request was sent, but repeating it could succeed, so it
+    ///   is marked retryable even for requests the client does not repeat itself.
+    /// </summary>
+    private static bool IsResponseBodyCutOff(HttpRequestException exception) {
+      for (Exception? inner = exception; inner != null; inner = inner.InnerException) {
+        if (inner is ResponseBodyCutOffException) {
+          return true;
+        }
+      }
+
+      return false;
     }
 
     /// <summary>Class used for JSON-deserialization of error results.</summary>

@@ -1422,7 +1422,8 @@ not return them; within `UsageLimits`, a `null` limit means unlimited.
 To avoid duplicate keys, `CreateDeveloperKeyAsync()` is retried only when the
 API cannot have processed the request: after HTTP 429, a failure to resolve
 the server name, a refused connection or a connect timeout. Server errors, other
-timeouts and broken connections are not retried. If it throws, check `ListDeveloperKeysAsync()` before trying again.
+timeouts, broken connections and response bodies cut off mid-read are not
+retried. If it throws, check `ListDeveloperKeysAsync()` before trying again.
 
 #### Retrieving usage analytics
 
@@ -1505,7 +1506,8 @@ failures, and `null` if unknown.
 Operations that create a resource are not safe to repeat after a server error
 or a timeout, because the resource may already exist; for them, `ShouldRetry`
 is `true` only for HTTP 429, name resolution failures, refused connections and
-connect timeouts. They are `TranslateDocumentAsync()` and
+connect timeouts, and for a response body cut off mid-read, which they do not
+retry themselves. They are `TranslateDocumentAsync()` and
 `TranslateDocumentUploadAsync()`, `DeepLAdminClient.CreateDeveloperKeyAsync()`,
 the glossary, style rule, custom instruction, style profile and spoken terms
 creates, and `CreateTranslationMemoryImportAsync()` and

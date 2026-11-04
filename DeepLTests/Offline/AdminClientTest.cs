@@ -620,6 +620,24 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
+    public async Task CreateDeveloperKeyCutOffBodyIsRetryableButNotRetried() {
+      ExpectJson(HttpMethod.Post, "v2/admin/developer-keys", "{}").Respond(CutOffReply("{\"id\":"));
+
+      var exception = await Assert.ThrowsAsync<ConnectionException>(
+            () => CreateAdminClientWithRetries(1).CreateDeveloperKeyAsync());
+      Assert.True(exception.ShouldRetry);
+    }
+
+    [Fact]
+    public async Task CreateDeveloperKeyCutOffBodyIsRetryableWithCustomClient() {
+      ExpectJson(HttpMethod.Post, "v2/admin/developer-keys", "{}").Respond(CutOffReply("{\"id\":"));
+
+      var exception = await Assert.ThrowsAsync<ConnectionException>(
+            () => CreateAdminClient().CreateDeveloperKeyAsync());
+      Assert.True(exception.ShouldRetry);
+    }
+
+    [Fact]
     public async Task TestCreateDeveloperKeyIsRetriedAfter429() {
       ExpectJson(HttpMethod.Post, "v2/admin/developer-keys", "{}").RespondJson("{}", (HttpStatusCode)429);
       ExpectJson(HttpMethod.Post, "v2/admin/developer-keys", "{}").RespondJson(DeveloperKeyJson);
