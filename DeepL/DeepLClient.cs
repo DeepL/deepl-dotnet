@@ -1439,12 +1439,24 @@ namespace DeepL {
           WaitUntilTranslationMemoryJobDoneAsync(jobId, null, cancellationToken);
 
     /// <inheritdoc />
-    public async Task<TranslationMemoryJob> WaitUntilTranslationMemoryJobDoneAsync(
+    public Task<TranslationMemoryJob> WaitUntilTranslationMemoryJobDoneAsync(
           string jobId,
           TimeSpan? timeout,
-          CancellationToken cancellationToken = default) {
+          CancellationToken cancellationToken = default) =>
+          WaitUntilTranslationMemoryJobDoneAsync(jobId, timeout, _ => { }, cancellationToken);
+
+    /// <summary>
+    ///   Polls the translation memory job like the public overloads, passing every retrieved job state to
+    ///   <paramref name="onJob" /> so that the file helpers can report the last known state on failure.
+    /// </summary>
+    private async Task<TranslationMemoryJob> WaitUntilTranslationMemoryJobDoneAsync(
+          string jobId,
+          TimeSpan? timeout,
+          Action<TranslationMemoryJob> onJob,
+          CancellationToken cancellationToken) {
       var deadline = timeout == null ? (DateTime?)null : DateTime.UtcNow + timeout.Value;
       var job = await GetTranslationMemoryJobAsync(jobId, cancellationToken).ConfigureAwait(false);
+      onJob(job);
       // Done means completed; a failed or expired job ends the wait through Ok. Any other status keeps polling.
       while (!job.Done && job.Ok) {
         if (job.Result == null) {
@@ -1465,6 +1477,7 @@ namespace DeepL {
 
         await Task.Delay(wait, cancellationToken).ConfigureAwait(false);
         job = await GetTranslationMemoryJobAsync(jobId, cancellationToken).ConfigureAwait(false);
+        onJob(job);
       }
 
       if (!job.Ok) {
@@ -1557,41 +1570,60 @@ namespace DeepL {
         throw new ArgumentException($"File does not exist: {inputFilePath}");
       }
 
-      // Read the file before creating the job, so that a file that cannot be read leaves no job awaiting input. The
-      // upload buffers the whole file anyway.
-      byte[] fileContent;
+      string? jobId = null;
+      TranslationMemoryJob? job = null;
       try {
-        using var inputFileStream = inputFileInfo.OpenRead();
-        using var buffer = new MemoryStream();
-        await inputFileStream.CopyToAsync(buffer, 81920, cancellationToken).ConfigureAwait(false);
-        fileContent = buffer.ToArray();
-      } catch (Exception exception) when (IsLocalFileException(exception)) {
-        throw new DeepLException($"Failed to read input file {inputFilePath}: {exception.Message}", exception);
-      }
+        // Read the file before creating the job, so that a file that cannot be read leaves no job awaiting input. The
+        // upload buffers the whole file anyway.
+        byte[] fileContent;
+        using (var inputFileStream = inputFileInfo.OpenRead())
+        using (var buffer = new MemoryStream()) {
+          await inputFileStream.CopyToAsync(buffer, 81920, cancellationToken).ConfigureAwait(false);
+          fileContent = buffer.ToArray();
+        }
 
-      var createOptions = new CreateTranslationMemoryImportOptions {
-        ContentType = options?.ContentType,
-        DisplayName = options?.DisplayName,
-        ExtraBodyParameters = options?.ExtraBodyParameters
-      };
-      var created = await CreateTranslationMemoryImportAsync(
-                  inputFileInfo.Name,
-                  fileContent.Length,
-                  createOptions,
-                  cancellationToken)
-            .ConfigureAwait(false);
+        if (fileContent.Length == 0) {
+          throw new DeepLException($"Input file is empty: {inputFilePath}");
+        }
 
-      using (var contentStream = new MemoryStream(fileContent, false)) {
-        await UploadTranslationMemoryFileAsync(
-                    created,
-                    contentStream,
-                    options?.ContentType ?? "application/xml",
+        var createOptions = new CreateTranslationMemoryImportOptions {
+          ContentType = options?.ContentType,
+          DisplayName = options?.DisplayName,
+          ExtraBodyParameters = options?.ExtraBodyParameters
+        };
+        var created = await CreateTranslationMemoryImportAsync(
+                    inputFileInfo.Name,
+                    fileContent.Length,
+                    createOptions,
                     cancellationToken)
               .ConfigureAwait(false);
-      }
+        jobId = created.JobId;
 
-      return await WaitUntilTranslationMemoryJobDoneAsync(created.JobId, options?.Timeout, cancellationToken)
-            .ConfigureAwait(false);
+        using (var contentStream = new MemoryStream(fileContent, false)) {
+          await UploadTranslationMemoryFileAsync(
+                      created,
+                      contentStream,
+                      options?.ContentType ?? "application/xml",
+                      cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        return await WaitUntilTranslationMemoryJobDoneAsync(
+                    created.JobId,
+                    options?.Timeout,
+                    polled => job = polled,
+                    cancellationToken)
+              .ConfigureAwait(false);
+      } catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) {
+        // Cancellation by the caller is not wrapped.
+        throw;
+      } catch (Exception exception) {
+        throw new TranslationMemoryJobException(
+              $"Error occurred during translation memory import: {exception.Message}",
+              exception,
+              jobId,
+              job);
+      }
     }
 
     /// <inheritdoc />
@@ -1608,23 +1640,48 @@ namespace DeepL {
           string outputFilePath,
           TimeSpan? timeout,
           CancellationToken cancellationToken = default) {
+      string? jobId = null;
+      TranslationMemoryJob? job = null;
+      try {
+        return await ExportTranslationMemoryToFilepathCoreAsync(
+                    translationMemoryId,
+                    outputFilePath,
+                    timeout,
+                    created => jobId = created,
+                    polled => job = polled,
+                    cancellationToken)
+              .ConfigureAwait(false);
+      } catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) {
+        // Cancellation by the caller is not wrapped.
+        throw;
+      } catch (Exception exception) {
+        throw new TranslationMemoryJobException(
+              $"Error occurred during translation memory export: {exception.Message}",
+              exception,
+              jobId,
+              job);
+      }
+    }
+
+    private async Task<TranslationMemoryJob> ExportTranslationMemoryToFilepathCoreAsync(
+          string translationMemoryId,
+          string outputFilePath,
+          TimeSpan? timeout,
+          Action<string> onCreated,
+          Action<TranslationMemoryJob> onJob,
+          CancellationToken cancellationToken) {
       CheckTranslationMemoryId(translationMemoryId);
       // Create the output file before creating the job, so that an existing file or an unwritable path fails before
       // the export runs. CreateNew rather than Create: the file is deleted again if the export fails, so truncating
       // an existing one would destroy the caller's data.
       var outputFileInfo = new FileInfo(outputFilePath);
-      FileStream outputFileStream;
-      try {
-        outputFileStream = outputFileInfo.Open(FileMode.CreateNew, FileAccess.Write);
-      } catch (Exception exception) when (IsLocalFileException(exception)) {
-        throw new DeepLException($"Failed to create output file {outputFilePath}: {exception.Message}", exception);
-      }
-
+      var outputFileStream = outputFileInfo.Open(FileMode.CreateNew, FileAccess.Write);
       try {
         using (outputFileStream) {
           var created = await CreateTranslationMemoryExportAsync(translationMemoryId, cancellationToken)
                 .ConfigureAwait(false);
-          var job = await WaitUntilTranslationMemoryJobDoneAsync(created.JobId, timeout, cancellationToken)
+          onCreated(created.JobId);
+          var job = await WaitUntilTranslationMemoryJobDoneAsync(created.JobId, timeout, onJob, cancellationToken)
                 .ConfigureAwait(false);
           if (string.IsNullOrEmpty(job.Result?.DownloadUrl)) {
             throw new DeepLException("Translation memory export job completed without a download URL");
@@ -1634,15 +1691,11 @@ namespace DeepL {
 
           return job;
         }
-      } catch (Exception exception) {
+      } catch {
         try {
           outputFileInfo.Delete();
         } catch {
           // ignored
-        }
-
-        if (IsLocalFileException(exception)) {
-          throw new DeepLException($"Failed to write output file {outputFilePath}: {exception.Message}", exception);
         }
 
         throw;
@@ -1650,8 +1703,8 @@ namespace DeepL {
     }
 
     /// <summary>
-    ///   <c>true</c> for the exceptions of local file access that the document and translation memory file helpers wrap
-    ///   in a <see cref="DeepLException" />.
+    ///   <c>true</c> for the exceptions of local file access that the document translation helpers wrap in a
+    ///   <see cref="DocumentTranslationException" />.
     /// </summary>
     private static bool IsLocalFileException(Exception exception) =>
           exception is IOException || exception is UnauthorizedAccessException;

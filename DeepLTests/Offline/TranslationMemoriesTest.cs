@@ -355,37 +355,43 @@ namespace DeepLTests.Offline {
                       Path.Combine(Fixtures.TempDir(), "missing.tmx")));
 
     [Fact]
-    public async Task ImportFromFilepathWrapsIOExceptionForUnreadableFileBeforeCreatingJob() {
+    public async Task ImportFromFilepathWrapsIOExceptionInJobExceptionForUnreadableFileBeforeCreatingJob() {
       var path = TmxFile();
       // No request is declared: creating the import job would fail the test with a ConnectionException.
       using (new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None)) {
-        var exception = await Assert.ThrowsAsync<DeepLException>(
+        var exception = await Assert.ThrowsAsync<TranslationMemoryJobException>(
               () => CreateClient().ImportTranslationMemoryFromFilepathAsync(path));
         Assert.IsAssignableFrom<IOException>(exception.InnerException);
+        Assert.Null(exception.JobId);
+        Assert.Null(exception.Job);
       }
     }
 
     [Fact]
-    public async Task ExportToFilepathWrapsIOExceptionForExistingFileBeforeCreatingJob() {
+    public async Task ExportToFilepathWrapsIOExceptionInJobExceptionForExistingFileBeforeCreatingJob() {
       var path = Path.Combine(Fixtures.TempDir(), "export.tmx");
       File.WriteAllText(path, "keep");
       // No request is declared: creating the export job would fail the test with a ConnectionException.
-      var exception = await Assert.ThrowsAsync<DeepLException>(
+      var exception = await Assert.ThrowsAsync<TranslationMemoryJobException>(
             () => CreateClient().ExportTranslationMemoryToFilepathAsync("tm1", path));
       Assert.IsAssignableFrom<IOException>(exception.InnerException);
+      Assert.Null(exception.JobId);
+      Assert.Null(exception.Job);
       Assert.Equal("keep", File.ReadAllText(path));
     }
 
     [Fact]
-    public async Task ExportToFilepathThrowsDeepLExceptionWhenCompletedJobHasNoDownloadUrl() {
+    public async Task ExportToFilepathThrowsJobExceptionWhenCompletedJobHasNoDownloadUrl() {
       ExpectNoBody(HttpMethod.Post, "v3/translation_memories/tm1/export")
             .RespondJson("{\"job_id\":\"j1\"}", HttpStatusCode.Accepted);
       ExpectNoBody(HttpMethod.Get, "v3/translation_memories/jobs/j1")
             .RespondJson(JobReply("{\"status\":\"completed\"}", "export"));
       var path = Path.Combine(Fixtures.TempDir(), "export.tmx");
-      var exception = await Assert.ThrowsAsync<DeepLException>(
+      var exception = await Assert.ThrowsAsync<TranslationMemoryJobException>(
             () => CreateClient().ExportTranslationMemoryToFilepathAsync("tm1", path));
-      Assert.Equal("Translation memory export job completed without a download URL", exception.Message);
+      Assert.Equal("Translation memory export job completed without a download URL", exception.InnerException!.Message);
+      Assert.Equal("j1", exception.JobId);
+      Assert.Equal(TranslationMemoryJobStatus.Completed, exception.Job!.Status);
       Assert.False(File.Exists(path));
     }
 
@@ -431,6 +437,75 @@ namespace DeepLTests.Offline {
     public async Task ThrowsArgumentExceptionWhenUploadUrlIsNotAbsolute(string uploadUrl) =>
           await Assert.ThrowsAsync<ArgumentException>(
                 () => CreateClient().UploadTranslationMemoryFileAsync(uploadUrl, new MemoryStream(new byte[] { 1 })));
+
+    [Fact]
+    public async Task ImportFromFilepathThrowsJobExceptionWithJobWhenJobFails() {
+      var path = TmxFile();
+      ExpectJson(
+                  HttpMethod.Post,
+                  "v3/translation_memories/import",
+                  "{\"source_file\":{\"file_name\":\"example.tmx\",\"content_length\":" + Tmx.Length + "}}")
+            .RespondJson("{\"job_id\":\"j1\",\"upload_url\":\"" + UploadUrl + "\"}");
+      Http.Expect(HttpMethod.Put, UploadUrl).Respond(HttpStatusCode.OK);
+      ExpectNoBody(HttpMethod.Get, "v3/translation_memories/jobs/j1")
+            .RespondJson(JobReply("{\"status\":\"failed\",\"error\":{\"message\":\"bad file\"}}"));
+      var exception = await Assert.ThrowsAsync<TranslationMemoryJobException>(
+            () => CreateClient().ImportTranslationMemoryFromFilepathAsync(path));
+      Assert.Contains("bad file", exception.Message);
+      Assert.Equal("bad file", exception.InnerException!.Message);
+      Assert.Equal("j1", exception.JobId);
+      Assert.Equal(TranslationMemoryJobStatus.Failed, exception.Job!.Status);
+    }
+
+    [Fact]
+    public async Task ImportFromFilepathThrowsJobExceptionWithJobIdAndStatusWhenUploadFails() {
+      var path = TmxFile();
+      ExpectJson(
+                  HttpMethod.Post,
+                  "v3/translation_memories/import",
+                  "{\"source_file\":{\"file_name\":\"example.tmx\",\"content_length\":" + Tmx.Length + "}}")
+            .RespondJson("{\"job_id\":\"j1\",\"upload_url\":\"" + UploadUrl + "\"}");
+      Http.Expect(HttpMethod.Put, UploadUrl).Respond(HttpStatusCode.ServiceUnavailable, "text/plain", "busy");
+      var exception = await Assert.ThrowsAsync<TranslationMemoryJobException>(
+            () => CreateClient().ImportTranslationMemoryFromFilepathAsync(path));
+      Assert.Equal("j1", exception.JobId);
+      Assert.Null(exception.Job);
+      Assert.Equal(503, exception.HttpStatusCode);
+      Assert.Equal(((DeepLException)exception.InnerException!).ShouldRetry, exception.ShouldRetry);
+    }
+
+    [Fact]
+    public async Task ImportFromFilepathThrowsJobExceptionForEmptyFileBeforeCreatingJob() {
+      var path = Path.Combine(Fixtures.TempDir(), "empty.tmx");
+      File.WriteAllText(path, "");
+      // No request is declared: creating the import job would fail the test with a ConnectionException.
+      var exception = await Assert.ThrowsAsync<TranslationMemoryJobException>(
+            () => CreateClient().ImportTranslationMemoryFromFilepathAsync(path));
+      Assert.Null(exception.JobId);
+    }
+
+    [Fact]
+    public async Task ExportToFilepathWrapsArgumentErrorOfJobCreation() {
+      var path = Path.Combine(Fixtures.TempDir(), "export.tmx");
+      var exception = await Assert.ThrowsAsync<TranslationMemoryJobException>(
+            () => CreateClient().ExportTranslationMemoryToFilepathAsync("", path));
+      Assert.IsType<ArgumentException>(exception.InnerException);
+      Assert.Null(exception.JobId);
+    }
+
+    [Fact]
+    public async Task ExportToFilepathCopiesStatusOfApiErrorIntoJobException() {
+      ExpectNoBody(HttpMethod.Post, "v3/translation_memories/tm1/export")
+            .RespondJson("{\"message\":\"gone\"}", HttpStatusCode.NotFound);
+      var path = Path.Combine(Fixtures.TempDir(), "export.tmx");
+      var exception = await Assert.ThrowsAsync<TranslationMemoryJobException>(
+            () => CreateClient().ExportTranslationMemoryToFilepathAsync("tm1", path));
+      Assert.IsType<NotFoundException>(exception.InnerException);
+      Assert.Equal(404, exception.HttpStatusCode);
+      Assert.False(exception.ShouldRetry);
+      Assert.Null(exception.JobId);
+      Assert.False(File.Exists(path));
+    }
     [Fact]
     public async Task ParsesUnknownJobStatusAndKeepsPollingOnIt() {
       ExpectNoBody(HttpMethod.Get, "v3/translation_memories/jobs/j1")
@@ -508,14 +583,16 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
-    public async Task ThrowsDeepLExceptionWhenExportTimeoutExpires() {
+    public async Task ThrowsJobExceptionWhenExportTimeoutExpires() {
       ExpectNoBody(HttpMethod.Post, "v3/translation_memories/tm1/export")
             .RespondJson("{\"job_id\":\"j1\"}", HttpStatusCode.Accepted);
       ExpectNoBody(HttpMethod.Get, "v3/translation_memories/jobs/j1")
             .RespondJson(JobReply("{\"status\":\"processing\"}", "export"));
       var path = Path.Combine(Fixtures.TempDir(), "export.tmx");
-      await Assert.ThrowsAsync<DeepLException>(
+      var exception = await Assert.ThrowsAsync<TranslationMemoryJobException>(
             () => CreateClient().ExportTranslationMemoryToFilepathAsync("tm1", path, TimeSpan.Zero));
+      Assert.Equal("j1", exception.JobId);
+      Assert.Equal(TranslationMemoryJobStatus.Processing, exception.Job!.Status);
       Assert.False(File.Exists(path));
     }
 
@@ -617,7 +694,7 @@ namespace DeepLTests.Offline {
             .Respond(HttpStatusCode.OK);
       ExpectNoBody(HttpMethod.Get, "v3/translation_memories/jobs/j1")
             .RespondJson(JobReply("{\"status\":\"processing\"}"));
-      await Assert.ThrowsAsync<DeepLException>(
+      await Assert.ThrowsAsync<TranslationMemoryJobException>(
             () => CreateClient().ImportTranslationMemoryFromFilepathAsync(
                   path,
                   new ImportTranslationMemoryOptions { Timeout = TimeSpan.Zero }));

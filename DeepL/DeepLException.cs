@@ -116,4 +116,43 @@ namespace DeepL {
     /// The handle can be used to later retrieve the document or to contact DeepL support.
     public DocumentHandle? DocumentHandle { get; }
   }
+  /// <summary>
+  ///   Exception thrown by the translation memory file helpers
+  ///   (<see cref="DeepLClient.ImportTranslationMemoryFromFilepathAsync(string, ImportTranslationMemoryOptions, System.Threading.CancellationToken)" />,
+  ///   <see cref="DeepLClient.ExportTranslationMemoryToFilepathAsync(string, string, System.TimeSpan?, System.Threading.CancellationToken)" />
+  ///   and their overloads) when any step fails. The cause is the <see cref="Exception.InnerException" />. Once the job
+  ///   was created, <see cref="JobId" /> is set, and <see cref="Job" /> holds its last known state, so the job can be
+  ///   inspected or awaited again.
+  /// </summary>
+  public sealed class TranslationMemoryJobException : DeepLException {
+    /// <summary>Initializes a new instance of the <see cref="TranslationMemoryJobException" /> class.</summary>
+    /// <param name="message">The message that describes the error.</param>
+    /// <param name="innerException">
+    ///   The exception that caused this one. If it is a <see cref="DeepLException" />, its
+    ///   <see cref="DeepLException.HttpStatusCode" /> and <see cref="DeepLException.ShouldRetry" /> are copied.
+    /// </param>
+    /// <param name="jobId">ID of the translation memory job, or null if the error occurred before it was created.</param>
+    /// <param name="job">Last known state of the job, or null if it was not retrieved before the error.</param>
+    public TranslationMemoryJobException(
+          string message,
+          Exception innerException,
+          string? jobId,
+          TranslationMemoryJob? job) : base(message, innerException) {
+      JobId = jobId ?? job?.JobId;
+      Job = job;
+      if (innerException is DeepLException deepLException) {
+        HttpStatusCode = deepLException.HttpStatusCode;
+        ShouldRetry = deepLException.ShouldRetry;
+      }
+    }
+
+    /// <summary>ID of the translation memory job, or null if the error occurred before the job was created.</summary>
+    public string? JobId { get; }
+
+    /// <summary>
+    ///   Last known state of the translation memory job, for example the failed job, or null if the error occurred
+    ///   before the job state was retrieved (before the job was created, or while uploading the file to import).
+    /// </summary>
+    public TranslationMemoryJob? Job { get; }
+  }
 }

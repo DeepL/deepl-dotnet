@@ -91,10 +91,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   used `Done` to mean "finished, successfully or not" must check `Done || !Ok`.
   `WaitUntilTranslationMemoryJobDoneAsync()` still returns a completed job and throws a `DeepLException` for a failed or expired one.
 - `ImportTranslationMemoryFromFilepathAsync()` and `ExportTranslationMemoryToFilepathAsync()` now wrap local file
-  failures in a `DeepLException`, with the original `IOException` or `UnauthorizedAccessException` as
-  `InnerException`: an input file that cannot be read, an output file that already exists or cannot be created, and
-  errors writing the output. The checks still run before any job is created, and a missing input file still throws
-  an `ArgumentException`. Catch `DeepLException` instead of the I/O exceptions.
+  failures in a `TranslationMemoryJobException` (see below), with the original `IOException` or
+  `UnauthorizedAccessException` as `InnerException`: an input file that cannot be read, an output file that already
+  exists or cannot be created, and errors writing the output. The checks still run before any job is created, and a
+  missing input file still throws an `ArgumentException`. Catch `DeepLException` or
+  `TranslationMemoryJobException` instead of the I/O exceptions.
 - `TextResult.BilledCharacters` is now a `long` and `DocumentStatus.BilledCharacters` a `long?`, so counts above
   `int.MaxValue` are kept; `DocumentStatus` read such a count as `null` before. The `TextResult` and
   `DocumentStatus` constructors take `long` and `long?`. Code assigning the value to an `int` must cast or use
@@ -138,6 +139,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   such as `/upload`, failed at the request).
 - **Breaking:** `DownloadTranslationMemoryExportAsync()` now throws a `DeepLException` instead of an
   `ArgumentException` if the job has no download URL: the job state comes from the API. Catch `DeepLException`.
+- **Breaking:** `ImportTranslationMemoryFromFilepathAsync()` and `ExportTranslationMemoryToFilepathAsync()` now wrap
+  every failure in the new `TranslationMemoryJobException` (a `DeepLException`), with the cause as `InnerException`:
+  local file errors, argument errors, API errors, a failed or expired job and an expired timeout. Once the job was
+  created, `JobId` is set and `Job` holds its last retrieved state; `HttpStatusCode` and `ShouldRetry` are copied
+  from a `DeepLException` cause. A missing input file still throws an `ArgumentException` before any request, an
+  empty input file now throws before any request too, and cancellation through the `CancellationToken` is not
+  wrapped. Code catching `DeepLException` still catches it; code catching a subclass such as `NotFoundException`
+  must catch `TranslationMemoryJobException` and check `InnerException`.
 
 ### Removed
 - Removed `Usage.Document` and `Usage.TeamDocument`; the API no longer returns document usage. `Usage.ToString()` no

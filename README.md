@@ -1061,10 +1061,16 @@ do {
 Use `ImportTranslationMemoryFromFilepathAsync()` to create a new translation
 memory from a TMX file. It reads the file, creates the import job, uploads the
 file, and waits for processing to finish. The returned job carries the ID of the
-new translation memory. A missing file throws an `ArgumentException`; a file
-that cannot be read throws a `DeepLException` with the `IOException` or
-`UnauthorizedAccessException` of reading it as `InnerException`. Both are thrown
-before the import job is created:
+new translation memory. A missing file throws an `ArgumentException` before any
+request is sent. Every other failure throws a `TranslationMemoryJobException`
+with the cause as `InnerException`: a file that is empty or cannot be read (the
+`IOException` or `UnauthorizedAccessException` of reading it; checked before the
+import job is created), a failed import job, an expired timeout, or an error
+communicating with the DeepL API. Once the import job was created, its
+`JobId` is set, and `Job` holds the last retrieved job state, so you can inspect
+the job or wait for it again. `HttpStatusCode` and `ShouldRetry` are copied from
+a `DeepLException` cause. Cancellation through the `CancellationToken` is not
+wrapped:
 
 ```c#
 var job = await client.ImportTranslationMemoryFromFilepathAsync(
@@ -1081,7 +1087,7 @@ object:
 - `ContentType`: MIME type of the file, declared on the import job and sent
   with the upload. When not set, the file is uploaded as `application/xml`.
 - `Timeout`: maximum time to wait for the import job to finish; a
-  `DeepLException` is thrown when it expires. When not set, waits without limit.
+  `TranslationMemoryJobException` is thrown when it expires. When not set, waits without limit.
 - `ExtraBodyParameters`: added last to the JSON body of the import job request.
 
 ```c#
@@ -1123,16 +1129,18 @@ the JSON request body).
 Use `ExportTranslationMemoryToFilepathAsync()` to export a translation memory as
 a TMX file. It creates the output file, creates the export job, waits for it to
 finish, and writes the result to the file. The output file must not exist yet.
-If it exists, its directory does not exist or it is not writable, a
-`DeepLException` is thrown before the export job is created, with the
-`IOException` or `UnauthorizedAccessException` as `InnerException`; errors
-writing the file are wrapped the same way. If the export fails, the file is
-deleted again:
+Every failure throws a `TranslationMemoryJobException` with the cause as
+`InnerException`, like the import: if the file exists, its directory does not
+exist or it is not writable, it is thrown before the export job is created,
+with the `IOException` or `UnauthorizedAccessException` as `InnerException`;
+errors of the export job, the download and writing the file are wrapped the same
+way, with `JobId` and `Job` set once the job was created. If the export fails,
+the file is deleted again:
 
 ```c#
 await client.ExportTranslationMemoryToFilepathAsync("YOUR_TM_ID", "exported.tmx");
 
-// Throws a DeepLException if the export job has not finished within 5 minutes.
+// Throws a TranslationMemoryJobException if the export job has not finished within 5 minutes.
 await client.ExportTranslationMemoryToFilepathAsync("YOUR_TM_ID", "exported.tmx", TimeSpan.FromMinutes(5));
 ```
 
@@ -1500,6 +1508,8 @@ invalid arguments are provided, they may raise the standard exceptions
 | `TooManyRequestsException` | HTTP 429 after all retries |
 | `QuotaExceededException` | HTTP 456: the quota is exceeded |
 | `DocumentNotReadyException` | HTTP 503 while downloading a document |
+| `DocumentTranslationException` | any failure of `TranslateDocumentAsync()`; carries the `DocumentHandle` once the document was uploaded |
+| `TranslationMemoryJobException` | any failure of `ImportTranslationMemoryFromFilepathAsync()` or `ExportTranslationMemoryToFilepathAsync()` except a missing input file; carries the `JobId` and the last retrieved `Job` once the job was created |
 | `ConnectionException` | no HTTP response, for example a timeout or a failed connection |
 | `DeepLException` | any other status than 2xx (including a 3xx redirect that was not followed), or a malformed response |
 

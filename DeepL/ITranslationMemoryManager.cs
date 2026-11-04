@@ -439,11 +439,14 @@ namespace DeepL {
     ///   A <see cref="TranslationMemoryJob" /> object for the completed import; its result carries the ID of the
     ///   new translation memory.
     /// </returns>
-    /// <exception cref="ArgumentException">If any argument is invalid, or the input file does not exist.</exception>
-    /// <exception cref="DeepLException">
-    ///   If the input file cannot be read (it is read before any job is created; the <see cref="IOException" /> or
-    ///   <see cref="System.UnauthorizedAccessException" /> is the <see cref="System.Exception.InnerException" />), the
-    ///   import failed, or any error occurs while communicating with the DeepL API.
+    /// <exception cref="ArgumentException">If the input file does not exist; raised before any request.</exception>
+    /// <exception cref="TranslationMemoryJobException">
+    ///   If any other step fails; the cause is the <see cref="System.Exception.InnerException" />: the input file is
+    ///   empty or cannot be read (checked before any job is created; an <see cref="IOException" /> or
+    ///   <see cref="System.UnauthorizedAccessException" /> cause), an argument is invalid, the import job failed, or
+    ///   any error occurs while communicating with the DeepL API. Once the job was created,
+    ///   <see cref="TranslationMemoryJobException.JobId" /> is set, and <see cref="TranslationMemoryJobException.Job" />
+    ///   holds its last retrieved state. Cancellation through <paramref name="cancellationToken" /> is not wrapped.
     /// </exception>
     Task<TranslationMemoryJob> ImportTranslationMemoryFromFilepathAsync(
           string inputFilePath,
@@ -464,11 +467,14 @@ namespace DeepL {
     ///   A <see cref="TranslationMemoryJob" /> object for the completed import; its result carries the ID of the
     ///   new translation memory.
     /// </returns>
-    /// <exception cref="ArgumentException">If any argument is invalid, or the input file does not exist.</exception>
-    /// <exception cref="DeepLException">
-    ///   If the input file cannot be read (it is read before any job is created; the <see cref="IOException" /> or
-    ///   <see cref="System.UnauthorizedAccessException" /> is the <see cref="System.Exception.InnerException" />), the
-    ///   import failed, the timeout expired, or any error occurs while communicating with the DeepL API.
+    /// <exception cref="ArgumentException">If the input file does not exist; raised before any request.</exception>
+    /// <exception cref="TranslationMemoryJobException">
+    ///   If any other step fails; the cause is the <see cref="System.Exception.InnerException" />: the input file is
+    ///   empty or cannot be read (checked before any job is created; an <see cref="IOException" /> or
+    ///   <see cref="System.UnauthorizedAccessException" /> cause), an argument is invalid, the import job failed or the timeout expired, or
+    ///   any error occurs while communicating with the DeepL API. Once the job was created,
+    ///   <see cref="TranslationMemoryJobException.JobId" /> is set, and <see cref="TranslationMemoryJobException.Job" />
+    ///   holds its last retrieved state. Cancellation through <paramref name="cancellationToken" /> is not wrapped.
     /// </exception>
     Task<TranslationMemoryJob> ImportTranslationMemoryFromFilepathAsync(
           string inputFilePath,
@@ -486,12 +492,14 @@ namespace DeepL {
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="TranslationMemoryJob" /> object for the completed export.</returns>
-    /// <exception cref="NotFoundException">If the specified translation memory was not found.</exception>
-    /// <exception cref="DeepLException">
-    ///   If the output file already exists, cannot be created or cannot be written (it is created before any job is
-    ///   created; the <see cref="IOException" /> or <see cref="System.UnauthorizedAccessException" /> is the
-    ///   <see cref="System.Exception.InnerException" />), the export failed, or any error occurs while communicating
-    ///   with the DeepL API.
+    /// <exception cref="TranslationMemoryJobException">
+    ///   If any step fails; the cause is the <see cref="System.Exception.InnerException" />: the output file already
+    ///   exists, cannot be created or cannot be written (it is created before any job is created; an
+    ///   <see cref="IOException" /> or <see cref="System.UnauthorizedAccessException" /> cause), an argument is invalid,
+    ///   the translation memory was not found (a <see cref="NotFoundException" /> cause), the export job failed, or any
+    ///   error occurs while communicating with the DeepL API. Once the job was created,
+    ///   <see cref="TranslationMemoryJobException.JobId" /> is set, and <see cref="TranslationMemoryJobException.Job" />
+    ///   holds its last retrieved state. Cancellation through <paramref name="cancellationToken" /> is not wrapped.
     /// </exception>
     Task<TranslationMemoryJob> ExportTranslationMemoryToFilepathAsync(
           string translationMemoryId,
@@ -509,12 +517,14 @@ namespace DeepL {
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="TranslationMemoryJob" /> object for the completed export.</returns>
-    /// <exception cref="NotFoundException">If the specified translation memory was not found.</exception>
-    /// <exception cref="DeepLException">
-    ///   If the output file already exists, cannot be created or cannot be written (it is created before any job is
-    ///   created; the <see cref="IOException" /> or <see cref="System.UnauthorizedAccessException" /> is the
-    ///   <see cref="System.Exception.InnerException" />), the export failed, or any error occurs while communicating
-    ///   with the DeepL API.
+    /// <exception cref="TranslationMemoryJobException">
+    ///   If any step fails; the cause is the <see cref="System.Exception.InnerException" />: the output file already
+    ///   exists, cannot be created or cannot be written (it is created before any job is created; an
+    ///   <see cref="IOException" /> or <see cref="System.UnauthorizedAccessException" /> cause), an argument is invalid,
+    ///   the translation memory was not found (a <see cref="NotFoundException" /> cause), the export job failed, or any
+    ///   error occurs while communicating with the DeepL API. Once the job was created,
+    ///   <see cref="TranslationMemoryJobException.JobId" /> is set, and <see cref="TranslationMemoryJobException.Job" />
+    ///   holds its last retrieved state. Cancellation through <paramref name="cancellationToken" /> is not wrapped.
     /// </exception>
     Task<TranslationMemoryJob> ExportTranslationMemoryToFilepathAsync(
           TranslationMemoryInfo translationMemory,
@@ -533,12 +543,14 @@ namespace DeepL {
     /// <param name="timeout">Maximum time to wait for the export job, or <c>null</c> to wait without a limit.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="TranslationMemoryJob" /> object for the completed export.</returns>
-    /// <exception cref="NotFoundException">If the specified translation memory was not found.</exception>
-    /// <exception cref="DeepLException">
-    ///   If the output file already exists, cannot be created or cannot be written (it is created before any job is
-    ///   created; the <see cref="IOException" /> or <see cref="System.UnauthorizedAccessException" /> is the
-    ///   <see cref="System.Exception.InnerException" />), the export failed, the <paramref name="timeout" /> expired,
-    ///   or any error occurs while communicating with the DeepL API.
+    /// <exception cref="TranslationMemoryJobException">
+    ///   If any step fails; the cause is the <see cref="System.Exception.InnerException" />: the output file already
+    ///   exists, cannot be created or cannot be written (it is created before any job is created; an
+    ///   <see cref="IOException" /> or <see cref="System.UnauthorizedAccessException" /> cause), an argument is invalid,
+    ///   the translation memory was not found (a <see cref="NotFoundException" /> cause), the export job failed, the <paramref name="timeout" /> expired, or any
+    ///   error occurs while communicating with the DeepL API. Once the job was created,
+    ///   <see cref="TranslationMemoryJobException.JobId" /> is set, and <see cref="TranslationMemoryJobException.Job" />
+    ///   holds its last retrieved state. Cancellation through <paramref name="cancellationToken" /> is not wrapped.
     /// </exception>
     Task<TranslationMemoryJob> ExportTranslationMemoryToFilepathAsync(
           string translationMemoryId,
@@ -558,12 +570,14 @@ namespace DeepL {
     /// <param name="timeout">Maximum time to wait for the export job, or <c>null</c> to wait without a limit.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="TranslationMemoryJob" /> object for the completed export.</returns>
-    /// <exception cref="NotFoundException">If the specified translation memory was not found.</exception>
-    /// <exception cref="DeepLException">
-    ///   If the output file already exists, cannot be created or cannot be written (it is created before any job is
-    ///   created; the <see cref="IOException" /> or <see cref="System.UnauthorizedAccessException" /> is the
-    ///   <see cref="System.Exception.InnerException" />), the export failed, the <paramref name="timeout" /> expired,
-    ///   or any error occurs while communicating with the DeepL API.
+    /// <exception cref="TranslationMemoryJobException">
+    ///   If any step fails; the cause is the <see cref="System.Exception.InnerException" />: the output file already
+    ///   exists, cannot be created or cannot be written (it is created before any job is created; an
+    ///   <see cref="IOException" /> or <see cref="System.UnauthorizedAccessException" /> cause), an argument is invalid,
+    ///   the translation memory was not found (a <see cref="NotFoundException" /> cause), the export job failed, the <paramref name="timeout" /> expired, or any
+    ///   error occurs while communicating with the DeepL API. Once the job was created,
+    ///   <see cref="TranslationMemoryJobException.JobId" /> is set, and <see cref="TranslationMemoryJobException.Job" />
+    ///   holds its last retrieved state. Cancellation through <paramref name="cancellationToken" /> is not wrapped.
     /// </exception>
     Task<TranslationMemoryJob> ExportTranslationMemoryToFilepathAsync(
           TranslationMemoryInfo translationMemory,
