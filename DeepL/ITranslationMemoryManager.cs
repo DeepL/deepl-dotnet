@@ -235,7 +235,9 @@ namespace DeepL {
     ///   MIME type of the file, which must match the content type declared when the import job was created.
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
-    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="ArgumentException">
+    ///   If any argument is invalid, for example the upload URL is empty or not an absolute http or https URL.
+    /// </exception>
     /// <exception cref="DeepLException">If any error occurs while uploading the file.</exception>
     Task UploadTranslationMemoryFileAsync(
           TranslationMemoryImport translationMemoryImport,
@@ -253,7 +255,9 @@ namespace DeepL {
     ///   MIME type of the file, which must match the content type declared when the import job was created.
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
-    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="ArgumentException">
+    ///   If any argument is invalid, for example the upload URL is empty or not an absolute http or https URL.
+    /// </exception>
     /// <exception cref="DeepLException">If any error occurs while uploading the file.</exception>
     Task UploadTranslationMemoryFileAsync(
           string uploadUrl,

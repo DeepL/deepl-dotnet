@@ -133,6 +133,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   scheme, for example `ftp://`, was accepted and failed only at the first request.
 - Error messages now include the API's message from a nested `error.message` field of the response body, as the API
   sends for some statuses (for example 414, 500 and 503), when there is no top-level `message`. It was dropped before.
+- **Breaking:** `UploadTranslationMemoryFileAsync()` now throws an `ArgumentException` if the upload URL is not an
+  absolute `http` or `https` URL, before reading the stream. It threw a `UriFormatException` before (or, for a path
+  such as `/upload`, failed at the request).
 
 ### Removed
 - Removed `Usage.Document` and `Usage.TeamDocument`; the API no longer returns document usage. `Usage.ToString()` no

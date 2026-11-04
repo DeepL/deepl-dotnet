@@ -424,6 +424,13 @@ namespace DeepLTests.Offline {
       await Assert.ThrowsAsync<ArgumentException>(
             () => client.UploadTranslationMemoryFileAsync("", new MemoryStream()));
     }
+
+    [Theory]
+    [InlineData("not a url")]
+    [InlineData("/upload?sig=abc")]
+    public async Task ThrowsArgumentExceptionWhenUploadUrlIsNotAbsolute(string uploadUrl) =>
+          await Assert.ThrowsAsync<ArgumentException>(
+                () => CreateClient().UploadTranslationMemoryFileAsync(uploadUrl, new MemoryStream(new byte[] { 1 })));
     [Fact]
     public async Task ParsesUnknownJobStatusAndKeepsPollingOnIt() {
       ExpectNoBody(HttpMethod.Get, "v3/translation_memories/jobs/j1")

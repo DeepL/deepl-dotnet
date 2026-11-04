@@ -1354,6 +1354,11 @@ namespace DeepL {
         throw new ArgumentException($"Parameter {nameof(uploadUrl)} must not be empty");
       }
 
+      if (!Uri.TryCreate(uploadUrl, UriKind.Absolute, out var parsedUploadUrl) ||
+          (parsedUploadUrl.Scheme != Uri.UriSchemeHttp && parsedUploadUrl.Scheme != Uri.UriSchemeHttps)) {
+        throw new ArgumentException($"Parameter {nameof(uploadUrl)} must be an absolute http or https URL");
+      }
+
       // Buffer the file before sending it. Requests are retried on 429 and 5xx responses, and a
       // StreamContent body would already be at the end of the stream on the second attempt,
       // uploading nothing.

@@ -1095,7 +1095,9 @@ var job = await client.ImportTranslationMemoryFromFilepathAsync(
 
 If you need more control, the three steps are also available separately. Note
 that the upload URL is a pre-signed storage URL outside the DeepL API, so your
-authentication key is not sent to it:
+authentication key is not sent to it. `UploadTranslationMemoryFileAsync()`
+throws an `ArgumentException` if the upload URL is empty or not an absolute
+`http` or `https` URL:
 
 ```c#
 var fileInfo = new FileInfo("legal.tmx");
