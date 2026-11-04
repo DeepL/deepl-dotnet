@@ -35,6 +35,11 @@ namespace DeepL {
     ///   <see cref="DocumentTranslationException.DocumentHandle" /> contains the document ID and key that may be used
     ///   to retrieve the document.
     /// </exception>
+    /// <remarks>
+    ///   Because the request creates a resource, it is retried only when it was not sent: after HTTP 429, a failure to
+    ///   resolve the server name, a refused connection or a connect timeout. Server errors, other timeouts and broken
+    ///   connections are not retried.
+    /// </remarks>
     Task<DocumentStatus> TranslateDocumentAsync(
           FileInfo inputFileInfo,
           FileInfo outputFileInfo,
@@ -63,6 +68,11 @@ namespace DeepL {
     ///   <see cref="DocumentTranslationException.DocumentHandle" /> contains the document ID and key that may be used
     ///   to retrieve the document.
     /// </exception>
+    /// <remarks>
+    ///   Because the request creates a resource, it is retried only when it was not sent: after HTTP 429, a failure to
+    ///   resolve the server name, a refused connection or a connect timeout. Server errors, other timeouts and broken
+    ///   connections are not retried.
+    /// </remarks>
     Task<DocumentStatus> TranslateDocumentAsync(
           Stream inputFile,
           string inputFileName,
@@ -95,6 +105,11 @@ namespace DeepL {
     ///   document was uploaded successfully, then the <see cref="DocumentTranslationException.DocumentHandle" />
     ///   contains the document ID and key that may be used to retrieve the document.
     /// </exception>
+    /// <remarks>
+    ///   Because the request creates a resource, it is retried only when it was not sent: after HTTP 429, a failure to
+    ///   resolve the server name, a refused connection or a connect timeout. Server errors, other timeouts and broken
+    ///   connections are not retried.
+    /// </remarks>
     Task<DocumentStatus> TranslateDocumentAsync(
           Stream inputFile,
           Stream outputFile,
@@ -126,6 +141,11 @@ namespace DeepL {
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
     /// </exception>
+    /// <remarks>
+    ///   Because the request creates a resource, it is retried only when it was not sent: after HTTP 429, a failure to
+    ///   resolve the server name, a refused connection or a connect timeout. Server errors, other timeouts and broken
+    ///   connections are not retried.
+    /// </remarks>
     Task<DocumentHandle> TranslateDocumentUploadAsync(
           FileInfo inputFileInfo,
           string? sourceLanguageCode,
@@ -153,6 +173,11 @@ namespace DeepL {
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
     /// </exception>
+    /// <remarks>
+    ///   Because the request creates a resource, it is retried only when it was not sent: after HTTP 429, a failure to
+    ///   resolve the server name, a refused connection or a connect timeout. Server errors, other timeouts and broken
+    ///   connections are not retried.
+    /// </remarks>
     Task<DocumentHandle> TranslateDocumentUploadAsync(
           Stream inputFile,
           string? sourceLanguageCode,
@@ -173,6 +198,11 @@ namespace DeepL {
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
     /// </exception>
+    /// <remarks>
+    ///   Because the request creates a resource, it is retried only when it was not sent: after HTTP 429, a failure to
+    ///   resolve the server name, a refused connection or a connect timeout. Server errors, other timeouts and broken
+    ///   connections are not retried.
+    /// </remarks>
     Task<DocumentHandle> TranslateDocumentUploadAsync(
           Stream inputFile,
           string inputFileName,

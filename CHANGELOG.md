@@ -109,6 +109,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`Character`) or this API key's character limit (`ApiKeyCharacter`) is reached. The speech minutes have their own
   details (`SpeechToTextMinutes`, `SpeechToSpeechMinutes`). Code that needs only the account-wide limit must check
   `Character` directly.
+- **Breaking:** operations that create a resource are now retried only when the request was not sent: after HTTP
+  429, a name resolution failure, a refused connection or a connect timeout. They are `TranslateDocumentAsync()` and
+  `TranslateDocumentUploadAsync()`, `CreateGlossaryAsync()`, `CreateGlossaryFromCsvAsync()`,
+  `CreateMultilingualGlossaryAsync()`, `CreateMultilingualGlossaryFromCsvAsync()`, `CreateStyleRuleAsync()`,
+  `CreateStyleRuleCustomInstructionAsync()`, `CreateStyleProfileAsync()`, `CreateSpokenTermsAsync()`,
+  `CreateTranslationMemoryImportAsync()` and `CreateTranslationMemoryExportAsync()`, like
+  `DeepLAdminClient.CreateDeveloperKeyAsync()` before. After a 5xx, a timeout or a broken connection they no longer
+  retry, and `DeepLException.ShouldRetry` is `false`, because the resource may already exist; check whether it exists
+  before creating it again. `ImportTranslationMemoryFromFilepathAsync()` and `ExportTranslationMemoryToFilepathAsync()`
+  create their jobs the same way.
 
 ### Removed
 - Removed `Usage.Document` and `Usage.TeamDocument`; the API no longer returns document usage. `Usage.ToString()` no

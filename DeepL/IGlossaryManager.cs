@@ -27,6 +27,11 @@ namespace DeepL {
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
     /// </exception>
+    /// <remarks>
+    ///   Because the request creates a resource, it is retried only when it was not sent: after HTTP 429, a failure to
+    ///   resolve the server name, a refused connection or a connect timeout. Server errors, other timeouts and broken
+    ///   connections are not retried.
+    /// </remarks>
     Task<MultilingualGlossaryInfo> CreateMultilingualGlossaryAsync(
           string name,
           MultilingualGlossaryDictionaryEntries[] glossaryDicts,
@@ -50,6 +55,11 @@ namespace DeepL {
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
     /// </exception>
+    /// <remarks>
+    ///   Because the request creates a resource, it is retried only when it was not sent: after HTTP 429, a failure to
+    ///   resolve the server name, a refused connection or a connect timeout. Server errors, other timeouts and broken
+    ///   connections are not retried.
+    /// </remarks>
     Task<MultilingualGlossaryInfo> CreateMultilingualGlossaryAsync(
           string name,
           MultilingualGlossaryDictionaryEntries[] glossaryDicts,
@@ -75,6 +85,11 @@ namespace DeepL {
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
     /// </exception>
+    /// <remarks>
+    ///   Because the request creates a resource, it is retried only when it was not sent: after HTTP 429, a failure to
+    ///   resolve the server name, a refused connection or a connect timeout. Server errors, other timeouts and broken
+    ///   connections are not retried.
+    /// </remarks>
     Task<MultilingualGlossaryInfo> CreateMultilingualGlossaryFromCsvAsync(
           string name,
           string sourceLanguageCode,
@@ -101,6 +116,11 @@ namespace DeepL {
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
     /// </exception>
+    /// <remarks>
+    ///   Because the request creates a resource, it is retried only when it was not sent: after HTTP 429, a failure to
+    ///   resolve the server name, a refused connection or a connect timeout. Server errors, other timeouts and broken
+    ///   connections are not retried.
+    /// </remarks>
     Task<MultilingualGlossaryInfo> CreateMultilingualGlossaryFromCsvAsync(
           string name,
           string sourceLanguageCode,
@@ -1037,6 +1057,11 @@ namespace DeepL {
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
     /// </exception>
+    /// <remarks>
+    ///   Because the request creates a resource, it is retried only when it was not sent: after HTTP 429, a failure to
+    ///   resolve the server name, a refused connection or a connect timeout. Server errors, other timeouts and broken
+    ///   connections are not retried.
+    /// </remarks>
     Task<GlossaryInfo> CreateGlossaryAsync(
           string name,
           string sourceLanguageCode,
@@ -1061,6 +1086,11 @@ namespace DeepL {
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
     /// </exception>
+    /// <remarks>
+    ///   Because the request creates a resource, it is retried only when it was not sent: after HTTP 429, a failure to
+    ///   resolve the server name, a refused connection or a connect timeout. Server errors, other timeouts and broken
+    ///   connections are not retried.
+    /// </remarks>
     Task<GlossaryInfo> CreateGlossaryFromCsvAsync(
           string name,
           string sourceLanguageCode,

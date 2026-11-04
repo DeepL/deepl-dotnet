@@ -28,10 +28,10 @@ namespace DeepL {
     /// <summary>
     ///   <c>true</c> if repeating the request could succeed: HTTP 429, any 5xx status, and transient network failures
     ///   (connect, DNS, timeout, connection reset). <c>false</c> for other HTTP statuses and for TLS, certificate and
-    ///   proxy failures; <c>null</c> if unknown. For requests that are
-    ///   unsafe to repeat (<see cref="DeepLAdminClient.CreateDeveloperKeyAsync" />), it is <c>true</c> only when the
-    ///   request was certainly not processed: HTTP 429, a name resolution failure, a refused connection or a
-    ///   connect timeout.
+    ///   proxy failures; <c>null</c> if unknown. For operations that create a resource (document upload, developer
+    ///   key, glossary, style rule, custom instruction, style profile, spoken terms and translation memory import and
+    ///   export creates), it is <c>true</c> only when the request was certainly not processed: HTTP 429, a name
+    ///   resolution failure, a refused connection or a connect timeout.
     /// </summary>
     public bool? ShouldRetry { get; internal set; }
   }

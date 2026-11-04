@@ -170,6 +170,9 @@ namespace DeepL {
     ///   then poll <see cref="GetTranslationMemoryJobAsync" /> for the outcome. Use
     ///   <see cref="ImportTranslationMemoryFromFilepathAsync(string, string, CancellationToken)" /> to do all three
     ///   steps at once.
+    ///   Because the request creates a resource, it is retried only when it was not sent: after HTTP 429, a failure to
+    ///   resolve the server name, a refused connection or a connect timeout. Server errors, other timeouts and broken
+    ///   connections are not retried.
     /// </remarks>
     /// <param name="fileName">Name of the TMX file to import, for example "legal.tmx".</param>
     /// <param name="contentLength">Size of the TMX file in bytes.</param>
@@ -198,6 +201,9 @@ namespace DeepL {
     ///   then poll <see cref="GetTranslationMemoryJobAsync(string, CancellationToken)" /> for the outcome. Use
     ///   <see cref="ImportTranslationMemoryFromFilepathAsync(string, ImportTranslationMemoryOptions, CancellationToken)" />
     ///   to do all three steps at once.
+    ///   Because the request creates a resource, it is retried only when it was not sent: after HTTP 429, a failure to
+    ///   resolve the server name, a refused connection or a connect timeout. Server errors, other timeouts and broken
+    ///   connections are not retried.
     /// </remarks>
     /// <param name="fileName">Name of the TMX file to import, for example "legal.tmx".</param>
     /// <param name="contentLength">Size of the TMX file in bytes.</param>
@@ -258,6 +264,9 @@ namespace DeepL {
     ///   Poll <see cref="GetTranslationMemoryJobAsync" /> for the download URL of the exported TMX file. Use
     ///   <see cref="ExportTranslationMemoryToFilepathAsync(string, string, CancellationToken)" /> to do both steps
     ///   and write the file at once.
+    ///   Because the request creates a resource, it is retried only when it was not sent: after HTTP 429, a failure to
+    ///   resolve the server name, a refused connection or a connect timeout. Server errors, other timeouts and broken
+    ///   connections are not retried.
     /// </remarks>
     /// <param name="translationMemoryId">The ID of the translation memory to export.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
@@ -280,6 +289,11 @@ namespace DeepL {
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
     /// </exception>
+    /// <remarks>
+    ///   Because the request creates a resource, it is retried only when it was not sent: after HTTP 429, a failure to
+    ///   resolve the server name, a refused connection or a connect timeout. Server errors, other timeouts and broken
+    ///   connections are not retried.
+    /// </remarks>
     Task<TranslationMemoryExport> CreateTranslationMemoryExportAsync(
           TranslationMemoryInfo translationMemory,
           CancellationToken cancellationToken = default);

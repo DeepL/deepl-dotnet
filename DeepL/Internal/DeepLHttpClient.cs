@@ -584,12 +584,17 @@ namespace DeepL.Internal {
     /// <param name="relativeUri">Endpoint URL relative to server base URL.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <param name="bodyParams">Parameters to embed in the HTTP request body.</param>
+    /// <param name="retryOnlyUnprocessed">
+    ///   <c>true</c> for requests that are unsafe to repeat: they are retried only after HTTP 429, a name resolution
+    ///   failure, a refused connection or a connect timeout, not after server errors or other timeouts.
+    /// </param>
     /// <returns><see cref="HttpResponseMessage" /> received from DeepL API.</returns>
     /// <exception cref="ConnectionException">If any failure occurs while sending the request.</exception>
     public async Task<HttpResponseMessage> ApiPostAsync(
           string relativeUri,
           CancellationToken cancellationToken,
-          IEnumerable<(string Key, string Value)>? bodyParams = null) {
+          IEnumerable<(string Key, string Value)>? bodyParams = null,
+          bool retryOnlyUnprocessed = false) {
       using var requestMessage = new HttpRequestMessage {
         RequestUri = new Uri(_serverUrl, relativeUri),
         Method = HttpMethod.Post,
@@ -598,6 +603,10 @@ namespace DeepL.Internal {
                         bodyParams.Select(pair => new KeyValuePair<string, string>(pair.Key, pair.Value)))
                   : null
       };
+      if (retryOnlyUnprocessed) {
+        requestMessage.SetPolicyExecutionContext(new Context(RetryOnlyUnprocessedOperationKey));
+      }
+
       return await ApiCallAsync(requestMessage, cancellationToken);
     }
 
@@ -679,6 +688,10 @@ namespace DeepL.Internal {
     /// <param name="bodyParams">Parameters to embed in the HTTP request body.</param>
     /// <param name="file">Optional file content to upload in request.</param>
     /// <param name="fileName">If <see cref="file" /> is used, the name of file.</param>
+    /// <param name="retryOnlyUnprocessed">
+    ///   <c>true</c> for requests that are unsafe to repeat: they are retried only after HTTP 429, a name resolution
+    ///   failure, a refused connection or a connect timeout, not after server errors or other timeouts.
+    /// </param>
     /// <returns><see cref="HttpResponseMessage" /> received from DeepL API.</returns>
     /// <exception cref="ConnectionException">If any failure occurs while sending the request.</exception>
     public async Task<HttpResponseMessage> ApiUploadAsync(
@@ -686,7 +699,8 @@ namespace DeepL.Internal {
           CancellationToken cancellationToken,
           IEnumerable<(string Key, string Value)> bodyParams,
           Stream file,
-          string fileName) {
+          string fileName,
+          bool retryOnlyUnprocessed = false) {
       var content = new MultipartFormDataContent();
       foreach (var (key, value) in bodyParams) {
         content.Add(new StringContent(value), key);
@@ -708,6 +722,10 @@ namespace DeepL.Internal {
         Content = content,
         Headers = { Accept = { new MediaTypeWithQualityHeaderValue("application/json") } }
       };
+      if (retryOnlyUnprocessed) {
+        requestMessage.SetPolicyExecutionContext(new Context(RetryOnlyUnprocessedOperationKey));
+      }
+
       return await ApiCallAsync(requestMessage, cancellationToken);
     }
 

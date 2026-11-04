@@ -424,9 +424,10 @@ namespace DeepL {
                   cancellationToken,
                   bodyParams,
                   inputFile,
-                  inputFileName)
+                  inputFileName,
+                  retryOnlyUnprocessed: true)
             .ConfigureAwait(false);
-      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage).ConfigureAwait(false);
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, retryOnlyUnprocessed: true).ConfigureAwait(false);
       return await JsonUtils.DeserializeAsync<DocumentHandle>(responseMessage).ConfigureAwait(false);
     }
 
@@ -923,10 +924,11 @@ namespace DeepL {
             ["entries"] = entries
       };
       using var responseMessage = await _client
-            .ApiPostJsonAsync("v2/glossaries", cancellationToken, requestData, SerializationOptions)
+            .ApiPostJsonAsync("v2/glossaries", cancellationToken, requestData, SerializationOptions, true)
             .ConfigureAwait(false);
 
-      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.Glossary).ConfigureAwait(false);
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.Glossary, retryOnlyUnprocessed: true)
+            .ConfigureAwait(false);
       return await JsonUtils.DeserializeAsync<GlossaryInfo>(responseMessage).ConfigureAwait(false);
     }
 
@@ -1315,10 +1317,16 @@ namespace DeepL {
       AddExtraBodyParameters(requestData, options);
 
       using var responseMessage = await _client
-            .ApiPostJsonAsync("v3/translation_memories/import", cancellationToken, requestData, SerializationOptions)
+            .ApiPostJsonAsync(
+                  "v3/translation_memories/import",
+                  cancellationToken,
+                  requestData,
+                  SerializationOptions,
+                  true)
             .ConfigureAwait(false);
 
-      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.TranslationMemory)
+      await DeepLHttpClient
+            .CheckStatusCodeAsync(responseMessage, ResourceType.TranslationMemory, retryOnlyUnprocessed: true)
             .ConfigureAwait(false);
       return await JsonUtils.DeserializeAsync<TranslationMemoryImport>(responseMessage).ConfigureAwait(false);
     }
@@ -1370,10 +1378,12 @@ namespace DeepL {
       using var responseMessage = await _client
             .ApiPostAsync(
                   $"v3/translation_memories/{Uri.EscapeDataString(translationMemoryId)}/export",
-                  cancellationToken)
+                  cancellationToken,
+                  retryOnlyUnprocessed: true)
             .ConfigureAwait(false);
 
-      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.TranslationMemory)
+      await DeepLHttpClient
+            .CheckStatusCodeAsync(responseMessage, ResourceType.TranslationMemory, retryOnlyUnprocessed: true)
             .ConfigureAwait(false);
       // 200 means the DeepL API reused a previously completed export, 202 that it started a new one.
       var reusedExisting = responseMessage.StatusCode == HttpStatusCode.OK;
@@ -1681,6 +1691,11 @@ namespace DeepL {
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
     /// </exception>
+    /// <remarks>
+    ///   Because the request creates a resource, it is retried only when it was not sent: after HTTP 429, a failure to
+    ///   resolve the server name, a refused connection or a connect timeout. Server errors, other timeouts and broken
+    ///   connections are not retried.
+    /// </remarks>
     public async Task<StyleRuleInfo> CreateStyleRuleAsync(
           string name,
           string language,
@@ -1713,6 +1728,11 @@ namespace DeepL {
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
     /// </exception>
+    /// <remarks>
+    ///   Because the request creates a resource, it is retried only when it was not sent: after HTTP 429, a failure to
+    ///   resolve the server name, a refused connection or a connect timeout. Server errors, other timeouts and broken
+    ///   connections are not retried.
+    /// </remarks>
     public async Task<StyleRuleInfo> CreateStyleRuleAsync(
           string name,
           string language,
@@ -1733,9 +1753,11 @@ namespace DeepL {
       if (customInstructions != null) requestData["custom_instructions"] = customInstructions;
       AddExtraBodyParameters(requestData, options);
       using var responseMessage = await _client
-            .ApiPostJsonAsync("v3/style_rules", cancellationToken, requestData, SerializationOptions).ConfigureAwait(false);
+            .ApiPostJsonAsync("v3/style_rules", cancellationToken, requestData, SerializationOptions, true)
+            .ConfigureAwait(false);
 
-      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.StyleRule).ConfigureAwait(false);
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.StyleRule, retryOnlyUnprocessed: true)
+            .ConfigureAwait(false);
       return await JsonUtils.DeserializeAsync<StyleRuleInfo>(responseMessage).ConfigureAwait(false);
     }
 
@@ -2048,6 +2070,11 @@ namespace DeepL {
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
     /// </exception>
+    /// <remarks>
+    ///   Because the request creates a resource, it is retried only when it was not sent: after HTTP 429, a failure to
+    ///   resolve the server name, a refused connection or a connect timeout. Server errors, other timeouts and broken
+    ///   connections are not retried.
+    /// </remarks>
     public async Task<CustomInstruction> CreateStyleRuleCustomInstructionAsync(
           string styleId,
           string label,
@@ -2071,10 +2098,16 @@ namespace DeepL {
       if (sourceLanguage != null) requestData["source_language"] = sourceLanguage;
       AddExtraBodyParameters(requestData, options);
       using var responseMessage = await _client
-            .ApiPostJsonAsync($"v3/style_rules/{Uri.EscapeDataString(styleId)}/custom_instructions", cancellationToken, requestData, SerializationOptions)
+            .ApiPostJsonAsync(
+                  $"v3/style_rules/{Uri.EscapeDataString(styleId)}/custom_instructions",
+                  cancellationToken,
+                  requestData,
+                  SerializationOptions,
+                  true)
             .ConfigureAwait(false);
 
-      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.StyleRule).ConfigureAwait(false);
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.StyleRule, retryOnlyUnprocessed: true)
+            .ConfigureAwait(false);
       return await JsonUtils.DeserializeAsync<CustomInstruction>(responseMessage).ConfigureAwait(false);
     }
 
@@ -2094,6 +2127,11 @@ namespace DeepL {
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
     /// </exception>
+    /// <remarks>
+    ///   Because the request creates a resource, it is retried only when it was not sent: after HTTP 429, a failure to
+    ///   resolve the server name, a refused connection or a connect timeout. Server errors, other timeouts and broken
+    ///   connections are not retried.
+    /// </remarks>
     public async Task<CustomInstruction> CreateStyleRuleCustomInstructionAsync(
           StyleRuleInfo styleRule,
           string label,
@@ -2130,6 +2168,11 @@ namespace DeepL {
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
     /// </exception>
+    /// <remarks>
+    ///   Because the request creates a resource, it is retried only when it was not sent: after HTTP 429, a failure to
+    ///   resolve the server name, a refused connection or a connect timeout. Server errors, other timeouts and broken
+    ///   connections are not retried.
+    /// </remarks>
     public async Task<CustomInstruction> CreateStyleRuleCustomInstructionAsync(
           StyleRuleInfo styleRule,
           string label,
@@ -2639,10 +2682,12 @@ namespace DeepL {
                   "v3/style_profiles",
                   cancellationToken,
                   CreateStyleProfileBody(name, options),
-                  SerializationOptions)
+                  SerializationOptions,
+                  true)
             .ConfigureAwait(false);
 
-      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.StyleProfile).ConfigureAwait(false);
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.StyleProfile, retryOnlyUnprocessed: true)
+            .ConfigureAwait(false);
       return await JsonUtils.DeserializeAsync<StyleProfile>(responseMessage).ConfigureAwait(false);
     }
 
@@ -2717,10 +2762,11 @@ namespace DeepL {
       };
       AddExtraBodyParameters(requestData, options);
       using var responseMessage = await _client
-            .ApiPostJsonAsync("v3/spoken-terms", cancellationToken, requestData, SerializationOptions)
+            .ApiPostJsonAsync("v3/spoken-terms", cancellationToken, requestData, SerializationOptions, true)
             .ConfigureAwait(false);
 
-      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.SpokenTerms).ConfigureAwait(false);
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.SpokenTerms, retryOnlyUnprocessed: true)
+            .ConfigureAwait(false);
       return await JsonUtils.DeserializeAsync<SpokenTerms>(responseMessage).ConfigureAwait(false);
     }
 
@@ -2896,10 +2942,11 @@ namespace DeepL {
       };
       AddExtraBodyParameters(requestData, options);
       using var responseMessage = await _client
-            .ApiPostJsonAsync("v3/glossaries", cancellationToken, requestData, SerializationOptions)
+            .ApiPostJsonAsync("v3/glossaries", cancellationToken, requestData, SerializationOptions, true)
             .ConfigureAwait(false);
 
-      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.Glossary).ConfigureAwait(false);
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.Glossary, retryOnlyUnprocessed: true)
+            .ConfigureAwait(false);
       var glossary =
             await JsonUtils.DeserializeAsync<MultilingualGlossaryInfo>(responseMessage).ConfigureAwait(false);
       return glossary;
@@ -2949,10 +2996,11 @@ namespace DeepL {
       };
       AddExtraBodyParameters(requestData, options);
       using var responseMessage = await _client
-            .ApiPostJsonAsync("v3/glossaries", cancellationToken, requestData, SerializationOptions)
+            .ApiPostJsonAsync("v3/glossaries", cancellationToken, requestData, SerializationOptions, true)
             .ConfigureAwait(false);
 
-      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.Glossary).ConfigureAwait(false);
+      await DeepLHttpClient.CheckStatusCodeAsync(responseMessage, ResourceType.Glossary, retryOnlyUnprocessed: true)
+            .ConfigureAwait(false);
       var glossary =
             await JsonUtils.DeserializeAsync<MultilingualGlossaryInfo>(responseMessage).ConfigureAwait(false);
       return glossary;

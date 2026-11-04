@@ -552,7 +552,7 @@ namespace DeepLTests.Offline {
         return Encoding.UTF8.GetString(body.ToArray()).Contains("\r\n\r\nhello\r\n");
       }
 
-      Expect(HttpMethod.Post, "v2/document").With(SendsHello).RespondJson("{}", HttpStatusCode.ServiceUnavailable);
+      Expect(HttpMethod.Post, "v2/document").With(SendsHello).RespondJson("{}", (HttpStatusCode)429);
       Expect(HttpMethod.Post, "v2/document").With(SendsHello).RespondJson(HandleReply);
       var handle = await CreateClientWithRetries(1, TimeSpan.FromSeconds(10))
             .TranslateDocumentUploadAsync(new NonSeekableStream(Text("hello")), "a.txt", null, "DE");

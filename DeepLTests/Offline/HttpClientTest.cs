@@ -12,6 +12,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using DeepL;
+using DeepL.Model;
 using RichardSzalay.MockHttp;
 using Xunit;
 
@@ -68,6 +69,56 @@ namespace DeepLTests.Offline {
       Http.Expect(HttpMethod.Put, url).WithContent(body).Respond(HttpStatusCode.OK);
       await CreateClientWithRetries(1, PerRetryTimeout)
             .UploadTranslationMemoryFileAsync(url, new MemoryStream(Encoding.UTF8.GetBytes(body)));
+    }
+
+    private static Stream Text(string text) => new MemoryStream(Encoding.UTF8.GetBytes(text));
+
+    private static readonly GlossaryEntries Entries = new GlossaryEntries(new[] { ("a", "b") });
+
+    /// <summary>Calls the create named by the test row; returns its request path.</summary>
+    private static (string Path, Func<DeepLClient, Task> Call) Create(string name) =>
+          name switch {
+            "TranslateDocumentUpload" => ("v2/document",
+                  client => client.TranslateDocumentUploadAsync(Text("a"), "a.txt", null, "DE")),
+            "CreateGlossary" => ("v2/glossaries", client => client.CreateGlossaryAsync("g", "EN", "DE", Entries)),
+            "CreateTranslationMemoryImport" => ("v3/translation_memories/import",
+                  client => client.CreateTranslationMemoryImportAsync("a.tmx", 1)),
+            "CreateTranslationMemoryExport" => ("v3/translation_memories/tm/export",
+                  client => client.CreateTranslationMemoryExportAsync("tm")),
+            "CreateStyleRule" => ("v3/style_rules", client => client.CreateStyleRuleAsync("n", "en")),
+            "CreateStyleRuleCustomInstruction" => ("v3/style_rules/s/custom_instructions",
+                  client => client.CreateStyleRuleCustomInstructionAsync("s", "l", "p")),
+            "CreateStyleProfile" => ("v3/style_profiles", client => client.CreateStyleProfileAsync("n")),
+            "CreateSpokenTerms" => ("v3/spoken-terms",
+                  client => client.CreateSpokenTermsAsync("n", new[] { new SpokenTermsEntries("en", new[] { "a" }) })),
+            "CreateMultilingualGlossary" => ("v3/glossaries",
+                  client => client.CreateMultilingualGlossaryAsync(
+                        "g",
+                        new[] { new MultilingualGlossaryDictionaryEntries("en", "de", Entries) })),
+            "CreateMultilingualGlossaryFromCsv" => ("v3/glossaries",
+                  client => client.CreateMultilingualGlossaryFromCsvAsync("g", "en", "de", Text("a,b"))),
+            _ => throw new ArgumentException(name)
+          };
+
+    [Theory]
+    [InlineData("TranslateDocumentUpload")]
+    [InlineData("CreateGlossary")]
+    [InlineData("CreateTranslationMemoryImport")]
+    [InlineData("CreateTranslationMemoryExport")]
+    [InlineData("CreateStyleRule")]
+    [InlineData("CreateStyleRuleCustomInstruction")]
+    [InlineData("CreateStyleProfile")]
+    [InlineData("CreateSpokenTerms")]
+    [InlineData("CreateMultilingualGlossary")]
+    [InlineData("CreateMultilingualGlossaryFromCsv")]
+    public async Task CreatesAreNotRetriedAfterServerError(string name) {
+      var (path, call) = Create(name);
+      Expect(HttpMethod.Post, path).RespondJson("{}", HttpStatusCode.ServiceUnavailable);
+
+      var exception = await Assert.ThrowsAsync<DeepLException>(
+            () => call(CreateClientWithRetries(1, PerRetryTimeout)));
+      Assert.Equal(503, exception.HttpStatusCode);
+      Assert.False(exception.ShouldRetry);
     }
 
     [Fact]
