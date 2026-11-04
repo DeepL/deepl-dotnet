@@ -333,6 +333,7 @@ namespace DeepL.Internal {
     internal static HttpClientAndDisposeFlag CreateDefaultHttpClient(
           BaseClientOptions options,
           HttpMessageHandler? innerHandler = null) {
+      ValidateProxy(options.Proxy);
       var handler = CreateHttpMessageHandlerWithRetryPolicy(
             innerHandler ?? CreateHttpClientHandler(options.Proxy, options.PerRetryConnectionTimeout),
             options.PerRetryConnectionTimeout,
@@ -341,6 +342,21 @@ namespace DeepL.Internal {
         DisposeClient = true,
         HttpClient = new HttpClient(handler) { Timeout = options.OverallConnectionTimeout }
       };
+    }
+
+    /// <summary>Throws an <see cref="ArgumentException" /> unless the proxy is unset or an absolute HTTP(S) URL.</summary>
+    /// <param name="proxy">The configured proxy URL, or <c>null</c>.</param>
+    /// <exception cref="ArgumentException">If <paramref name="proxy" /> is not an absolute http or https URL.</exception>
+    private static void ValidateProxy(Uri? proxy) {
+      if (proxy == null) {
+        return;
+      }
+
+      if (!proxy.IsAbsoluteUri || (proxy.Scheme != Uri.UriSchemeHttp && proxy.Scheme != Uri.UriSchemeHttps)) {
+        throw new ArgumentException(
+              $"Option {nameof(BaseClientOptions.Proxy)} must be an absolute http or https URL",
+              nameof(BaseClientOptions.Proxy));
+      }
     }
 
     /// <summary>

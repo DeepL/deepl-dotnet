@@ -128,6 +128,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** `UpdateMultilingualGlossaryNameAsync()` now throws an `ArgumentException` for an empty or whitespace
   glossary ID (also from a `MultilingualGlossaryInfo`), like `UpdateMultilingualGlossaryAsync()`. It sent a request
   to the glossary collection path before.
+- **Breaking:** creating a `DeepLClient` or `DeepLAdminClient` now throws an `ArgumentException` if the `Proxy` option
+  is not an absolute `http` or `https` URL. A relative URL threw an `InvalidOperationException` before, and another
+  scheme, for example `ftp://`, was accepted and failed only at the first request.
 
 ### Removed
 - Removed `Usage.Document` and `Usage.TeamDocument`; the API no longer returns document usage. `Usage.ToString()` no

@@ -147,6 +147,17 @@ namespace DeepLTests.Offline {
     public void ThrowsUriFormatExceptionWhenServerUrlIsInvalid() =>
           Assert.Throws<UriFormatException>(() => CreateClient(options => options.ServerUrl = "http:/api.deepl.com"));
 
+    [Theory]
+    [InlineData("proxy.example.com", UriKind.Relative)]
+    [InlineData("proxy.example.com:3128", UriKind.Absolute)]
+    [InlineData("ftp://proxy.example.com", UriKind.Absolute)]
+    public void ThrowsArgumentExceptionWhenProxyIsNotAnAbsoluteHttpUrl(string proxy, UriKind kind) {
+      Assert.Throws<ArgumentException>(
+            () => new DeepLClient("key", new DeepLClientOptions { Proxy = new Uri(proxy, kind) }));
+      Assert.Throws<ArgumentException>(
+            () => new DeepLAdminClient("key", new DeepLAdminClientOptions { Proxy = new Uri(proxy, kind) }));
+    }
+
     [Fact]
     public void ThrowsArgumentExceptionWhenAuthKeyIsEmpty() {
       Assert.Throws<ArgumentException>(() => new DeepLClient(""));

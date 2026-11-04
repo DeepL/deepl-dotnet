@@ -51,7 +51,8 @@ namespace DeepL {
     /// <summary>
     ///   URL of an HTTP(S) proxy for all requests, for example <c>http://user:password@proxy.example.com:3128</c>.
     ///   Credentials in the URL are sent to the proxy. By default the system proxy settings are used. Only used if
-    ///   <see cref="ClientFactory" /> is unset.
+    ///   <see cref="ClientFactory" /> is unset; then a value that is not an absolute <c>http</c> or <c>https</c> URL
+    ///   throws an <see cref="System.ArgumentException" /> when the client is created.
     /// </summary>
     public Uri? Proxy { get; set; }
 

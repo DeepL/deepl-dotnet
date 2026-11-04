@@ -1601,7 +1601,8 @@ var options = new DeepLClientOptions {
 var client = new DeepLClient(authKey, options);
 ```
 
-Without the `Proxy` option, the system proxy settings are used.
+Without the `Proxy` option, the system proxy settings are used. A `Proxy` that is not an absolute `http` or `https`
+URL throws an `ArgumentException` when the client is created.
 
 #### Custom HTTP client
 
