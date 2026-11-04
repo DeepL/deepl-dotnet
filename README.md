@@ -1139,7 +1139,9 @@ await client.ExportTranslationMemoryToFilepathAsync("YOUR_TM_ID", "exported.tmx"
 The individual steps are available as `CreateTranslationMemoryExportAsync()`,
 `WaitUntilTranslationMemoryJobDoneAsync()` and
 `DownloadTranslationMemoryExportAsync()`. If the DeepL API reuses a previously
-completed export instead of starting a new one, `ReusedExisting` is `true`:
+completed export instead of starting a new one, `ReusedExisting` is `true`.
+`DownloadTranslationMemoryExportAsync()` throws a `DeepLException` if the job has
+no download URL, for example because it has not completed yet:
 
 ```c#
 var created = await client.CreateTranslationMemoryExportAsync("YOUR_TM_ID");

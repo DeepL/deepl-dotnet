@@ -406,8 +406,9 @@ namespace DeepL {
     /// <param name="job">Completed export job carrying the download URL.</param>
     /// <param name="outputFile">Stream to write the downloaded TMX file to.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
-    /// <exception cref="ArgumentException">If the job carries no download URL.</exception>
-    /// <exception cref="DeepLException">If any error occurs while downloading the file.</exception>
+    /// <exception cref="DeepLException">
+    ///   If the job carries no download URL, or any error occurs while downloading the file.
+    /// </exception>
     Task DownloadTranslationMemoryExportAsync(
           TranslationMemoryJob job,
           Stream outputFile,
@@ -417,8 +418,9 @@ namespace DeepL {
     /// <param name="job">Completed export job carrying the download URL.</param>
     /// <param name="outputFilePath">Path of the file to write the downloaded TMX file to.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
-    /// <exception cref="ArgumentException">If the job carries no download URL.</exception>
-    /// <exception cref="DeepLException">If any error occurs while downloading the file.</exception>
+    /// <exception cref="DeepLException">
+    ///   If the job carries no download URL, or any error occurs while downloading the file.
+    /// </exception>
     Task DownloadTranslationMemoryExportAsync(
           TranslationMemoryJob job,
           string outputFilePath,

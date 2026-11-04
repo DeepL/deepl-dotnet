@@ -329,8 +329,8 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
-    public async Task ThrowsArgumentExceptionWhenJobHasNoDownloadUrl() =>
-          await Assert.ThrowsAsync<ArgumentException>(
+    public async Task ThrowsDeepLExceptionWhenJobHasNoDownloadUrl() =>
+          await Assert.ThrowsAsync<DeepLException>(
                 () => CreateClient().DownloadTranslationMemoryExportAsync(CompletedJob(null), new MemoryStream()));
 
     [Fact]

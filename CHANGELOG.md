@@ -136,6 +136,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** `UploadTranslationMemoryFileAsync()` now throws an `ArgumentException` if the upload URL is not an
   absolute `http` or `https` URL, before reading the stream. It threw a `UriFormatException` before (or, for a path
   such as `/upload`, failed at the request).
+- **Breaking:** `DownloadTranslationMemoryExportAsync()` now throws a `DeepLException` instead of an
+  `ArgumentException` if the job has no download URL: the job state comes from the API. Catch `DeepLException`.
 
 ### Removed
 - Removed `Usage.Document` and `Usage.TeamDocument`; the API no longer returns document usage. `Usage.ToString()` no

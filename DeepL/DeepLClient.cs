@@ -1494,7 +1494,7 @@ namespace DeepL {
           CancellationToken cancellationToken = default) {
       var downloadUrl = job.Result?.DownloadUrl;
       if (string.IsNullOrEmpty(downloadUrl)) {
-        throw new ArgumentException(
+        throw new DeepLException(
               "Translation memory export job has no download URL; it may not have completed yet");
       }
 
