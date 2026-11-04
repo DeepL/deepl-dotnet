@@ -155,7 +155,9 @@ namespace DeepL.Internal {
     }
 
     /// <summary>
-    ///   Creates a policy to retry failed HTTP requests wrapping the given handler.
+    ///   Creates a policy to retry failed HTTP requests wrapping the given handler. Each attempt reads the whole response
+    ///   body, so a body cut off mid-read fails the attempt like a connection reset; the per-attempt timeout ends when
+    ///   the response headers arrive.
     /// </summary>
     /// <param name="innerHandler"><see cref="HttpMessageHandler" /> on which requests should be retried.</param>
     /// <param name="perRetryConnectionTimeout">Minimum time allowed for each attempted request.</param>
@@ -214,16 +216,17 @@ namespace DeepL.Internal {
                   responseMessage => responseMessage.StatusCode == HttpStatusCodeTooManyRequests ||
                                      responseMessage.StatusCode >= HttpStatusCode.InternalServerError)
             .WaitAndRetryAsync(maximumNetworkRetries, getSleepDuration, onRetry);
-      IAsyncPolicy<HttpResponseMessage> policy = Policy.WrapAsync(waitAndRetry, timeout);
       var waitAndRetryUnprocessed = Policy.Handle<HttpRequestException>(IsCertainlyNotSent)
             .OrResult<HttpResponseMessage>(
                   responseMessage => responseMessage.StatusCode == HttpStatusCodeTooManyRequests)
             .WaitAndRetryAsync(maximumNetworkRetries, getSleepDuration, onRetry);
-      IAsyncPolicy<HttpResponseMessage> unprocessedPolicy = Policy.WrapAsync(waitAndRetryUnprocessed, timeout);
+      // The body is read between the retry and the timeout policies: a cut-off body fails the attempt, but reading a
+      // large body is not limited by the per-attempt timeout. Both handlers share the request's policy context.
+      var timeoutHandler = new PolicyHttpMessageHandler(timeout) { InnerHandler = innerHandler };
       return new PolicyHttpMessageHandler(
             request => request.GetPolicyExecutionContext()?.OperationKey == RetryOnlyUnprocessedOperationKey
-                  ? unprocessedPolicy
-                  : policy) { InnerHandler = innerHandler };
+                  ? waitAndRetryUnprocessed
+                  : waitAndRetry) { InnerHandler = new ResponseBufferingHandler(timeoutHandler) };
     }
 
     /// <summary>

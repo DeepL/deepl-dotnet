@@ -1553,8 +1553,8 @@ The available options:
 
 - `MaximumNetworkRetries`: the number of retries after the first attempt, by
   default 5. Only HTTP 429, 5xx responses and transient network failures
-  (timeouts, failed and reset connections, name resolution failures) are
-  retried, with exponential backoff: the first wait is 1 second, each next one
+  (timeouts, failed and reset connections, a response body cut off mid-read,
+  name resolution failures) are retried, with exponential backoff: the first wait is 1 second, each next one
   1.6 times the previous, at most 120 seconds, with ±23 % jitter. TLS,
   certificate and proxy failures are not retried. Operations that create a
   resource are retried only when the request was not sent: after HTTP 429, a

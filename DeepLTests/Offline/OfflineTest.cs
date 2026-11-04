@@ -4,10 +4,14 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json;
+using System.Threading.Tasks;
 using DeepL;
 using RichardSzalay.MockHttp;
 using Xunit;
@@ -118,6 +122,50 @@ namespace DeepLTests.Offline {
                 part => (part.Headers.ContentDisposition!.Name!, part.Headers.ContentDisposition.FileName,
                       part.ReadAsStringAsync().Result))
           .ToArray();
+
+    /// <summary>Replies 200 with a JSON body that breaks off with an <see cref="IOException" /> after the given text.</summary>
+    protected static Func<Task<HttpResponseMessage>> CutOffReply(string prefix) =>
+          () => {
+            var content = new StreamContent(new CutOffStream(Encoding.UTF8.GetBytes(prefix)));
+            content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = content });
+          };
+
+    /// <summary>Stream returning the given bytes, then throwing an <see cref="IOException" /> like a reset connection.</summary>
+    private sealed class CutOffStream : Stream {
+      private readonly byte[] _prefix;
+      private bool _prefixRead;
+
+      public CutOffStream(byte[] prefix) => _prefix = prefix;
+
+      public override bool CanRead => true;
+      public override bool CanSeek => false;
+      public override bool CanWrite => false;
+      public override long Length => throw new NotSupportedException();
+
+      public override long Position {
+        get => throw new NotSupportedException();
+        set => throw new NotSupportedException();
+      }
+
+      public override int Read(byte[] buffer, int offset, int count) {
+        if (_prefixRead) {
+          throw new IOException("Connection reset by peer");
+        }
+
+        _prefixRead = true;
+        var length = Math.Min(count, _prefix.Length);
+        Array.Copy(_prefix, 0, buffer, offset, length);
+        return length;
+      }
+
+      public override void Flush() {
+      }
+
+      public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+      public override void SetLength(long value) => throw new NotSupportedException();
+      public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+    }
 
     /// <summary>Declares a request without a body.</summary>
     protected MockedRequest ExpectNoBody(HttpMethod method, string path) =>

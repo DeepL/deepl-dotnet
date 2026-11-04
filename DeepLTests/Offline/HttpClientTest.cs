@@ -122,6 +122,13 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
+    public async Task RetriesCutOffResponseBody() {
+      ExpectNoBody(HttpMethod.Get, "v2/usage").Respond(CutOffReply("{\"character_count\":"));
+      ExpectNoBody(HttpMethod.Get, "v2/usage").RespondJson(UsageReply);
+      await CreateClientWithRetries(1, PerRetryTimeout).GetUsageAsync();
+    }
+
+    [Fact]
     public async Task RetriesAfterPerRetryTimeout() {
       ExpectNoBody(HttpMethod.Get, "v2/usage").Respond(Slow());
       ExpectNoBody(HttpMethod.Get, "v2/usage").RespondJson(UsageReply);

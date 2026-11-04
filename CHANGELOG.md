@@ -119,6 +119,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   retry, and `DeepLException.ShouldRetry` is `false`, because the resource may already exist; check whether it exists
   before creating it again. `ImportTranslationMemoryFromFilepathAsync()` and `ExportTranslationMemoryToFilepathAsync()`
   create their jobs the same way.
+- **Breaking:** a response body cut off mid-read (the connection breaks after the status line) is now retried like a
+  connection reset, by every method except the resource creates above. It was not retried before.
 
 ### Removed
 - Removed `Usage.Document` and `Usage.TeamDocument`; the API no longer returns document usage. `Usage.ToString()` no
