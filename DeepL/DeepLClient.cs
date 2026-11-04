@@ -3419,6 +3419,10 @@ namespace DeepL {
           string name,
           BaseRequestOptions? options,
           CancellationToken cancellationToken = default) {
+      if (string.IsNullOrWhiteSpace(glossaryId)) {
+        throw new ArgumentException($"Parameter {nameof(glossaryId)} must not be empty");
+      }
+
       if (string.IsNullOrWhiteSpace(name)) {
         throw new ArgumentException($"Parameter {nameof(name)} must not be empty");
       }

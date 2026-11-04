@@ -572,7 +572,8 @@ Functions to edit stored glossaries are also provided:
   cancellation token; its `ExtraBodyParameters` are added last to the JSON
   request body.
 - `UpdateMultilingualGlossaryNameAsync()` takes a glossary ID or `MultilingualGlossaryInfo`
-  object, plus the new name of the glossary.
+  object, plus the new name of the glossary. An empty glossary ID or name throws an
+  `ArgumentException` without sending a request.
 
 ```c#
 // Update glossary dictionary

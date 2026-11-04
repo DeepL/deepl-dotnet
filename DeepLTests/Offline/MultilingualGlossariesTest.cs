@@ -399,6 +399,11 @@ namespace DeepLTests.Offline {
       await Assert.ThrowsAsync<ArgumentException>(() => client.DeleteMultilingualGlossaryDictionaryAsync("g1", "en", ""));
       await Assert.ThrowsAsync<ArgumentException>(() => client.ReplaceMultilingualGlossaryDictionaryAsync("", "en", "de", Apple));
       await Assert.ThrowsAsync<ArgumentException>(() => client.UpdateMultilingualGlossaryNameAsync("g1", " "));
+      await Assert.ThrowsAsync<ArgumentException>(() => client.UpdateMultilingualGlossaryNameAsync("", "n"));
+      await Assert.ThrowsAsync<ArgumentException>(
+            () => client.UpdateMultilingualGlossaryNameAsync(
+                  new MultilingualGlossaryInfo(" ", "n", new MultilingualGlossaryDictionaryInfo[0], DateTime.UtcNow),
+                  "n"));
       await Assert.ThrowsAsync<ArgumentException>(
             () => client.UpdateMultilingualGlossaryDictionaryAsync("g1", "", "de", Apple));
     }

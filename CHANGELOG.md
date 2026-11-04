@@ -125,6 +125,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   resource creates above and `DeepLAdminClient.CreateDeveloperKeyAsync()` too, which do not retry it themselves; it
   was `false` for them before. This also applies to an `HttpClient` from `ClientFactory`: the client now reads the
   response body after the headers, so a cut-off body is told apart from a failure to send.
+- **Breaking:** `UpdateMultilingualGlossaryNameAsync()` now throws an `ArgumentException` for an empty or whitespace
+  glossary ID (also from a `MultilingualGlossaryInfo`), like `UpdateMultilingualGlossaryAsync()`. It sent a request
+  to the glossary collection path before.
 
 ### Removed
 - Removed `Usage.Document` and `Usage.TeamDocument`; the API no longer returns document usage. `Usage.ToString()` no
