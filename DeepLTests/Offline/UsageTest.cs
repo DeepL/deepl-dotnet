@@ -11,33 +11,12 @@ using Xunit;
 namespace DeepLTests.Offline {
   public sealed class UsageTest : OfflineTest {
     [Fact]
-    public async Task ParsesCharacterAndDocumentCounts() {
+    public async Task ReportsAccountCharacterLimitReached() {
       ExpectNoBody(HttpMethod.Get, "v2/usage")
             .RespondJson(
-                  "{\"character_count\":20,\"character_limit\":20,\"document_count\":0,\"document_limit\":1}");
-      var usage = await CreateClient().GetUsageAsync();
-      Assert.Equal(20, usage.Character!.Count);
-      Assert.Equal(20, usage.Character.Limit);
-      Assert.True(usage.Character.LimitReached);
-      Assert.False(usage.Document!.LimitReached);
-      Assert.Null(usage.TeamDocument);
-      Assert.True(usage.AnyLimitReached);
-      Assert.Contains("Characters: 20 of 20", usage.ToString());
-      Assert.Contains("Documents: 0 of 1", usage.ToString());
-      Assert.DoesNotContain("Team documents", usage.ToString());
-    }
-
-    [Fact]
-    public async Task ParsesTeamDocumentLimitOnly() {
-      ExpectNoBody(HttpMethod.Get, "v2/usage")
-            .RespondJson("{\"team_document_count\":1,\"team_document_limit\":1}");
-      var usage = await CreateClient().GetUsageAsync();
-      Assert.Null(usage.Character);
-      Assert.Null(usage.Document);
-      Assert.True(usage.TeamDocument!.LimitReached);
-      Assert.True(usage.AnyLimitReached);
-      Assert.Contains("Team documents: 1 of 1", usage.ToString());
-      Assert.DoesNotContain("Characters", usage.ToString());
+                  "{\"character_count\":20,\"character_limit\":20,\"api_key_character_count\":1," +
+                  "\"api_key_character_limit\":5}");
+      Assert.True((await CreateClient().GetUsageAsync()).AnyCharacterLimitReached);
     }
 
     [Fact]
@@ -46,14 +25,33 @@ namespace DeepLTests.Offline {
             .RespondJson(
                   "{\"character_count\":1,\"character_limit\":10,\"api_key_character_count\":5," +
                   "\"api_key_character_limit\":5}");
-      Assert.True((await CreateClient().GetUsageAsync()).AnyLimitReached);
+      Assert.True((await CreateClient().GetUsageAsync()).AnyCharacterLimitReached);
     }
 
     [Fact]
-    public async Task ReportsNoLimitReachedBelowLimits() {
-      ExpectNoBody(HttpMethod.Get, "v2/usage").RespondJson("{\"character_count\":1,\"character_limit\":2}");
-      Assert.False((await CreateClient().GetUsageAsync()).AnyLimitReached);
+    public async Task IgnoresSpeechMinuteLimitsForAnyCharacterLimitReached() {
+      ExpectNoBody(HttpMethod.Get, "v2/usage")
+            .RespondJson(
+                  "{\"character_count\":1,\"character_limit\":10,\"speech_to_text_minutes_count\":600," +
+                  "\"speech_to_text_minutes_limit\":600,\"speech_to_speech_minutes_count\":600," +
+                  "\"speech_to_speech_minutes_limit\":600}");
+      var usage = await CreateClient().GetUsageAsync();
+      Assert.True(usage.SpeechToTextMinutes!.LimitReached);
+      Assert.False(usage.AnyCharacterLimitReached);
     }
+
+    [Fact]
+    public async Task IgnoresDocumentUsageFields() {
+      ExpectNoBody(HttpMethod.Get, "v2/usage")
+            .RespondJson(
+                  "{\"character_count\":5,\"character_limit\":10,\"document_count\":1,\"document_limit\":1," +
+                  "\"team_document_count\":1,\"team_document_limit\":1}");
+      var usage = await CreateClient().GetUsageAsync();
+      Assert.Equal(5, usage.Character!.Count);
+      Assert.False(usage.AnyCharacterLimitReached);
+      Assert.Equal("Usage this billing period:\nCharacters: 5 of 10", usage.ToString());
+    }
+
     private const string ProUsageReply = @"{
       ""character_count"": 5947223,
       ""character_limit"": 1000000000000,
@@ -103,7 +101,7 @@ namespace DeepLTests.Offline {
       Assert.Equal(new long?[] { 0, 636, 30, 12 }, Array.ConvertAll(products, p => p.ApiKeyUnitCount));
       Assert.Equal(new long?[] { 5643, 5941580, 30, 12 }, Array.ConvertAll(products, p => p.AccountUnitCount));
 
-      Assert.False(usage.AnyLimitReached);
+      Assert.False(usage.AnyCharacterLimitReached);
       Assert.Equal("Usage this billing period:\nCharacters: 5947223 of 1000000000000", usage.ToString());
     }
 
@@ -135,8 +133,6 @@ namespace DeepLTests.Offline {
 
       Assert.Equal(180118, usage.Character!.Count);
       Assert.Equal(1250000, usage.Character.Limit);
-      Assert.Null(usage.Document);
-      Assert.Null(usage.TeamDocument);
       Assert.Null(usage.ApiKeyCharacter);
       Assert.Null(usage.SpeechToTextMinutes);
       Assert.Null(usage.SpeechToSpeechMinutes);

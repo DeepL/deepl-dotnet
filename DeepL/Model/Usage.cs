@@ -25,8 +25,6 @@ namespace DeepL.Model {
       }
 
       Character = DetailOrNull(fieldsStruct.CharacterCount, fieldsStruct.CharacterLimit);
-      Document = DetailOrNull(fieldsStruct.DocumentCount, fieldsStruct.DocumentLimit);
-      TeamDocument = DetailOrNull(fieldsStruct.TeamDocumentCount, fieldsStruct.TeamDocumentLimit);
       ApiKeyCharacter = DetailOrNull(fieldsStruct.ApiKeyCharacterCount, fieldsStruct.ApiKeyCharacterLimit);
       SpeechToTextMinutes =
             DetailOrNull(fieldsStruct.SpeechToTextMinutesCount, fieldsStruct.SpeechToTextMinutesLimit);
@@ -39,12 +37,6 @@ namespace DeepL.Model {
 
     /// <summary>The character usage if included for the account type, or null.</summary>
     public Detail? Character { get; }
-
-    /// <summary>The document usage if included for the account type, or null.</summary>
-    public Detail? Document { get; }
-
-    /// <summary>The team document usage if included for the account type, or null.</summary>
-    public Detail? TeamDocument { get; }
 
     /// <summary>
     ///   The character usage of the API key used for this request, as opposed to <see cref="Character" />, which covers
@@ -68,13 +60,12 @@ namespace DeepL.Model {
     public DateTime? EndTime { get; }
 
     /// <summary>
-    ///   <c>true</c> if the character, document, team document or API key character (<see cref="ApiKeyCharacter" />)
-    ///   limit has been reached. The speech usage types (<see cref="SpeechToTextMinutes" />,
-    ///   <see cref="SpeechToSpeechMinutes" />) are not considered; check <see cref="Detail.LimitReached" /> on them
-    ///   directly.
+    ///   <c>true</c> if the account's character limit (<see cref="Character" />) or this API key's character limit
+    ///   (<see cref="ApiKeyCharacter" />) is reached; the speech minutes (<see cref="SpeechToTextMinutes" />,
+    ///   <see cref="SpeechToSpeechMinutes" />) have their own details.
     /// </summary>
-    public bool AnyLimitReached => (Character?.LimitReached ?? false) || (Document?.LimitReached ?? false) ||
-                                   (TeamDocument?.LimitReached ?? false) || (ApiKeyCharacter?.LimitReached ?? false);
+    public bool AnyCharacterLimitReached =>
+          (Character?.LimitReached ?? false) || (ApiKeyCharacter?.LimitReached ?? false);
 
     /// <summary>Returns a string representing the usage.</summary>
     /// <returns>A string containing the usage for this billing period.</returns>
@@ -88,9 +79,7 @@ namespace DeepL.Model {
       }
 
       return "Usage this billing period:" +
-             LabelledDetail("Characters", Character) +
-             LabelledDetail("Documents", Document) +
-             LabelledDetail("Team documents", TeamDocument);
+             LabelledDetail("Characters", Character);
     }
 
     /// <summary>
@@ -178,10 +167,6 @@ namespace DeepL.Model {
       public ResponseFieldsStruct(
             long? characterCount,
             long? characterLimit,
-            long? documentCount,
-            long? documentLimit,
-            long? teamDocumentCount,
-            long? teamDocumentLimit,
             long? apiKeyCharacterCount,
             long? apiKeyCharacterLimit,
             long? speechToTextMinutesCount,
@@ -191,8 +176,7 @@ namespace DeepL.Model {
             Product[]? products,
             DateTime? startTime,
             DateTime? endTime) {
-        (CharacterCount, CharacterLimit, DocumentCount, DocumentLimit, TeamDocumentCount, TeamDocumentLimit) =
-              (characterCount, characterLimit, documentCount, documentLimit, teamDocumentCount, teamDocumentLimit);
+        (CharacterCount, CharacterLimit) = (characterCount, characterLimit);
         (ApiKeyCharacterCount, ApiKeyCharacterLimit) = (apiKeyCharacterCount, apiKeyCharacterLimit);
         (SpeechToTextMinutesCount, SpeechToTextMinutesLimit) = (speechToTextMinutesCount, speechToTextMinutesLimit);
         (SpeechToSpeechMinutesCount, SpeechToSpeechMinutesLimit) =
@@ -202,10 +186,6 @@ namespace DeepL.Model {
 
       public long? CharacterCount { get; }
       public long? CharacterLimit { get; }
-      public long? DocumentCount { get; }
-      public long? DocumentLimit { get; }
-      public long? TeamDocumentCount { get; }
-      public long? TeamDocumentLimit { get; }
       public long? ApiKeyCharacterCount { get; }
       public long? ApiKeyCharacterLimit { get; }
       public long? SpeechToTextMinutesCount { get; }

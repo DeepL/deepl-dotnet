@@ -105,11 +105,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DateTime`s; a job response without one of them throws a `DeepLException`. The `TranslationMemoryJob`
   constructor takes them as required parameters after `results`. Remove null checks and `.Value` on these
   properties.
-- `Usage.AnyLimitReached` now also checks the per-key character limit, `ApiKeyCharacter`, so it returns `true` for
-  an API Pro key that has used up its own character limit. The speech limits are still not considered. Code that
-  needs only the account-wide limits must check `Character`, `Document` and `TeamDocument` directly.
+- `Usage.AnyLimitReached` is replaced by `Usage.AnyCharacterLimitReached`: `true` if the account's character limit
+  (`Character`) or this API key's character limit (`ApiKeyCharacter`) is reached. The speech minutes have their own
+  details (`SpeechToTextMinutes`, `SpeechToSpeechMinutes`). Code that needs only the account-wide limit must check
+  `Character` directly.
 
 ### Removed
+- Removed `Usage.Document` and `Usage.TeamDocument`; the API no longer returns document usage. `Usage.ToString()` no
+  longer has the "Documents" and "Team documents" lines. Responses that still contain the `document_*` or
+  `team_document_*` fields are parsed as before; the fields are ignored.
 - Removed the `ConfiguredRules` class and the `DeepLClient.CreateStyleRuleAsync()` and
   `UpdateStyleRuleConfiguredRulesAsync()` overloads taking it. Pass the configured rules as a
   `Dictionary<string, Dictionary<string, string>>` keyed by the API names instead, for example

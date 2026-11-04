@@ -1239,8 +1239,8 @@ await client.TranslateDocumentAsync(
 
 ```c#
 var usage = await client.GetUsageAsync();
-if (usage.AnyLimitReached) {
-  Console.WriteLine("Translation limit exceeded.");
+if (usage.AnyCharacterLimitReached) {
+  Console.WriteLine("Character limit reached.");
 } else if (usage.Character != null) {
   Console.WriteLine($"Character usage: {usage.Character}");
 } else {
@@ -1257,8 +1257,9 @@ For API Pro accounts, `Usage` also contains the following fields; they are `null
   `"write"`, `"speechToText"`, `"speechToSpeech"`), `BillingUnit` (`"characters"` or `"minutes"`),
   `ApiKeyUnitCount` and `AccountUnitCount`. Each of these four is `null` when the response omits it.
 
-`AnyLimitReached` checks `Character`, `Document`, `TeamDocument` and `ApiKeyCharacter`. It does not consider the
-speech fields; check `LimitReached` on them directly, e.g. `usage.SpeechToTextMinutes?.LimitReached`.
+`AnyCharacterLimitReached` is `true` if the account's character limit (`Character`) or this API key's character
+limit (`ApiKeyCharacter`) is reached. The speech minutes have their own details; check `LimitReached` on them
+directly, e.g. `usage.SpeechToTextMinutes?.LimitReached`.
 
 ```c#
 var usage = await client.GetUsageAsync();
