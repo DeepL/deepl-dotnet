@@ -31,6 +31,27 @@ namespace DeepLTests.Offline {
     }
 
     [Theory]
+    [InlineData(414, "Unexpected status code: RequestUriTooLong")]
+    [InlineData(500, "Unexpected status code: InternalServerError")]
+    [InlineData(503, "Service unavailable")]
+    public async Task ReadsMessageOfNestedErrorObject(int status, string expectedStart) {
+      ExpectNoBody(HttpMethod.Get, "v2/usage")
+            .RespondJson("{\"error\":{\"message\":\"the nested message\"}}", (HttpStatusCode)status);
+      var exception = await Assert.ThrowsAsync<DeepLException>(() => CreateClient().GetUsageAsync());
+      Assert.Equal(expectedStart + ", message: the nested message", exception.Message);
+    }
+
+    [Fact]
+    public async Task PrefersTopLevelMessageOverNestedErrorObject() {
+      ExpectNoBody(HttpMethod.Get, "v2/usage")
+            .RespondJson(
+                  "{\"message\":\"top\",\"error\":{\"message\":\"nested\"}}",
+                  HttpStatusCode.BadRequest);
+      var exception = await Assert.ThrowsAsync<DeepLException>(() => CreateClient().GetUsageAsync());
+      Assert.Equal("Bad request, message: top", exception.Message);
+    }
+
+    [Theory]
     [InlineData(400, false)]
     [InlineData(401, false)]
     [InlineData(404, false)]

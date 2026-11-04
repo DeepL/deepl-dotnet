@@ -881,13 +881,25 @@ namespace DeepL.Internal {
     private readonly struct ErrorResult {
       /// <summary>Initializes a new instance of <see cref="ErrorResult" />, used for JSON deserialization.</summary>
       [JsonConstructor]
-      public ErrorResult(string? message, string? detail) {
-        Message = message;
+      public ErrorResult(string? message, string? detail, JsonElement? error) {
+        Message = message ??
+                  (error is { ValueKind: JsonValueKind.Object } errorObject &&
+                   errorObject.TryGetProperty("message", out var nestedMessage) &&
+                   nestedMessage.ValueKind == JsonValueKind.String
+                        ? nestedMessage.GetString()
+                        : null);
         Detail = detail;
+        Error = error;
       }
 
-      /// <summary>Message describing the error, if it was included in response.</summary>
+      /// <summary>
+      ///   Message describing the error, if it was included in response: the top-level <c>message</c>, or else the
+      ///   <c>message</c> of a nested <c>error</c> object (<c>{"error": {"message": ...}}</c>).
+      /// </summary>
       public string? Message { get; }
+
+      /// <summary>Nested <c>error</c> field, if it was included in the response.</summary>
+      public JsonElement? Error { get; }
 
       /// <summary>String explaining more detail the error, if it was included in response.</summary>
       public string? Detail { get; }

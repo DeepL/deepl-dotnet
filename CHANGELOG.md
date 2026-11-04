@@ -131,6 +131,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** creating a `DeepLClient` or `DeepLAdminClient` now throws an `ArgumentException` if the `Proxy` option
   is not an absolute `http` or `https` URL. A relative URL threw an `InvalidOperationException` before, and another
   scheme, for example `ftp://`, was accepted and failed only at the first request.
+- Error messages now include the API's message from a nested `error.message` field of the response body, as the API
+  sends for some statuses (for example 414, 500 and 503), when there is no top-level `message`. It was dropped before.
 
 ### Removed
 - Removed `Usage.Document` and `Usage.TeamDocument`; the API no longer returns document usage. `Usage.ToString()` no

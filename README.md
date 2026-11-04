@@ -1499,6 +1499,8 @@ invalid arguments are provided, they may raise the standard exceptions
 | `ConnectionException` | no HTTP response, for example a timeout or a failed connection |
 | `DeepLException` | any other status than 2xx (including a 3xx redirect that was not followed), or a malformed response |
 
+The exception message contains the error message of the API response, read from
+its `message` field or from a nested `error.message` field.
 `DeepLException.HttpStatusCode` holds the HTTP status of the failed response, or
 `null` if there was no response. `DeepLException.ShouldRetry` is `true` if
 repeating the request could succeed (HTTP 429, 5xx, timeouts, failed and reset
