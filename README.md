@@ -69,7 +69,7 @@ with `:fx`). The client uses this to choose the server URL.
 `TranslateDocument*Async()` steps), `ILanguageProvider` (`GetSourceLanguagesAsync()`, `GetTargetLanguagesAsync()`,
 `GetGlossaryLanguagesAsync()`), `IUsageProvider` (`GetUsageAsync()`), `IGlossaryManager` (glossaries), `IWriter`
 (`RephraseTextAsync()`, `CorrectTextAsync()`), `IStyleRuleManager`, `IStyleProfileManager`, `ITranslationMemoryManager` and
-`ISpokenTermsManager`. Some newer methods and overloads are members of `DeepLClient` only, as noted in their sections.
+`ISpokenTermsManager`.
 
 ### Translating text
 
@@ -775,9 +775,7 @@ options object (`CreateStyleRuleOptions`, `UpdateStyleRuleNameOptions`,
 `UpdateStyleRuleCustomInstructionOptions`) before the cancellation token. Its
 `ExtraBodyParameters` are added last to the JSON request body, replacing
 built-in parameters with the same key; for `UpdateStyleRuleConfiguredRulesAsync()`
-they are added to the configured rules map as further keys. These overloads and
-the object overloads are members of `DeepLClient`; the `IStyleRuleManager`
-interface is unchanged.
+they are added to the configured rules map as further keys.
 
 #### Creating a style rule
 

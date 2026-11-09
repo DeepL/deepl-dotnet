@@ -312,5 +312,8 @@ namespace DeepLTests.Offline {
     public async Task ThrowsArgumentNullExceptionWhenConfiguredRulesAreNull() =>
           await Assert.ThrowsAsync<ArgumentNullException>(
                 () => CreateClient().UpdateStyleRuleConfiguredRulesAsync("s1", (Dictionary<string, Dictionary<string, string>>)null!));
+
+    [Fact]
+    public void DeclaresAllClientOverloadsOnIStyleRuleManager() => AssertClientOverloadsDeclaredOn<IStyleRuleManager>();
   }
 }

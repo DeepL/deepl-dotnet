@@ -23,6 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   timeout or a `TranslationMemoryJob`. Classes implementing `ITranslationMemoryManager` themselves must add them.
 - `IWriter` now also declares both `CorrectTextAsync()` overloads. Classes implementing `IWriter` themselves must
   add them.
+- `IStyleRuleManager` now also declares the `DeepLClient` overloads that take a `StyleRuleInfo` or
+  `CustomInstruction`, and those that take `CreateStyleRuleOptions`, `UpdateStyleRuleNameOptions`,
+  `UpdateStyleRuleConfiguredRulesOptions`, `CreateStyleRuleCustomInstructionOptions` or
+  `UpdateStyleRuleCustomInstructionOptions`. Classes implementing `IStyleRuleManager` themselves must add them.
 
 ### Changed
 - The package now targets `net8.0` and `netstandard2.0`; the `net5.0` target is removed. .NET 5, 6 and 7
