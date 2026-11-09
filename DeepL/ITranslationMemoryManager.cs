@@ -41,6 +41,7 @@ namespace DeepL {
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="TranslationMemoryInfo" /> object for the requested translation memory.</returns>
     /// <exception cref="NotFoundException">If the specified translation memory was not found.</exception>
+    /// <exception cref="ArgumentNullException">If <paramref name="translationMemory" /> is null.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -92,6 +93,7 @@ namespace DeepL {
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="TranslationMemorySegments" /> object holding the requested page.</returns>
     /// <exception cref="NotFoundException">If the specified translation memory was not found.</exception>
+    /// <exception cref="ArgumentNullException">If <paramref name="translationMemory" /> is null.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -130,6 +132,7 @@ namespace DeepL {
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="TranslationMemorySegments" /> object holding the requested page.</returns>
     /// <exception cref="NotFoundException">If the specified translation memory was not found.</exception>
+    /// <exception cref="ArgumentNullException">If <paramref name="translationMemory" /> is null.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -155,6 +158,7 @@ namespace DeepL {
     /// <param name="translationMemory">The translation memory to delete.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <exception cref="NotFoundException">If the specified translation memory was not found.</exception>
+    /// <exception cref="ArgumentNullException">If <paramref name="translationMemory" /> is null.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -292,6 +296,7 @@ namespace DeepL {
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="TranslationMemoryExport" /> object with the job ID.</returns>
     /// <exception cref="NotFoundException">If the specified translation memory was not found.</exception>
+    /// <exception cref="ArgumentNullException">If <paramref name="translationMemory" /> is null.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -326,6 +331,7 @@ namespace DeepL {
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="TranslationMemoryJob" /> object with the current status.</returns>
     /// <exception cref="NotFoundException">If the specified job was not found.</exception>
+    /// <exception cref="ArgumentNullException">If <paramref name="job" /> is null.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -381,6 +387,7 @@ namespace DeepL {
     /// <param name="job">The job to wait for.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="TranslationMemoryJob" /> object holding the status once the job has finished.</returns>
+    /// <exception cref="ArgumentNullException">If <paramref name="job" /> is null.</exception>
     /// <exception cref="DeepLException">
     ///   If the job failed or expired, or if any error occurs while communicating with the DeepL API.
     /// </exception>
@@ -393,6 +400,7 @@ namespace DeepL {
     /// <param name="timeout">Maximum time to wait, or <c>null</c> to wait without a limit.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="TranslationMemoryJob" /> object holding the status once the job has finished.</returns>
+    /// <exception cref="ArgumentNullException">If <paramref name="job" /> is null.</exception>
     /// <exception cref="DeepLException">
     ///   If the job failed or expired, the <paramref name="timeout" /> expires before it finishes, or any error occurs
     ///   while communicating with the DeepL API.

@@ -431,6 +431,27 @@ namespace DeepLTests.Offline {
             () => client.UploadTranslationMemoryFileAsync("", new MemoryStream()));
     }
 
+    [Fact]
+    public async Task ThrowsArgumentNullExceptionForNullTranslationMemoryOrJobObject() {
+      var client = CreateClient();
+      var memory = (TranslationMemoryInfo)null!;
+      var job = (TranslationMemoryJob)null!;
+      var calls = new (string Param, Func<Task> Call)[] {
+        ("translationMemory", () => client.GetTranslationMemoryAsync(memory)),
+        ("translationMemory", () => client.ListTranslationMemorySegmentsAsync(memory)),
+        ("translationMemory", () => client.ListTranslationMemorySegmentsAsync(memory, new TranslationMemorySegmentsOptions())),
+        ("translationMemory", () => client.DeleteTranslationMemoryAsync(memory)),
+        ("translationMemory", () => client.CreateTranslationMemoryExportAsync(memory)),
+        ("job", () => client.GetTranslationMemoryJobAsync(job)),
+        ("job", () => client.WaitUntilTranslationMemoryJobDoneAsync(job)),
+        ("job", () => client.WaitUntilTranslationMemoryJobDoneAsync(job, TimeSpan.FromSeconds(1))),
+      };
+      foreach (var (param, call) in calls) {
+        var exception = await Assert.ThrowsAsync<ArgumentNullException>(call);
+        Assert.Equal(param, exception.ParamName);
+      }
+    }
+
     [Theory]
     [InlineData("not a url")]
     [InlineData("/upload?sig=abc")]
@@ -491,6 +512,22 @@ namespace DeepLTests.Offline {
             () => CreateClient().ExportTranslationMemoryToFilepathAsync("", path));
       Assert.IsType<ArgumentException>(exception.InnerException);
       Assert.Null(exception.JobId);
+    }
+
+    [Fact]
+    public async Task ExportToFilepathWrapsArgumentErrorOfNullTranslationMemory() {
+      var memory = (TranslationMemoryInfo)null!;
+      var path = Path.Combine(Fixtures.TempDir(), "export.tmx");
+      var calls = new Func<Task>[] {
+        () => CreateClient().ExportTranslationMemoryToFilepathAsync(memory, path),
+        () => CreateClient().ExportTranslationMemoryToFilepathAsync(memory, path, TimeSpan.FromSeconds(1)),
+      };
+      foreach (var call in calls) {
+        var exception = await Assert.ThrowsAsync<TranslationMemoryJobException>(call);
+        Assert.IsType<ArgumentException>(exception.InnerException);
+        Assert.Null(exception.JobId);
+        Assert.False(File.Exists(path));
+      }
     }
 
     [Fact]

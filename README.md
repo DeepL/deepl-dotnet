@@ -665,7 +665,9 @@ Spoken Terms collections improve speech recognition in the Voice API: they make
 sure that specific words and phrases, such as product names or technical terms,
 are transcribed correctly. A collection holds one term list per language
 (ISO 639-1 code, e.g. `en`); each term list is a list of strings. Every method
-that takes a collection accepts either its ID or a `SpokenTerms` object.
+that takes a collection accepts either its ID or a `SpokenTerms` object. An
+empty ID throws an `ArgumentException`, and a `null` object an
+`ArgumentNullException`, without sending a request.
 
 Before sending, the library trims leading and trailing whitespace from each
 term and then checks it like a glossary term
@@ -892,7 +894,8 @@ await client.DeleteStyleRuleAsync("YOUR_STYLE_ID");
 A style profile is a named set of glossaries, style rule lists and translation
 memories, with an optional description and industry. Every style profile
 management method accepts either its ID or a `StyleProfile` object; an empty ID
-throws an `ArgumentException` without sending a request.
+throws an `ArgumentException`, and a `null` `StyleProfile` an
+`ArgumentNullException`, without sending a request.
 
 The optional fields are set with `CreateStyleProfileOptions` when creating and
 `UpdateStyleProfileOptions` (which adds `Name`) when updating. A property left
@@ -998,7 +1001,10 @@ that need to be translated.
 Translation memories can be created, inspected and deleted with the methods
 below. Each method that takes a translation memory accepts either its ID as a
 string, or a `TranslationMemoryInfo` object as returned by
-`ListTranslationMemoriesAsync()`.
+`ListTranslationMemoriesAsync()`. A `null` object throws an
+`ArgumentNullException` without sending a request;
+`ExportTranslationMemoryToFilepathAsync()` wraps it in a
+`TranslationMemoryJobException` like its other errors.
 
 #### Listing translation memories
 
@@ -1496,7 +1502,9 @@ do {
 
 All library functions may raise `DeepLException` or one of its subclasses. If
 invalid arguments are provided, they may raise the standard exceptions
-`ArgumentException`.
+`ArgumentException`. A `null` resource object, such as a
+`MultilingualGlossaryInfo` or `StyleProfile`, throws an `ArgumentNullException`,
+a subclass of `ArgumentException`, without sending a request.
 
 | Exception | Raised when |
 |---|---|

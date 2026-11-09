@@ -114,6 +114,21 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
+    public async Task RejectsANullStyleProfileWithoutSendingARequest() {
+      var client = CreateClient();
+      var profile = (StyleProfile)null!;
+      var calls = new Func<Task>[] {
+        () => client.GetStyleProfileAsync(profile),
+        () => client.UpdateStyleProfileAsync(profile, new UpdateStyleProfileOptions { Name = "New" }),
+        () => client.DeleteStyleProfileAsync(profile),
+      };
+      foreach (var call in calls) {
+        var exception = await Assert.ThrowsAsync<ArgumentNullException>(call);
+        Assert.Equal("styleProfile", exception.ParamName);
+      }
+    }
+
+    [Fact]
     public async Task ParsesEveryFieldOfTheSpecExample() {
       ExpectNoBody(HttpMethod.Get, "v3/style_profiles/sp1").RespondJson(ProfileReply);
 

@@ -69,6 +69,7 @@ namespace DeepL {
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="StyleProfile" /> object with details about the style profile.</returns>
     /// <exception cref="NotFoundException">If the specified style profile was not found.</exception>
+    /// <exception cref="ArgumentNullException">If <paramref name="styleProfile" /> is null.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -111,6 +112,7 @@ namespace DeepL {
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="StyleProfile" /> object with details about the updated style profile.</returns>
     /// <exception cref="NotFoundException">If the specified style profile was not found.</exception>
+    /// <exception cref="ArgumentNullException">If <paramref name="styleProfile" /> is null.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -137,6 +139,7 @@ namespace DeepL {
     /// <param name="styleProfile">The style profile.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <exception cref="NotFoundException">If the specified style profile was not found.</exception>
+    /// <exception cref="ArgumentNullException">If <paramref name="styleProfile" /> is null.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.

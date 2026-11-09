@@ -165,6 +165,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `UpdateMultilingualGlossaryDictionaryFromCsvAsync()` and `ReplaceMultilingualGlossaryDictionaryFromCsvAsync()` now
   throw an `ArgumentException` for empty or whitespace-only CSV content, without sending a request. The request was
   sent to the API before.
+- **Breaking:** the overloads taking a `MultilingualGlossaryInfo`, `TranslationMemoryInfo`, `TranslationMemoryJob`,
+  `StyleProfile` or `SpokenTerms` now throw an `ArgumentNullException` (an `ArgumentException`) for a `null` object,
+  without sending a request. They threw a `NullReferenceException` before. `ExportTranslationMemoryToFilepathAsync()`
+  throws a `TranslationMemoryJobException` with an `ArgumentException` cause instead, as for an empty ID. Catch
+  `ArgumentException` instead of `NullReferenceException`.
 
 ### Removed
 - Removed `Usage.Document` and `Usage.TeamDocument`; the API no longer returns document usage. `Usage.ToString()` no

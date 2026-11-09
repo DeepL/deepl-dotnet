@@ -1174,7 +1174,7 @@ namespace DeepL {
     public async Task<TranslationMemoryInfo> GetTranslationMemoryAsync(
           TranslationMemoryInfo translationMemory,
           CancellationToken cancellationToken = default) =>
-          await GetTranslationMemoryAsync(translationMemory.TranslationMemoryId, cancellationToken)
+          await GetTranslationMemoryAsync(TranslationMemoryId(translationMemory), cancellationToken)
                 .ConfigureAwait(false);
 
     /// <inheritdoc />
@@ -1242,7 +1242,7 @@ namespace DeepL {
           bool? filterCaseSensitive = null,
           CancellationToken cancellationToken = default) =>
           await ListTranslationMemorySegmentsAsync(
-                      translationMemory.TranslationMemoryId,
+                      TranslationMemoryId(translationMemory),
                       pageSize,
                       pageCursor,
                       filterText,
@@ -1255,7 +1255,7 @@ namespace DeepL {
           TranslationMemoryInfo translationMemory,
           TranslationMemorySegmentsOptions? options,
           CancellationToken cancellationToken = default) =>
-          await ListTranslationMemorySegmentsAsync(translationMemory.TranslationMemoryId, options, cancellationToken)
+          await ListTranslationMemorySegmentsAsync(TranslationMemoryId(translationMemory), options, cancellationToken)
                 .ConfigureAwait(false);
 
     /// <inheritdoc />
@@ -1276,7 +1276,7 @@ namespace DeepL {
     public async Task DeleteTranslationMemoryAsync(
           TranslationMemoryInfo translationMemory,
           CancellationToken cancellationToken = default) =>
-          await DeleteTranslationMemoryAsync(translationMemory.TranslationMemoryId, cancellationToken)
+          await DeleteTranslationMemoryAsync(TranslationMemoryId(translationMemory), cancellationToken)
                 .ConfigureAwait(false);
 
     /// <inheritdoc />
@@ -1407,7 +1407,7 @@ namespace DeepL {
     public async Task<TranslationMemoryExport> CreateTranslationMemoryExportAsync(
           TranslationMemoryInfo translationMemory,
           CancellationToken cancellationToken = default) =>
-          await CreateTranslationMemoryExportAsync(translationMemory.TranslationMemoryId, cancellationToken)
+          await CreateTranslationMemoryExportAsync(TranslationMemoryId(translationMemory), cancellationToken)
                 .ConfigureAwait(false);
 
     /// <inheritdoc />
@@ -1433,7 +1433,7 @@ namespace DeepL {
     public async Task<TranslationMemoryJob> GetTranslationMemoryJobAsync(
           TranslationMemoryJob job,
           CancellationToken cancellationToken = default) =>
-          await GetTranslationMemoryJobAsync(job.JobId, cancellationToken).ConfigureAwait(false);
+          await GetTranslationMemoryJobAsync(TranslationMemoryJobId(job), cancellationToken).ConfigureAwait(false);
 
     /// <inheritdoc />
     public Task<TranslationMemoryJob> WaitUntilTranslationMemoryJobDoneAsync(
@@ -1494,14 +1494,14 @@ namespace DeepL {
     public Task<TranslationMemoryJob> WaitUntilTranslationMemoryJobDoneAsync(
           TranslationMemoryJob job,
           CancellationToken cancellationToken = default) =>
-          WaitUntilTranslationMemoryJobDoneAsync(job.JobId, null, cancellationToken);
+          WaitUntilTranslationMemoryJobDoneAsync(TranslationMemoryJobId(job), null, cancellationToken);
 
     /// <inheritdoc />
     public Task<TranslationMemoryJob> WaitUntilTranslationMemoryJobDoneAsync(
           TranslationMemoryJob job,
           TimeSpan? timeout,
           CancellationToken cancellationToken = default) =>
-          WaitUntilTranslationMemoryJobDoneAsync(job.JobId, timeout, cancellationToken);
+          WaitUntilTranslationMemoryJobDoneAsync(TranslationMemoryJobId(job), timeout, cancellationToken);
 
     /// <inheritdoc />
     public async Task DownloadTranslationMemoryExportAsync(
@@ -1717,8 +1717,9 @@ namespace DeepL {
           TranslationMemoryInfo translationMemory,
           string outputFilePath,
           CancellationToken cancellationToken = default) =>
+          // A null object reaches the wrapped empty-ID check, like an empty ID.
           await ExportTranslationMemoryToFilepathAsync(
-                      translationMemory.TranslationMemoryId,
+                      translationMemory?.TranslationMemoryId!,
                       outputFilePath,
                       null,
                       cancellationToken)
@@ -1730,8 +1731,9 @@ namespace DeepL {
           string outputFilePath,
           TimeSpan? timeout,
           CancellationToken cancellationToken = default) =>
+          // A null object reaches the wrapped empty-ID check, like an empty ID.
           await ExportTranslationMemoryToFilepathAsync(
-                      translationMemory.TranslationMemoryId,
+                      translationMemory?.TranslationMemoryId!,
                       outputFilePath,
                       timeout,
                       cancellationToken)
@@ -2309,7 +2311,7 @@ namespace DeepL {
     public async Task<StyleProfile> GetStyleProfileAsync(
           StyleProfile styleProfile,
           CancellationToken cancellationToken = default) =>
-          await GetStyleProfileAsync(styleProfile.StyleProfileId, cancellationToken).ConfigureAwait(false);
+          await GetStyleProfileAsync(StyleProfileId(styleProfile), cancellationToken).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<StyleProfile> UpdateStyleProfileAsync(
@@ -2335,7 +2337,7 @@ namespace DeepL {
           StyleProfile styleProfile,
           UpdateStyleProfileOptions? options = null,
           CancellationToken cancellationToken = default) =>
-          await UpdateStyleProfileAsync(styleProfile.StyleProfileId, options, cancellationToken)
+          await UpdateStyleProfileAsync(StyleProfileId(styleProfile), options, cancellationToken)
                 .ConfigureAwait(false);
 
     /// <inheritdoc />
@@ -2352,7 +2354,7 @@ namespace DeepL {
     public async Task DeleteStyleProfileAsync(
           StyleProfile styleProfile,
           CancellationToken cancellationToken = default) =>
-          await DeleteStyleProfileAsync(styleProfile.StyleProfileId, cancellationToken).ConfigureAwait(false);
+          await DeleteStyleProfileAsync(StyleProfileId(styleProfile), cancellationToken).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<SpokenTerms> CreateSpokenTermsAsync(
@@ -2398,7 +2400,7 @@ namespace DeepL {
     public async Task<SpokenTerms> GetSpokenTermsAsync(
           SpokenTerms spokenTerms,
           CancellationToken cancellationToken = default) =>
-          await GetSpokenTermsAsync(spokenTerms.SpokenTermsId, cancellationToken).ConfigureAwait(false);
+          await GetSpokenTermsAsync(SpokenTermsId(spokenTerms), cancellationToken).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<SpokenTerms> UpdateSpokenTermsAsync(
@@ -2424,7 +2426,7 @@ namespace DeepL {
           SpokenTerms spokenTerms,
           UpdateSpokenTermsOptions? options = null,
           CancellationToken cancellationToken = default) =>
-          await UpdateSpokenTermsAsync(spokenTerms.SpokenTermsId, options, cancellationToken)
+          await UpdateSpokenTermsAsync(SpokenTermsId(spokenTerms), options, cancellationToken)
                 .ConfigureAwait(false);
 
     /// <inheritdoc />
@@ -2448,7 +2450,7 @@ namespace DeepL {
           SpokenTerms spokenTerms,
           string lang,
           CancellationToken cancellationToken = default) =>
-          await GetSpokenTermsEntriesAsync(spokenTerms.SpokenTermsId, lang, cancellationToken).ConfigureAwait(false);
+          await GetSpokenTermsEntriesAsync(SpokenTermsId(spokenTerms), lang, cancellationToken).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<SpokenTermsList> ReplaceSpokenTermsListAsync(
@@ -2476,7 +2478,7 @@ namespace DeepL {
           SpokenTermsEntries entries,
           ReplaceSpokenTermsListOptions? options = null,
           CancellationToken cancellationToken = default) =>
-          await ReplaceSpokenTermsListAsync(spokenTerms.SpokenTermsId, entries, options, cancellationToken)
+          await ReplaceSpokenTermsListAsync(SpokenTermsId(spokenTerms), entries, options, cancellationToken)
                 .ConfigureAwait(false);
 
     /// <inheritdoc />
@@ -2493,7 +2495,7 @@ namespace DeepL {
     public async Task DeleteSpokenTermsAsync(
           SpokenTerms spokenTerms,
           CancellationToken cancellationToken = default) =>
-          await DeleteSpokenTermsAsync(spokenTerms.SpokenTermsId, cancellationToken).ConfigureAwait(false);
+          await DeleteSpokenTermsAsync(SpokenTermsId(spokenTerms), cancellationToken).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task DeleteSpokenTermsListAsync(
@@ -2512,7 +2514,7 @@ namespace DeepL {
           SpokenTerms spokenTerms,
           string lang,
           CancellationToken cancellationToken = default) =>
-          await DeleteSpokenTermsListAsync(spokenTerms.SpokenTermsId, lang, cancellationToken).ConfigureAwait(false);
+          await DeleteSpokenTermsListAsync(SpokenTermsId(spokenTerms), lang, cancellationToken).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<MultilingualGlossaryInfo> CreateMultilingualGlossaryAsync(
@@ -2627,7 +2629,7 @@ namespace DeepL {
     public async Task<MultilingualGlossaryInfo> GetMultilingualGlossaryAsync(
           MultilingualGlossaryInfo glossary,
           CancellationToken cancellationToken = default) =>
-          await GetMultilingualGlossaryAsync(glossary.GlossaryId, cancellationToken).ConfigureAwait(false);
+          await GetMultilingualGlossaryAsync(MultilingualGlossaryId(glossary), cancellationToken).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<MultilingualGlossaryDictionaryEntries> GetMultilingualGlossaryDictionaryEntriesAsync(
@@ -2665,7 +2667,7 @@ namespace DeepL {
           MultilingualGlossaryDictionaryInfo glossaryDict,
           CancellationToken cancellationToken = default) =>
           await GetMultilingualGlossaryDictionaryEntriesAsync(
-                glossary.GlossaryId,
+                MultilingualGlossaryId(glossary),
                 glossaryDict.SourceLanguageCode,
                 glossaryDict.TargetLanguageCode,
                 cancellationToken).ConfigureAwait(false);
@@ -2688,7 +2690,7 @@ namespace DeepL {
           string targetLanguageCode,
           CancellationToken cancellationToken = default) =>
           await GetMultilingualGlossaryDictionaryEntriesAsync(
-                glossary.GlossaryId,
+                MultilingualGlossaryId(glossary),
                 sourceLanguageCode,
                 targetLanguageCode,
                 cancellationToken).ConfigureAwait(false);
@@ -2723,7 +2725,7 @@ namespace DeepL {
     public async Task DeleteMultilingualGlossaryAsync(
           MultilingualGlossaryInfo glossary,
           CancellationToken cancellationToken = default) =>
-          await DeleteMultilingualGlossaryAsync(glossary.GlossaryId, cancellationToken).ConfigureAwait(false);
+          await DeleteMultilingualGlossaryAsync(MultilingualGlossaryId(glossary), cancellationToken).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task DeleteMultilingualGlossaryDictionaryAsync(
@@ -2751,7 +2753,7 @@ namespace DeepL {
           string targetLanguageCode,
           CancellationToken cancellationToken = default) =>
           await DeleteMultilingualGlossaryDictionaryAsync(
-                glossary.GlossaryId,
+                MultilingualGlossaryId(glossary),
                 sourceLanguageCode,
                 targetLanguageCode,
                 cancellationToken).ConfigureAwait(false);
@@ -2762,7 +2764,7 @@ namespace DeepL {
           MultilingualGlossaryDictionaryInfo glossaryDict,
           CancellationToken cancellationToken = default) =>
           await DeleteMultilingualGlossaryDictionaryAsync(
-                glossary.GlossaryId,
+                MultilingualGlossaryId(glossary),
                 glossaryDict.SourceLanguageCode,
                 glossaryDict.TargetLanguageCode,
                 cancellationToken).ConfigureAwait(false);
@@ -2802,7 +2804,7 @@ namespace DeepL {
           GlossaryEntries entries,
           CancellationToken cancellationToken = default) =>
           await ReplaceMultilingualGlossaryDictionaryInternalAsync(
-                glossary.GlossaryId,
+                MultilingualGlossaryId(glossary),
                 sourceLanguageCode,
                 targetLanguageCode,
                 entries.ToTsv(),
@@ -2816,7 +2818,7 @@ namespace DeepL {
           MultilingualGlossaryDictionaryEntries glossaryDict,
           CancellationToken cancellationToken = default) =>
           await ReplaceMultilingualGlossaryDictionaryInternalAsync(
-                glossary.GlossaryId,
+                MultilingualGlossaryId(glossary),
                 glossaryDict.SourceLanguageCode,
                 glossaryDict.TargetLanguageCode,
                 glossaryDict.Entries.ToTsv(),
@@ -2862,7 +2864,7 @@ namespace DeepL {
           Stream csvFile,
           CancellationToken cancellationToken = default) =>
           await ReplaceMultilingualGlossaryDictionaryInternalAsync(
-                glossary.GlossaryId,
+                MultilingualGlossaryId(glossary),
                 sourceLanguageCode,
                 targetLanguageCode,
                 await ReadCsvAsync(csvFile).ConfigureAwait(false),
@@ -2896,7 +2898,7 @@ namespace DeepL {
           ReplaceMultilingualGlossaryDictionaryOptions? options,
           CancellationToken cancellationToken = default) =>
           await ReplaceMultilingualGlossaryDictionaryAsync(
-                glossary.GlossaryId,
+                MultilingualGlossaryId(glossary),
                 sourceLanguageCode,
                 targetLanguageCode,
                 entries,
@@ -2924,7 +2926,7 @@ namespace DeepL {
           ReplaceMultilingualGlossaryDictionaryOptions? options,
           CancellationToken cancellationToken = default) =>
           await ReplaceMultilingualGlossaryDictionaryAsync(
-                glossary.GlossaryId,
+                MultilingualGlossaryId(glossary),
                 glossaryDict.SourceLanguageCode,
                 glossaryDict.TargetLanguageCode,
                 glossaryDict.Entries,
@@ -2957,7 +2959,7 @@ namespace DeepL {
           ReplaceMultilingualGlossaryDictionaryOptions? options,
           CancellationToken cancellationToken = default) =>
           await ReplaceMultilingualGlossaryDictionaryFromCsvAsync(
-                glossary.GlossaryId,
+                MultilingualGlossaryId(glossary),
                 sourceLanguageCode,
                 targetLanguageCode,
                 csvFile,
@@ -3040,7 +3042,7 @@ namespace DeepL {
           MultilingualGlossaryInfo glossary,
           string name,
           CancellationToken cancellationToken = default) =>
-          await UpdateMultilingualGlossaryNameAsync(glossary.GlossaryId, name, null, cancellationToken)
+          await UpdateMultilingualGlossaryNameAsync(MultilingualGlossaryId(glossary), name, null, cancellationToken)
                 .ConfigureAwait(false);
 
     /// <inheritdoc />
@@ -3049,7 +3051,7 @@ namespace DeepL {
           string name,
           BaseRequestOptions? options,
           CancellationToken cancellationToken = default) =>
-          await UpdateMultilingualGlossaryNameAsync(glossary.GlossaryId, name, options, cancellationToken)
+          await UpdateMultilingualGlossaryNameAsync(MultilingualGlossaryId(glossary), name, options, cancellationToken)
                 .ConfigureAwait(false);
 
     /// <inheritdoc />
@@ -3087,7 +3089,7 @@ namespace DeepL {
           MultilingualGlossaryInfo glossary,
           UpdateMultilingualGlossaryOptions? options = null,
           CancellationToken cancellationToken = default) =>
-          await UpdateMultilingualGlossaryAsync(glossary.GlossaryId, options, cancellationToken).ConfigureAwait(false);
+          await UpdateMultilingualGlossaryAsync(MultilingualGlossaryId(glossary), options, cancellationToken).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<MultilingualGlossaryInfo> UpdateMultilingualGlossaryDictionaryAsync(
@@ -3145,7 +3147,7 @@ namespace DeepL {
           BaseRequestOptions? options,
           CancellationToken cancellationToken = default) =>
           await UpdateMultilingualGlossaryDictionaryInternalAsync(
-                glossary.GlossaryId,
+                MultilingualGlossaryId(glossary),
                 sourceLanguageCode,
                 targetLanguageCode,
                 entries.ToTsv(),
@@ -3171,7 +3173,7 @@ namespace DeepL {
           BaseRequestOptions? options,
           CancellationToken cancellationToken = default) =>
           await UpdateMultilingualGlossaryDictionaryInternalAsync(
-                glossary.GlossaryId,
+                MultilingualGlossaryId(glossary),
                 glossaryDict.SourceLanguageCode,
                 glossaryDict.TargetLanguageCode,
                 glossaryDict.Entries.ToTsv(),
@@ -3261,7 +3263,7 @@ namespace DeepL {
           BaseRequestOptions? options,
           CancellationToken cancellationToken = default) =>
           await UpdateMultilingualGlossaryDictionaryInternalAsync(
-                glossary.GlossaryId,
+                MultilingualGlossaryId(glossary),
                 sourceLanguageCode,
                 targetLanguageCode,
                 await ReadCsvAsync(csvFile).ConfigureAwait(false),
@@ -3683,6 +3685,26 @@ namespace DeepL {
 
     /// <summary>Returns the ID of the given custom instruction, or an empty string if it or its ID is <c>null</c>.</summary>
     private static string InstructionId(CustomInstruction? instruction) => instruction?.Id ?? string.Empty;
+
+    /// <summary>Returns the ID of the given multilingual glossary, throwing if it is <c>null</c>.</summary>
+    private static string MultilingualGlossaryId(MultilingualGlossaryInfo glossary) =>
+          (glossary ?? throw new ArgumentNullException(nameof(glossary))).GlossaryId;
+
+    /// <summary>Returns the ID of the given translation memory, throwing if it is <c>null</c>.</summary>
+    private static string TranslationMemoryId(TranslationMemoryInfo translationMemory) =>
+          (translationMemory ?? throw new ArgumentNullException(nameof(translationMemory))).TranslationMemoryId;
+
+    /// <summary>Returns the ID of the given translation memory job, throwing if it is <c>null</c>.</summary>
+    private static string TranslationMemoryJobId(TranslationMemoryJob job) =>
+          (job ?? throw new ArgumentNullException(nameof(job))).JobId;
+
+    /// <summary>Returns the ID of the given style profile, throwing if it is <c>null</c>.</summary>
+    private static string StyleProfileId(StyleProfile styleProfile) =>
+          (styleProfile ?? throw new ArgumentNullException(nameof(styleProfile))).StyleProfileId;
+
+    /// <summary>Returns the ID of the given spoken terms collection, throwing if it is <c>null</c>.</summary>
+    private static string SpokenTermsId(SpokenTerms spokenTerms) =>
+          (spokenTerms ?? throw new ArgumentNullException(nameof(spokenTerms))).SpokenTermsId;
 
     /// <summary>
     ///   Adds the extra body parameters of the options last to form fields, replacing fields with the same key; a

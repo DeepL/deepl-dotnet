@@ -61,6 +61,7 @@ namespace DeepL {
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="SpokenTerms" /> object with details about the collection.</returns>
     /// <exception cref="NotFoundException">If the specified Spoken Terms collection was not found.</exception>
+    /// <exception cref="ArgumentNullException">If <paramref name="spokenTerms" /> is null.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -110,6 +111,7 @@ namespace DeepL {
     /// <exception cref="ArgumentException">
     ///   If any term is invalid, checked like glossary terms (see <see cref="GlossaryEntries.ValidateGlossaryTerm" />).
     /// </exception>
+    /// <exception cref="ArgumentNullException">If <paramref name="spokenTerms" /> is null.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -140,6 +142,7 @@ namespace DeepL {
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="SpokenTermsEntries" /> object containing the terms.</returns>
     /// <exception cref="NotFoundException">If the specified Spoken Terms collection was not found.</exception>
+    /// <exception cref="ArgumentNullException">If <paramref name="spokenTerms" /> is null.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -179,6 +182,7 @@ namespace DeepL {
     /// <exception cref="ArgumentException">
     ///   If any term is invalid, checked like glossary terms (see <see cref="GlossaryEntries.ValidateGlossaryTerm" />).
     /// </exception>
+    /// <exception cref="ArgumentNullException">If <paramref name="spokenTerms" /> is null.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -205,6 +209,7 @@ namespace DeepL {
     /// <param name="spokenTerms">The Spoken Terms collection.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <exception cref="NotFoundException">If the specified Spoken Terms collection was not found.</exception>
+    /// <exception cref="ArgumentNullException">If <paramref name="spokenTerms" /> is null.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -232,6 +237,7 @@ namespace DeepL {
     /// <param name="lang">Language code (ISO 639-1) of the term list to delete, for example "de".</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <exception cref="NotFoundException">If the specified Spoken Terms collection was not found.</exception>
+    /// <exception cref="ArgumentNullException">If <paramref name="spokenTerms" /> is null.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
