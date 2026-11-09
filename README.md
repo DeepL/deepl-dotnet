@@ -566,6 +566,10 @@ Functions to edit stored glossaries are also provided:
   taking a `ReplaceMultilingualGlossaryDictionaryOptions` object before the
   cancellation token; its `ExtraBodyParameters` are added last to the JSON
   request body.
+- `UpdateMultilingualGlossaryDictionaryFromCsvAsync()` and
+  `ReplaceMultilingualGlossaryDictionaryFromCsvAsync()` take the entries as CSV
+  content from a stream. Empty or whitespace-only content throws an
+  `ArgumentException` without sending a request.
 - `UpdateMultilingualGlossaryNameAsync()` takes a glossary ID or `MultilingualGlossaryInfo`
   object, plus the new name of the glossary. An empty glossary ID or name throws an
   `ArgumentException` without sending a request.

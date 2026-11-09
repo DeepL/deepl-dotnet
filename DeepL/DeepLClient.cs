@@ -2849,7 +2849,7 @@ namespace DeepL {
                 glossaryId,
                 sourceLanguageCode,
                 targetLanguageCode,
-                await new StreamReader(csvFile).ReadToEndAsync().ConfigureAwait(false),
+                await ReadCsvAsync(csvFile).ConfigureAwait(false),
                 "csv",
                 null,
                 cancellationToken).ConfigureAwait(false);
@@ -2865,7 +2865,7 @@ namespace DeepL {
                 glossary.GlossaryId,
                 sourceLanguageCode,
                 targetLanguageCode,
-                await new StreamReader(csvFile).ReadToEndAsync().ConfigureAwait(false),
+                await ReadCsvAsync(csvFile).ConfigureAwait(false),
                 "csv",
                 null,
                 cancellationToken).ConfigureAwait(false);
@@ -2943,7 +2943,7 @@ namespace DeepL {
                 glossaryId,
                 sourceLanguageCode,
                 targetLanguageCode,
-                await new StreamReader(csvFile).ReadToEndAsync().ConfigureAwait(false),
+                await ReadCsvAsync(csvFile).ConfigureAwait(false),
                 "csv",
                 options,
                 cancellationToken).ConfigureAwait(false);
@@ -3232,7 +3232,7 @@ namespace DeepL {
                 glossaryId,
                 sourceLanguageCode,
                 targetLanguageCode,
-                await new StreamReader(csvFile).ReadToEndAsync().ConfigureAwait(false),
+                await ReadCsvAsync(csvFile).ConfigureAwait(false),
                 "csv",
                 options,
                 cancellationToken).ConfigureAwait(false);
@@ -3264,7 +3264,7 @@ namespace DeepL {
                 glossary.GlossaryId,
                 sourceLanguageCode,
                 targetLanguageCode,
-                await new StreamReader(csvFile).ReadToEndAsync().ConfigureAwait(false),
+                await ReadCsvAsync(csvFile).ConfigureAwait(false),
                 "csv",
                 options,
                 cancellationToken).ConfigureAwait(false);
@@ -3652,6 +3652,19 @@ namespace DeepL {
       }
 
       return new Dictionary<string, string> { ["lang"] = entries.Lang, ["entries"] = string.Join("\n", terms) };
+    }
+
+    /// <summary>Reads the CSV content of a dictionary update or replace from the stream.</summary>
+    /// <param name="csvFile">Stream containing the CSV content.</param>
+    /// <returns>The CSV content.</returns>
+    /// <exception cref="ArgumentException">If the content is empty or contains only whitespace.</exception>
+    private static async Task<string> ReadCsvAsync(Stream csvFile) {
+      var csv = await new StreamReader(csvFile).ReadToEndAsync().ConfigureAwait(false);
+      if (string.IsNullOrWhiteSpace(csv)) {
+        throw new ArgumentException($"Parameter {nameof(csvFile)} must not be empty", nameof(csvFile));
+      }
+
+      return csv;
     }
 
     /// <summary>

@@ -469,7 +469,9 @@ namespace DeepL {
     /// <returns>
     ///   <see cref="MultilingualGlossaryDictionaryInfo" /> object with details about the newly replaced glossary dictionary.
     /// </returns>
-    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="ArgumentException">
+    ///   If any argument is invalid, or the CSV content is empty or contains only whitespace.
+    /// </exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -494,7 +496,9 @@ namespace DeepL {
     /// <returns>
     ///   <see cref="MultilingualGlossaryDictionaryInfo" /> object with details about the newly replaced glossary dictionary.
     /// </returns>
-    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="ArgumentException">
+    ///   If any argument is invalid, or the CSV content is empty or contains only whitespace.
+    /// </exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -521,7 +525,9 @@ namespace DeepL {
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="MultilingualGlossaryDictionaryInfo" /> object with details about the replaced dictionary.</returns>
-    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="ArgumentException">
+    ///   If any argument is invalid, or the CSV content is empty or contains only whitespace.
+    /// </exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -549,7 +555,9 @@ namespace DeepL {
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="MultilingualGlossaryDictionaryInfo" /> object with details about the replaced dictionary.</returns>
-    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="ArgumentException">
+    ///   If any argument is invalid, or the CSV content is empty or contains only whitespace.
+    /// </exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -863,7 +871,9 @@ namespace DeepL {
     ///   <see cref="MultilingualGlossaryInfo" /> object with details about the glossary with the newly updated glossary
     ///   dictionary.
     /// </returns>
-    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="ArgumentException">
+    ///   If any argument is invalid, or the CSV content is empty or contains only whitespace.
+    /// </exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -889,7 +899,9 @@ namespace DeepL {
     ///   <see cref="MultilingualGlossaryInfo" /> object with details about the glossary with the newly updated glossary
     ///   dictionary.
     /// </returns>
-    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="ArgumentException">
+    ///   If any argument is invalid, or the CSV content is empty or contains only whitespace.
+    /// </exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -917,7 +929,9 @@ namespace DeepL {
     /// <returns>
     ///   <see cref="MultilingualGlossaryInfo" /> object with details about the glossary with the updated dictionary.
     /// </returns>
-    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="ArgumentException">
+    ///   If any argument is invalid, or the CSV content is empty or contains only whitespace.
+    /// </exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -946,7 +960,9 @@ namespace DeepL {
     /// <returns>
     ///   <see cref="MultilingualGlossaryInfo" /> object with details about the glossary with the updated dictionary.
     /// </returns>
-    /// <exception cref="ArgumentException">If any argument is invalid.</exception>
+    /// <exception cref="ArgumentException">
+    ///   If any argument is invalid, or the CSV content is empty or contains only whitespace.
+    /// </exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.

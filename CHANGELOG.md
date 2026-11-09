@@ -162,6 +162,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** a `null` value in `ExtraBodyParameters` is now sent as JSON `null` in JSON request bodies, instead of
   removing the key (including a field the library sets). Leave the key out to not send it. In the multipart body of
   a document upload, a `null` value still removes the key.
+- `UpdateMultilingualGlossaryDictionaryFromCsvAsync()` and `ReplaceMultilingualGlossaryDictionaryFromCsvAsync()` now
+  throw an `ArgumentException` for empty or whitespace-only CSV content, without sending a request. The request was
+  sent to the API before.
 
 ### Removed
 - Removed `Usage.Document` and `Usage.TeamDocument`; the API no longer returns document usage. `Usage.ToString()` no

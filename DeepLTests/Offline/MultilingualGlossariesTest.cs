@@ -406,6 +406,10 @@ namespace DeepLTests.Offline {
                   "n"));
       await Assert.ThrowsAsync<ArgumentException>(
             () => client.UpdateMultilingualGlossaryDictionaryAsync("g1", "", "de", Apple));
+      await Assert.ThrowsAsync<ArgumentException>(
+            () => client.UpdateMultilingualGlossaryDictionaryFromCsvAsync("g1", "en", "de", new MemoryStream()));
+      await Assert.ThrowsAsync<ArgumentException>(
+            () => client.ReplaceMultilingualGlossaryDictionaryFromCsvAsync("g1", "en", "de", new MemoryStream()));
     }
 
     [Fact]
