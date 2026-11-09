@@ -1589,7 +1589,9 @@ The available options:
 - `OverallConnectionTimeout`: the timeout of a request including all retries
   and the waits between them, by default 100 seconds.
   `Timeout.InfiniteTimeSpan` disables it.
-- `ServerUrl`: overrides the DeepL API server URL.
+- `ServerUrl`: overrides the DeepL API server URL. A value that is not an
+  absolute `http` or `https` URL throws an `ArgumentException` when the client
+  is created.
 - `Headers`: extra HTTP headers sent with every request to the DeepL API. A
   `User-Agent` or `Authorization` header (names compared case-insensitively)
   replaces the one the client sends by default. `Content-Type`,

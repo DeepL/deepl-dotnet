@@ -33,7 +33,10 @@ namespace DeepL {
     /// </param>
     /// <param name="options">Additional options controlling <see cref="DeepLAdminClient" /> behaviour.</param>
     /// <exception cref="ArgumentNullException">If adminKey argument is null.</exception>
-    /// <exception cref="ArgumentException">If adminKey argument is empty.</exception>
+    /// <exception cref="ArgumentException">
+    ///   If adminKey argument is empty, or the <see cref="BaseClientOptions.ServerUrl" /> option is not an absolute
+    ///   http or https URL.
+    /// </exception>
     /// <remarks>This function does not establish a connection to the DeepL API.</remarks>
     public DeepLAdminClient(string adminKey, DeepLAdminClientOptions? options = null) {
       options ??= new DeepLAdminClientOptions();
@@ -48,7 +51,7 @@ namespace DeepL {
         throw new ArgumentException($"{nameof(adminKey)} is empty");
       }
 
-      _client = DeepLHttpClient.Create(adminKey, new Uri(options.ServerUrl ?? DeepLServerUrl), options);
+      _client = DeepLHttpClient.Create(adminKey, DeepLHttpClient.ParseServerUrl(options.ServerUrl ?? DeepLServerUrl), options);
     }
 
     /// <summary>

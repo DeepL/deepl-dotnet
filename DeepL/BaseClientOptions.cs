@@ -61,7 +61,8 @@ namespace DeepL {
     /// <summary>
     ///   The base URL for DeepL's API that may be overridden for testing purposes. By default
     ///   <see cref="DeepLClient" /> selects the correct DeepL API URL based on the user account type (free or paid),
-    ///   and <see cref="DeepLAdminClient" /> uses <c>https://api.deepl.com</c>.
+    ///   and <see cref="DeepLAdminClient" /> uses <c>https://api.deepl.com</c>. A value that is not an absolute
+    ///   <c>http</c> or <c>https</c> URL throws an <see cref="System.ArgumentException" /> when the client is created.
     /// </summary>
     public string? ServerUrl { get; set; }
 

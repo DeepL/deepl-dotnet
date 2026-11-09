@@ -151,6 +151,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `Content-Encoding`) are now sent on the content of requests with a body, replacing the client's value, and are not
   sent on requests without a body. Every request failed with a `ConnectionException` ("Unexpected request failure")
   before.
+- **Breaking:** creating a `DeepLClient` or `DeepLAdminClient` now throws an `ArgumentException` if the `ServerUrl`
+  option is not an absolute `http` or `https` URL. An unparsable URL threw a `UriFormatException` before, and another
+  scheme, for example `ftp://`, was accepted and failed only at the first request. Catch `ArgumentException` instead
+  of `UriFormatException`.
 
 ### Removed
 - Removed `Usage.Document` and `Usage.TeamDocument`; the API no longer returns document usage. `Usage.ToString()` no

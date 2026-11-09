@@ -359,6 +359,22 @@ namespace DeepL.Internal {
       };
     }
 
+    /// <summary>Parses the server URL, which must be an absolute HTTP(S) URL with a host.</summary>
+    /// <param name="serverUrl">The server URL from the options, or the default server URL.</param>
+    /// <returns>The parsed server URL.</returns>
+    /// <exception cref="ArgumentException">If <paramref name="serverUrl" /> is not an absolute http or https URL.</exception>
+    internal static Uri ParseServerUrl(string serverUrl) {
+      if (!Uri.TryCreate(serverUrl, UriKind.Absolute, out var uri) ||
+          (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps) ||
+          string.IsNullOrEmpty(uri.Host)) {
+        throw new ArgumentException(
+              $"Option {nameof(BaseClientOptions.ServerUrl)} must be an absolute http or https URL",
+              nameof(BaseClientOptions.ServerUrl));
+      }
+
+      return uri;
+    }
+
     /// <summary>Throws an <see cref="ArgumentException" /> unless the proxy is unset or an absolute HTTP(S) URL.</summary>
     /// <param name="proxy">The configured proxy URL, or <c>null</c>.</param>
     /// <exception cref="ArgumentException">If <paramref name="proxy" /> is not an absolute http or https URL.</exception>

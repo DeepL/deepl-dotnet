@@ -113,7 +113,10 @@ namespace DeepL {
     /// </param>
     /// <param name="options">Additional options controlling client behaviour.</param>
     /// <exception cref="ArgumentNullException">If authKey argument is null.</exception>
-    /// <exception cref="ArgumentException">If authKey argument is empty.</exception>
+    /// <exception cref="ArgumentException">
+    ///   If authKey argument is empty, or the <see cref="BaseClientOptions.ServerUrl" /> option is not an absolute
+    ///   http or https URL.
+    /// </exception>
     /// <remarks>
     ///   This function does not establish a connection to the DeepL API. To check connectivity, use
     ///   <see cref="GetUsageAsync" />.
@@ -131,7 +134,7 @@ namespace DeepL {
         throw new ArgumentException($"{nameof(authKey)} is empty");
       }
 
-      var serverUrl = new Uri(
+      var serverUrl = DeepLHttpClient.ParseServerUrl(
             options.ServerUrl ?? (IsFreeAccountAuthKey(authKey) ? DeepLServerUrlFree : DeepLServerUrl));
 
       _client = DeepLHttpClient.Create(authKey, serverUrl, options);
