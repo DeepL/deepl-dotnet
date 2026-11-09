@@ -313,16 +313,12 @@ namespace DeepL {
 
     /// <summary>
     ///   Adds the extra body parameters of the options last, replacing fields with the same key; a <c>null</c> value
-    ///   removes the field.
+    ///   is sent as JSON <c>null</c>.
     /// </summary>
     private static void AddExtraBodyParameters(Dictionary<string, object?> requestData, BaseRequestOptions? options) {
       if (options?.ExtraBodyParameters == null) return;
       foreach (var pair in options.ExtraBodyParameters) {
-        if (pair.Value == null) {
-          requestData.Remove(pair.Key);
-        } else {
-          requestData[pair.Key] = pair.Value;
-        }
+        requestData[pair.Key] = pair.Value;
       }
     }
 

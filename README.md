@@ -228,8 +228,8 @@ The following options are only used if `TagHandling` is set to `'xml'`:
 - `ExtraBodyParameters`: `Dictionary<string, object?>` of extra parameters to pass in the JSON body of the HTTP
   request. Keys in this dictionary will be added to the request body and replace built-in parameters with the same
   key, including `text`. Each value is sent with its JSON type, for example
-  `new Dictionary<string, object?> { ["show_billed_characters"] = false }`; a `null` value removes that key from the
-  body. Mostly used by DeepL employees to test functionality, or for beta programs.
+  `new Dictionary<string, object?> { ["show_billed_characters"] = false }`; a `null` value is sent as JSON `null`.
+  Mostly used by DeepL employees to test functionality, or for beta programs.
 
 For a detailed explanation of the XML handling options, see the [API documentation][api-docs-xml-handling].
 
@@ -294,7 +294,7 @@ result = await client.RephraseTextAsync("A rainbouw has seven colours.", "EN-US"
 
 `targetLanguageCode` may be omitted (it defaults to `null`). `TextRephraseOptions` also has
 `ExtraBodyParameters`: key-value pairs added last to the JSON request body with their JSON types,
-replacing built-in parameters with the same key (a `null` value removes the key).
+replacing built-in parameters with the same key (a `null` value is sent as JSON `null`).
 
 To only fix grammar and spelling errors without otherwise rephrasing the text, use
 `CorrectTextAsync()`. It takes the same text argument (a string or a list of strings), an

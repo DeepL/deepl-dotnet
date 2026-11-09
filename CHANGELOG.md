@@ -155,6 +155,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   option is not an absolute `http` or `https` URL. An unparsable URL threw a `UriFormatException` before, and another
   scheme, for example `ftp://`, was accepted and failed only at the first request. Catch `ArgumentException` instead
   of `UriFormatException`.
+- **Breaking:** a `null` value in `ExtraBodyParameters` is now sent as JSON `null` in JSON request bodies, instead of
+  removing the key (including a field the library sets). Leave the key out to not send it. In the multipart body of
+  a document upload, a `null` value still removes the key.
 
 ### Removed
 - Removed `Usage.Document` and `Usage.TeamDocument`; the API no longer returns document usage. `Usage.ToString()` no

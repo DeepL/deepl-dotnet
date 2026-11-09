@@ -324,8 +324,13 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
-    public async Task NullExtraBodyParameterRemovesTheField() {
-      ExpectJsonFields(HttpMethod.Post, "v2/translate", ("target_lang", "de"), ("text", new[] { "Hello" }))
+    public async Task SendsNullExtraBodyParameterAsJsonNull() {
+      ExpectJsonFields(
+                  HttpMethod.Post,
+                  "v2/translate",
+                  ("target_lang", "de"),
+                  ("text", new[] { "Hello" }),
+                  ("show_billed_characters", null!))
             .RespondJson(Reply);
       await CreateClient().TranslateTextAsync(
             "Hello",

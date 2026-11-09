@@ -389,7 +389,7 @@ namespace DeepL {
                   options?.TranslationMemory,
                   options?.GlossaryIds,
                   options?.StyleProfile)
-            .Select(pair => (pair.Key, pair.Value is string[] values ? string.Join(",", values) : (string)pair.Value))
+            .Select(pair => (pair.Key, pair.Value is string[] values ? string.Join(",", values) : (string)pair.Value!))
             .ToList();
 
       if (options?.FormalityValue != null) {
@@ -688,7 +688,7 @@ namespace DeepL {
     /// <param name="options">Extra <see cref="TextTranslateOptions" /> influencing translation.</param>
     /// <returns>Enumerable of tuples containing the parameters to include in HTTP request.</returns>
     /// <exception cref="ArgumentException">If the specified languages or options are invalid.</exception>
-    private static Dictionary<string, object> CreateHttpParams(
+    private static Dictionary<string, object?> CreateHttpParams(
           string? sourceLanguageCode,
           string targetLanguageCode,
           TextTranslateOptions? options) {
@@ -806,7 +806,7 @@ namespace DeepL {
     /// <param name="styleProfileId">Optional ID of style profile to use for translation.</param>
     /// <returns>Dictionary of the parameters, in insertion order.</returns>
     /// <exception cref="ArgumentException">If the specified languages or options are invalid.</exception>
-    private static Dictionary<string, object> CreateCommonHttpParams(
+    private static Dictionary<string, object?> CreateCommonHttpParams(
           string? sourceLanguageCode,
           string targetLanguageCode,
           Formality? formality,
@@ -820,7 +820,7 @@ namespace DeepL {
 
       CheckValidLanguages(sourceLanguageCode, targetLanguageCode);
 
-      var bodyParams = new Dictionary<string, object> { ["target_lang"] = targetLanguageCode };
+      var bodyParams = new Dictionary<string, object?> { ["target_lang"] = targetLanguageCode };
       if (sourceLanguageCode != null) {
         bodyParams["source_lang"] = sourceLanguageCode;
       }
@@ -919,7 +919,7 @@ namespace DeepL {
       sourceLanguageCode = LanguageCode.RemoveRegionalVariant(sourceLanguageCode);
       targetLanguageCode = LanguageCode.RemoveRegionalVariant(targetLanguageCode);
 
-      var requestData = new Dictionary<string, object> {
+      var requestData = new Dictionary<string, object?> {
             ["name"] = name,
             ["source_lang"] = sourceLanguageCode,
             ["target_lang"] = targetLanguageCode,
@@ -1010,7 +1010,7 @@ namespace DeepL {
           string? targetLanguageCode = null,
           TextRephraseOptions? options = null,
           CancellationToken cancellationToken = default) {
-      var requestData = new Dictionary<string, object>();
+      var requestData = new Dictionary<string, object?>();
       if (targetLanguageCode != null) {
         CheckValidLanguages(null, targetLanguageCode);
         requestData["target_lang"] = targetLanguageCode;
@@ -1048,7 +1048,7 @@ namespace DeepL {
           string? targetLanguageCode = null,
           CorrectTextOptions? options = null,
           CancellationToken cancellationToken = default) {
-      var requestData = new Dictionary<string, object>();
+      var requestData = new Dictionary<string, object?>();
       if (targetLanguageCode != null) {
         CheckValidLanguages(null, targetLanguageCode);
         requestData["target_lang"] = targetLanguageCode;
@@ -1072,7 +1072,7 @@ namespace DeepL {
     /// <exception cref="DeepLException">If the response holds fewer improvements than texts were sent.</exception>
     private async Task<WriteResult[]> WriteAsync(
           string path,
-          Dictionary<string, object> requestData,
+          Dictionary<string, object?> requestData,
           List<string> texts,
           BaseRequestOptions? options,
           CancellationToken cancellationToken) {
@@ -1307,14 +1307,14 @@ namespace DeepL {
         throw new ArgumentException($"Parameter {nameof(contentLength)} must be greater than 0");
       }
 
-      var sourceFile = new Dictionary<string, object> {
+      var sourceFile = new Dictionary<string, object?> {
         ["file_name"] = fileName,
         ["content_length"] = contentLength
       };
       if (options?.ContentType != null) sourceFile["content_type"] = options.ContentType;
-      var requestData = new Dictionary<string, object> { ["source_file"] = sourceFile };
+      var requestData = new Dictionary<string, object?> { ["source_file"] = sourceFile };
       if (options?.DisplayName != null) {
-        requestData["parameters"] = new Dictionary<string, object> { ["display_name"] = options.DisplayName };
+        requestData["parameters"] = new Dictionary<string, object?> { ["display_name"] = options.DisplayName };
       }
 
       AddExtraBodyParameters(requestData, options);
@@ -1811,7 +1811,7 @@ namespace DeepL {
         throw new ArgumentException($"Parameter {nameof(language)} must not be empty");
       }
 
-      var requestData = new Dictionary<string, object> { ["name"] = name, ["language"] = language };
+      var requestData = new Dictionary<string, object?> { ["name"] = name, ["language"] = language };
       if (configuredRules != null) requestData["configured_rules"] = configuredRules;
       if (customInstructions != null) requestData["custom_instructions"] = customInstructions;
       AddExtraBodyParameters(requestData, options);
@@ -1894,7 +1894,7 @@ namespace DeepL {
         throw new ArgumentException($"Parameter {nameof(name)} must not be empty");
       }
 
-      var requestData = new Dictionary<string, object> { ["name"] = name };
+      var requestData = new Dictionary<string, object?> { ["name"] = name };
       AddExtraBodyParameters(requestData, options);
       using var responseMessage =
             await _client.ApiPatchJsonAsync($"v3/style_rules/{Uri.EscapeDataString(styleId)}", cancellationToken, requestData, SerializationOptions)
@@ -2034,7 +2034,7 @@ namespace DeepL {
         throw new ArgumentNullException(nameof(configuredRules));
       }
 
-      var requestData = new Dictionary<string, object>();
+      var requestData = new Dictionary<string, object?>();
       foreach (var category in configuredRules) {
         requestData[category.Key] = category.Value;
       }
@@ -2158,7 +2158,7 @@ namespace DeepL {
         throw new ArgumentException($"Parameter {nameof(prompt)} must not be empty");
       }
 
-      var requestData = new Dictionary<string, object> { ["label"] = label, ["prompt"] = prompt };
+      var requestData = new Dictionary<string, object?> { ["label"] = label, ["prompt"] = prompt };
       if (sourceLanguage != null) requestData["source_language"] = sourceLanguage;
       AddExtraBodyParameters(requestData, options);
       using var responseMessage = await _client
@@ -2403,7 +2403,7 @@ namespace DeepL {
         throw new ArgumentException($"Parameter {nameof(prompt)} must not be empty");
       }
 
-      var requestData = new Dictionary<string, object> { ["label"] = label, ["prompt"] = prompt };
+      var requestData = new Dictionary<string, object?> { ["label"] = label, ["prompt"] = prompt };
       if (sourceLanguage != null) requestData["source_language"] = sourceLanguage;
       AddExtraBodyParameters(requestData, options);
       using var responseMessage = await _client
@@ -2823,7 +2823,7 @@ namespace DeepL {
           IEnumerable<SpokenTermsEntries> termLists,
           CreateSpokenTermsOptions? options = null,
           CancellationToken cancellationToken = default) {
-      var requestData = new Dictionary<string, object> {
+      var requestData = new Dictionary<string, object?> {
             ["name"] = name, ["term_lists"] = CreateSpokenTermsListsBody(termLists)
       };
       AddExtraBodyParameters(requestData, options);
@@ -2870,7 +2870,7 @@ namespace DeepL {
           CancellationToken cancellationToken = default) {
       var path = SpokenTermsPath(spokenTermsId);
       // With neither field set the body is {} and the API reports the error.
-      var requestData = new Dictionary<string, object>();
+      var requestData = new Dictionary<string, object?>();
       if (options?.Name != null) requestData["name"] = options.Name;
       if (options?.TermLists != null) requestData["term_lists"] = CreateSpokenTermsListsBody(options.TermLists);
       AddExtraBodyParameters(requestData, options);
@@ -2919,7 +2919,7 @@ namespace DeepL {
           SpokenTermsEntries entries,
           ReplaceSpokenTermsListOptions? options = null,
           CancellationToken cancellationToken = default) {
-      var requestData = CreateSpokenTermsListBody(entries).ToDictionary(pair => pair.Key, pair => (object)pair.Value);
+      var requestData = CreateSpokenTermsListBody(entries).ToDictionary(pair => pair.Key, pair => (object?)pair.Value);
       AddExtraBodyParameters(requestData, options);
       using var responseMessage = await _client
             .ApiPutJsonAsync(
@@ -2996,7 +2996,7 @@ namespace DeepL {
 
       if (!glossaryDicts.Any()) throw new ArgumentException("Parameter dictionaries must not be empty");
 
-      var requestData = new Dictionary<string, object> {
+      var requestData = new Dictionary<string, object?> {
             ["name"] = name,
             ["dictionaries"] = glossaryDicts
                   .Select(dictionary => CreateGlossaryDictionaryBody(
@@ -3054,7 +3054,7 @@ namespace DeepL {
       }
 
       var csvString = await new StreamReader(csvFile).ReadToEndAsync().ConfigureAwait(false);
-      var requestData = new Dictionary<string, object> {
+      var requestData = new Dictionary<string, object?> {
             ["name"] = name,
             ["dictionaries"] = new[] {
                   CreateGlossaryDictionaryBody(sourceLanguageCode, targetLanguageCode, csvString, "csv")
@@ -3447,7 +3447,7 @@ namespace DeepL {
         throw new ArgumentException($"Parameter {nameof(targetLanguageCode)} must not be empty");
       }
 
-      var requestData = new Dictionary<string, object> {
+      var requestData = new Dictionary<string, object?> {
             ["source_lang"] = sourceLanguageCode,
             ["target_lang"] = targetLanguageCode,
             ["entries"] = entries,
@@ -3488,7 +3488,7 @@ namespace DeepL {
         throw new ArgumentException($"Parameter {nameof(name)} must not be empty");
       }
 
-      var requestData = new Dictionary<string, object> { ["name"] = name };
+      var requestData = new Dictionary<string, object?> { ["name"] = name };
       AddExtraBodyParameters(requestData, options);
       using var responseMessage = await _client
             .ApiPatchJsonAsync(MultilingualGlossaryPath(glossaryId), cancellationToken, requestData, SerializationOptions)
@@ -3524,7 +3524,7 @@ namespace DeepL {
         throw new ArgumentException($"Parameter {nameof(glossaryId)} must not be empty");
       }
 
-      var requestData = new Dictionary<string, object>();
+      var requestData = new Dictionary<string, object?>();
       if (options?.Name != null) requestData["name"] = options.Name;
       if (options?.Dictionaries != null) {
         requestData["dictionaries"] = options.Dictionaries.Select(
@@ -3752,7 +3752,7 @@ namespace DeepL {
         throw new ArgumentException($"Parameter {nameof(targetLanguageCode)} must not be empty");
       }
 
-      var requestData = new Dictionary<string, object> {
+      var requestData = new Dictionary<string, object?> {
             ["dictionaries"] = new[] {
                   CreateGlossaryDictionaryBody(sourceLanguageCode, targetLanguageCode, entries, entriesFormat)
             }
@@ -4059,10 +4059,10 @@ namespace DeepL {
     /// <param name="name">Name of the style profile, or <c>null</c> to leave it out.</param>
     /// <param name="options">Optional fields of the style profile.</param>
     /// <returns>Dictionary to serialize as the JSON body.</returns>
-    private static Dictionary<string, object> CreateStyleProfileBody(
+    private static Dictionary<string, object?> CreateStyleProfileBody(
           string? name,
           CreateStyleProfileOptions? options) {
-      var body = new Dictionary<string, object>();
+      var body = new Dictionary<string, object?>();
       if (name != null) body["name"] = name;
       if (options == null) return body;
       if (options.Description != null) body["description"] = options.Description;
@@ -4119,16 +4119,12 @@ namespace DeepL {
 
     /// <summary>
     ///   Adds the extra body parameters of the options last, replacing fields with the same key; a <c>null</c> value
-    ///   removes the field.
+    ///   is sent as JSON <c>null</c>.
     /// </summary>
-    private static void AddExtraBodyParameters(Dictionary<string, object> requestData, BaseRequestOptions? options) {
+    private static void AddExtraBodyParameters(Dictionary<string, object?> requestData, BaseRequestOptions? options) {
       if (options?.ExtraBodyParameters == null) return;
       foreach (var pair in options.ExtraBodyParameters) {
-        if (pair.Value == null) {
-          requestData.Remove(pair.Key);
-        } else {
-          requestData[pair.Key] = pair.Value;
-        }
+        requestData[pair.Key] = pair.Value;
       }
     }
 

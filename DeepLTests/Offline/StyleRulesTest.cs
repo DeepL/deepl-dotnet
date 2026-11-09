@@ -129,7 +129,8 @@ namespace DeepLTests.Offline {
 
     [Fact]
     public async Task SendsTypedExtraBodyParametersAsJson() {
-      ExpectJson(Patch, "v3/style_rules/s1", "{\"flag\":true,\"count\":2,\"ids\":[\"a\",\"b\"]}").RespondJson(RuleReply);
+      ExpectJson(Patch, "v3/style_rules/s1", "{\"name\":null,\"flag\":true,\"count\":2,\"ids\":[\"a\",\"b\"]}")
+            .RespondJson(RuleReply);
       await CreateClient().UpdateStyleRuleNameAsync(
             "s1",
             "New",

@@ -218,6 +218,16 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
+    public async Task TestSendsNullExtraBodyParameterAsJsonNull() {
+      ExpectJson(HttpMethod.Post, "v2/admin/developer-keys", @"{""label"":null}").RespondJson(DeveloperKeyJson);
+      await CreateAdminClient().CreateDeveloperKeyAsync(
+            new CreateDeveloperKeyOptions {
+              Label = "label",
+              ExtraBodyParameters = new Dictionary<string, object?> { ["label"] = null }
+            });
+    }
+
+    [Fact]
     public async Task TestRejectsEmptyKeyIds() {
       var client = CreateAdminClient();
       var limits = new DeveloperKeyUsageLimitsUpdate { Characters = 0 };
