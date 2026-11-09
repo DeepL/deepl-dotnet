@@ -165,11 +165,9 @@ namespace DeepLTests.Offline {
                 new TextTranslateOptions { CustomInstructions = { "Use informal language", "Be concise" } },
                 ("custom_instructions", new[] { "Use informal language", "Be concise" }));
 
-#pragma warning disable CS0618 // The deprecated *Id properties stay covered by the existing tests.
     [Fact]
-    public Task SendsGlossaryId() =>
-          Translate(new TextTranslateOptions { GlossaryId = "g1" }, ("glossary_id", "g1"));
-#pragma warning restore CS0618
+    public Task SendsGlossary() =>
+          Translate(new TextTranslateOptions { Glossary = "g1" }, ("glossary_id", "g1"));
 
     [Fact]
     public Task SendsGlossaryOfGlossaryInfo() {
@@ -223,10 +221,8 @@ namespace DeepLTests.Offline {
       return Translate(new TextTranslateOptions(glossaries), ("glossary_ids", new[] { "g1", "g2" }));
     }
 
-#pragma warning disable CS0618
     [Fact]
-    public Task SendsStyleId() => Translate(new TextTranslateOptions { StyleId = "s1" }, ("style_id", "s1"));
-#pragma warning restore CS0618
+    public Task SendsStyleRule() => Translate(new TextTranslateOptions { StyleRule = "s1" }, ("style_id", "s1"));
 
     [Fact]
     public Task SendsStyleRuleOfStyleRuleInfo() {
@@ -257,14 +253,12 @@ namespace DeepLTests.Offline {
       return Translate(new TextTranslateOptions(styleProfile), ("style_profile_id", "sp1"));
     }
 
-#pragma warning disable CS0618
     [Fact]
-    public Task SendsTranslationMemoryIdAndThreshold() =>
+    public Task SendsTranslationMemoryAndThreshold() =>
           Translate(
-                new TextTranslateOptions { TranslationMemoryId = "tm1", TranslationMemoryThreshold = 80 },
+                new TextTranslateOptions { TranslationMemory = "tm1", TranslationMemoryThreshold = 80 },
                 ("translation_memory_id", "tm1"),
                 ("translation_memory_threshold", 80));
-#pragma warning restore CS0618
 
     [Fact]
     public Task SendsTranslationMemoryOfTranslationMemoryInfoAndThreshold() {

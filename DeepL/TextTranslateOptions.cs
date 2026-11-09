@@ -2,7 +2,6 @@
 // Use of this source code is governed by an MIT
 // license that can be found in the LICENSE file.
 
-using System;
 using System.Collections.Generic;
 using DeepL.Model;
 
@@ -93,11 +92,6 @@ namespace DeepL {
     /// <remarks>Cannot be used together with <see cref="GlossaryIds" />.</remarks>
     public string? Glossary { get; set; }
 
-    /// <summary>Specifies the ID of a glossary to use with the translation.</summary>
-    /// <remarks>Cannot be used together with <see cref="GlossaryIds" />.</remarks>
-    [Obsolete("Use Glossary instead. Will be removed in the next major version.")]
-    public string? GlossaryId { get => Glossary; set => Glossary = value; }
-
     /// <summary>
     ///   Specifies multiple glossaries to use with the translation (maximum of 5): their IDs, or
     ///   <see cref="GlossaryInfo" /> and <see cref="MultilingualGlossaryInfo" /> objects, which convert to their IDs.
@@ -116,10 +110,6 @@ namespace DeepL {
     /// </summary>
     public string? StyleRule { get; set; }
 
-    /// <summary>Specifies the ID of a style rule to use with the translation.</summary>
-    [Obsolete("Use StyleRule instead. Will be removed in the next major version.")]
-    public string? StyleId { get => StyleRule; set => StyleRule = value; }
-
     /// <summary>
     ///   Specifies a style profile to use with the translation: its ID, or a <see cref="Model.StyleProfile" />, which
     ///   converts to its ID. The style profile applies its glossaries, style rules and translation memories through
@@ -133,10 +123,6 @@ namespace DeepL {
     ///   which converts to its ID.
     /// </summary>
     public string? TranslationMemory { get; set; }
-
-    /// <summary>Specifies the ID of a translation memory to use with the translation.</summary>
-    [Obsolete("Use TranslationMemory instead. Will be removed in the next major version.")]
-    public string? TranslationMemoryId { get => TranslationMemory; set => TranslationMemory = value; }
 
     /// <summary>Specifies the minimum similarity threshold for translation memory matches (0-100).</summary>
     public int? TranslationMemoryThreshold { get; set; }

@@ -112,11 +112,9 @@ namespace DeepLTests.Offline {
                 new DocumentTranslateOptions { Formality = Formality.Less, FormalityValue = "formal" },
                 ("formality", null, "formal"));
 
-#pragma warning disable CS0618 // The deprecated *Id properties stay covered by the existing tests.
     [Fact]
-    public Task SendsStyleId() =>
-          Upload(new DocumentTranslateOptions { StyleId = "s1" }, ("style_id", null, "s1"));
-#pragma warning restore CS0618
+    public Task SendsStyleRule() =>
+          Upload(new DocumentTranslateOptions { StyleRule = "s1" }, ("style_id", null, "s1"));
 
     [Fact]
     public Task SendsStyleRuleOfStyleRuleInfo() {
@@ -141,14 +139,12 @@ namespace DeepLTests.Offline {
       return Upload(new DocumentTranslateOptions(styleProfile), ("style_profile_id", null, "sp1"));
     }
 
-#pragma warning disable CS0618
     [Fact]
-    public Task SendsTranslationMemoryIdAndThreshold() =>
+    public Task SendsTranslationMemoryAndThreshold() =>
           Upload(
-                new DocumentTranslateOptions { TranslationMemoryId = "tm1", TranslationMemoryThreshold = 90 },
+                new DocumentTranslateOptions { TranslationMemory = "tm1", TranslationMemoryThreshold = 90 },
                 ("translation_memory_id", null, "tm1"),
                 ("translation_memory_threshold", null, "90"));
-#pragma warning restore CS0618
 
     [Fact]
     public Task SendsTranslationMemoryOfTranslationMemoryInfoAndThreshold() {
@@ -248,7 +244,7 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
-    public async Task SendsGlossaryIdWithSourceLanguage() {
+    public async Task SendsGlossaryWithSourceLanguage() {
       ExpectMultipart(
                   "v2/document",
                   ("target_lang", null, "de"),
@@ -261,9 +257,7 @@ namespace DeepLTests.Offline {
             "a.txt",
             "EN",
             "DE",
-#pragma warning disable CS0618
-            new DocumentTranslateOptions { GlossaryId = "g1" });
-#pragma warning restore CS0618
+            new DocumentTranslateOptions { Glossary = "g1" });
     }
 
     [Fact]

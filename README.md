@@ -176,9 +176,6 @@ foreach (var formality in new[] { Formality.Less, Formality.More }) {
   or `CustomInstructions`; the API rejects such a request.
 - `TranslationMemory`: specifies a translation memory to use with translation:
   its ID, or a `TranslationMemoryInfo`.
-- `GlossaryId`, `StyleId` and `TranslationMemoryId` (obsolete): the former names
-  of `Glossary`, `StyleRule` and `TranslationMemory`, taking only the ID. They
-  will be removed in the next major version.
 - `TranslationMemoryThreshold`: specifies the minimum matching percentage
   (0 to 100) for translation memory matches. We recommend a minimum
   threshold of 75%.
@@ -403,8 +400,6 @@ unknown status keeps polling, pass a `TimeSpan` timeout to `TranslateDocumentWai
   `CustomInstructions` does not exist for documents. An unknown style profile is not rejected at upload: the
   translation fails with a `DocumentTranslationException` whose message contains `Style profile not found.`.
 - `TranslationMemory`:  same as in [Text translation options](#text-translation-options).
-- `GlossaryId`, `StyleId` and `TranslationMemoryId` (obsolete): the former names of `Glossary`, `StyleRule` and
-  `TranslationMemory`, taking only the ID. They will be removed in the next major version.
 - `TranslationMemoryThreshold`:  same as in [Text translation options](#text-translation-options).
 - `Filename`: the name of the input file sent with the upload; its extension determines the file type. Required by
   the `Stream` overloads without an `inputFileName` argument; the `FileInfo` overloads send it instead of the file's

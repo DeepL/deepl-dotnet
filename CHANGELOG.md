@@ -190,6 +190,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   to retrieve the supported languages. `LanguageCode.RemoveRegionalVariant()` remains.
 - Removed `Usage.JsonFieldsStruct` and the `Usage(in Usage.JsonFieldsStruct)` constructor; `GetUsageAsync()` does not
   use them, and `Usage` no longer has a public constructor. Obtain `Usage` from `GetUsageAsync()`.
+- Removed the obsolete `GlossaryId`, `StyleId` and `TranslationMemoryId` properties of `TextTranslateOptions` and
+  `DocumentTranslateOptions`. Use `Glossary`, `StyleRule` and `TranslationMemory` instead; they take the same ID.
 
 ## [1.23.0] - 2026-11-02
 TL;DR: new APIs in this release: the Admin API, spoken terms, style profiles and text correction.
