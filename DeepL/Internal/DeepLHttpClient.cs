@@ -67,6 +67,12 @@ namespace DeepL.Internal {
     private readonly KeyValuePair<string, string?>[] _headers;
 
     /// <summary>
+    ///   Configured headers that .NET classes as content headers (for example Content-Language): they are attached to
+    ///   the content of requests with a body and are not sent on requests without one.
+    /// </summary>
+    private readonly KeyValuePair<string, string?>[] _contentHeaders;
+
+    /// <summary>
     ///   Headers for requests to pre-signed storage URLs, which are served by the Asset Store
     ///   rather than the DeepL API. Built from scratch rather than by removing
     ///   <c>Authorization</c> from <see cref="_headers" />, so neither the auth key nor any
@@ -108,10 +114,19 @@ namespace DeepL.Internal {
               $"HttpClient returned by {nameof(clientFactory)} was null");
       }
 
-      _headers = headers.ToArray();
+      var headerArray = headers.ToArray();
+      _headers = headerArray.Where(header => !IsContentHeader(header.Key)).ToArray();
+      _contentHeaders = headerArray.Where(header => IsContentHeader(header.Key)).ToArray();
       _storageHeaders = _headers
             .Where(header => string.Equals(header.Key, "User-Agent", StringComparison.OrdinalIgnoreCase))
             .ToArray();
+    }
+
+    /// <summary>Returns <c>true</c> if .NET does not accept the header name as a request header.</summary>
+    /// <param name="name">Header name.</param>
+    private static bool IsContentHeader(string name) {
+      using var probe = new HttpRequestMessage();
+      return !probe.Headers.TryAddWithoutValidation(name, "x");
     }
 
     /// <summary>
@@ -814,6 +829,14 @@ namespace DeepL.Internal {
           }
 
           requestMessage.Headers.Add(header.Key, header.Value);
+        }
+
+        // Content headers go on the request content, replacing the library's value; requests without a body skip them.
+        if (headers == null && requestMessage.Content != null) {
+          foreach (var header in _contentHeaders) {
+            requestMessage.Content.Headers.Remove(header.Key);
+            requestMessage.Content.Headers.Add(header.Key, header.Value);
+          }
         }
 
         // The body is read below, so that a body cut off mid-read is told apart from a failure to send.

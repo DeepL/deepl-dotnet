@@ -105,6 +105,23 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
+    public async Task SendsContentHeadersOnTheRequestContentAndSkipsThemWithoutBody() {
+      ExpectJsonFields(
+                  HttpMethod.Post,
+                  "v2/translate",
+                  ("text", new[] { "a" }),
+                  ("target_lang", "de"),
+                  ("show_billed_characters", true))
+            .With(request => request.Content!.Headers.ContentLanguage.Contains("de"))
+            .RespondJson("{\"translations\":[{\"detected_source_language\":\"EN\",\"text\":\"b\"}]}");
+      ExpectNoBody(HttpMethod.Get, "v2/usage").RespondJson(UsageReply);
+      var client = CreateClient(
+            options => options.Headers = new Dictionary<string, string?> { { "Content-Language", "de" } });
+      await client.TranslateTextAsync("a", null, "de");
+      await client.GetUsageAsync();
+    }
+
+    [Fact]
     public async Task KeepsTheSdksAcceptHeader() {
       ExpectNoBody(HttpMethod.Get, "v2/usage")
             .With(request => request.Headers.GetValues("Accept").SequenceEqual(new[] { "application/json" }))

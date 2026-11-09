@@ -147,6 +147,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   empty input file now throws before any request too, and cancellation through the `CancellationToken` is not
   wrapped. Code catching `DeepLException` still catches it; code catching a subclass such as `NotFoundException`
   must catch `TranslationMemoryJobException` and check `InnerException`.
+- Headers from the `Headers` option that .NET classes as content headers (for example `Content-Language` or
+  `Content-Encoding`) are now sent on the content of requests with a body, replacing the client's value, and are not
+  sent on requests without a body. Every request failed with a `ConnectionException` ("Unexpected request failure")
+  before.
 
 ### Removed
 - Removed `Usage.Document` and `Usage.TeamDocument`; the API no longer returns document usage. `Usage.ToString()` no

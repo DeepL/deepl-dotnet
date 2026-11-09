@@ -1595,7 +1595,10 @@ The available options:
   replaces the one the client sends by default. `Content-Type`,
   `Content-Length`, `Transfer-Encoding` and `Host` entries are ignored: the
   client sets these for the request it builds. An `Accept` entry is ignored on
-  requests for which the client sets its own. Pre-signed storage URLs
+  requests for which the client sets its own. Headers that .NET classes as
+  content headers (for example `Content-Language` or `Content-Encoding`) go on
+  the content of requests with a body and are not sent on requests without
+  one. Pre-signed storage URLs
   (translation memory upload and export download) get none of the caller's
   headers except `User-Agent`, and no `Authorization`.
 - `Proxy`: see [Proxy configuration](#proxy-configuration).
