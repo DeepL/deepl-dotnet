@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+TL;DR: this release has breaking changes. See [Upgrading to 2.0.0](upgrading_to_v2.md) for how to adapt.
+
 ### Added
 - Added the interfaces `ITextTranslator` (`TranslateTextAsync()`), `IDocumentTranslator` (`TranslateDocumentAsync()`,
   `TranslateDocumentUploadAsync()`, `TranslateDocumentGetStatusAsync()`, `TranslateDocumentWaitUntilDoneAsync()`,
@@ -269,6 +271,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   is now `TranslationMemoryJobStatus.Unknown`, with `"downloaded"` in `StatusValue`, and
   `WaitUntilTranslationMemoryJobDoneAsync()` keeps polling on it instead of returning. Compare `StatusValue` with
   `"downloaded"` where you compared `Status` with `TranslationMemoryJobStatus.Downloaded`.
+  Removing it also renumbers `TranslationMemoryJobStatus`: `Failed` is now 3 (was 4), `Expired` 4 (was 5) and
+  `Unknown` 5 (was 6). Code that stores or compares the numeric values must change.
 - Removed document minification: `DocumentTranslateOptions.EnableDocumentMinification`, `DocumentMinifier`,
   `IDocumentMinifier`, `DocumentMinificationException` and `DocumentDeminificationException`. Translate the document
   as is; the DeepL API accepts larger documents than when minification was added. A missing or unreadable input

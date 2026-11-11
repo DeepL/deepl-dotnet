@@ -27,6 +27,8 @@ build. It is tested on .NET 8 and .NET 10. Applications targeting .NET Core 3.1 
 that the `System.Text.Json` or `Microsoft.Extensions.Http` dependency does not support their target framework; these
 runtimes are not supported. The `SuppressTfmSupportBuildWarnings` MSBuild property silences the warning.
 
+Upgrading from 1.x? See [Upgrading to 2.0.0](upgrading_to_v2.md) for the breaking changes and how to adapt to them.
+
 Using the .NET command-line interface (CLI) tools:
 
 ```
