@@ -14,8 +14,8 @@ Upgrade to 1.23.0 first and fix the deprecation warnings it reports: many remova
 - Supported runtimes are .NET 8 and later, and .NET Framework 4.6.2 and later (through `netstandard2.0`).
 - .NET Core 3.1 and .NET 5 to 7 are not supported. They use the `netstandard2.0` build, which has no separate connect
   timeout (see `PerRetryConnectionTimeout` in the README) and does not honour cancellation while it copies a
-  translation memory export to a stream. Building for them reports a warning that the package "doesn't support"
-  the target framework, an error with `TreatWarningsAsErrors`. The `SuppressTfmSupportBuildWarnings` MSBuild
+  translation memory export to a stream. Building for them reports a warning that the `System.Text.Json` or
+  `Microsoft.Extensions.Http` dependency "doesn't support" the target framework, an error with `TreatWarningsAsErrors`. The `SuppressTfmSupportBuildWarnings` MSBuild
   property set to `true` silences it, at your own risk.
 - Dependencies: `Microsoft.Extensions.Http.Polly` is now `8.0.33` (still Polly 7) and `System.Text.Json` is `10.0.14`
   (`netstandard2.0` build only; `net8.0` uses the framework's own). If your application pins older versions of
@@ -374,7 +374,9 @@ For the creates it throws a `ConnectionException` with `ShouldRetry` set to `tru
 
 The overloads taking a `MultilingualGlossaryInfo`, `TranslationMemoryInfo`, `TranslationMemoryJob`, `StyleProfile` or
 `SpokenTerms` throw an `ArgumentNullException` for a `null` object, without sending a request. They threw a
-`NullReferenceException` before.
+`NullReferenceException` before. The exception is `ExportTranslationMemoryToFilepathAsync()`: it throws a
+`TranslationMemoryJobException` with an `ArgumentException` cause, like for an empty ID (see "File methods wrap
+failures").
 
 ### Error messages
 
