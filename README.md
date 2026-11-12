@@ -1437,9 +1437,10 @@ not return them; within `UsageLimits`, a `null` limit means unlimited.
 
 To avoid duplicate keys, `CreateDeveloperKeyAsync()` is retried only when the
 API cannot have processed the request: after HTTP 429, a failure to resolve
-the server name, a refused connection or a connect timeout. Server errors, other
-timeouts, broken connections and response bodies cut off mid-read are not
-retried. If it throws, check `ListDeveloperKeysAsync()` before trying again.
+the server name, a refused connection, an unreachable host or network or a
+connect timeout. Server errors, other timeouts, broken connections and response
+bodies cut off mid-read are not retried. If it throws, check
+`ListDeveloperKeysAsync()` before trying again.
 
 #### Retrieving usage analytics
 
@@ -1527,10 +1528,11 @@ connections), `false` for other HTTP statuses and for TLS, certificate and proxy
 failures, and `null` if unknown.
 Operations that create a resource are not safe to repeat after a server error
 or a timeout, because the resource may already exist; for them, `ShouldRetry`
-is `true` only for HTTP 429, name resolution failures, refused connections and
-connect timeouts, and for a response body cut off mid-read, which they do not
-retry themselves. They are `TranslateDocumentAsync()` and
-`TranslateDocumentUploadAsync()`, `DeepLAdminClient.CreateDeveloperKeyAsync()`,
+is `true` only for HTTP 429, name resolution failures, refused connections,
+unreachable hosts or networks and connect timeouts, and for a response body cut
+off mid-read, which they do not retry themselves. They are
+`TranslateDocumentAsync()` and `TranslateDocumentUploadAsync()`,
+`DeepLAdminClient.CreateDeveloperKeyAsync()`,
 the glossary, style rule, custom instruction, style profile and spoken terms
 creates, and `CreateTranslationMemoryImportAsync()` and
 `CreateTranslationMemoryExportAsync()`.
@@ -1582,8 +1584,8 @@ The available options:
   1.6 times the previous, at most 120 seconds, with ±23 % jitter. TLS,
   certificate and proxy failures are not retried. Operations that create a
   resource are retried only when the request was not sent: after HTTP 429, a
-  name resolution failure, a refused connection or a connect timeout (see
-  [Exceptions](#exceptions)).
+  name resolution failure, a refused connection, an unreachable host or network
+  or a connect timeout (see [Exceptions](#exceptions)).
 - `PerRetryConnectionTimeout`: the timeout of each attempt, by default 10
   seconds. An attempt may run longer, until the time the client would wait
   before retrying it (the backoff delay), when that is longer. On .NET 8 and

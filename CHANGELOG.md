@@ -170,6 +170,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   without sending a request. They threw a `NullReferenceException` before. `ExportTranslationMemoryToFilepathAsync()`
   throws a `TranslationMemoryJobException` with an `ArgumentException` cause instead, as for an empty ID. Catch
   `ArgumentException` instead of `NullReferenceException`.
+- **Breaking:** operations that create a resource, such as `CreateDeveloperKeyAsync()`, now also retry when
+  connecting fails because the host or network is unreachable, as they do for a refused connection. The request was
+  not sent, so a repeat is safe. They failed after one attempt before, and a failed create had `ShouldRetry` `false`;
+  it is `true` now.
 
 ### Removed
 - Removed `Usage.Document` and `Usage.TeamDocument`; the API no longer returns document usage. `Usage.ToString()` no

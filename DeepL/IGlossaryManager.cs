@@ -29,9 +29,9 @@ namespace DeepL {
     /// </exception>
     /// <remarks>
     ///   Because the request creates a resource, it is retried only when it was not sent: after HTTP 429, a failure to
-    ///   resolve the server name, a refused connection or a connect timeout. Server errors, other timeouts and broken
-    ///   connections are not retried. A response body cut off mid-read is not retried either, but the
-    ///   <see cref="ConnectionException" /> has <see cref="DeepLException.ShouldRetry" /> <c>true</c>.
+    ///   resolve the server name, a refused connection, an unreachable host or network or a connect timeout. Server
+    ///   errors, other timeouts and broken connections are not retried. A response body cut off mid-read is not retried
+    ///   either, but the <see cref="ConnectionException" /> has <see cref="DeepLException.ShouldRetry" /> <c>true</c>.
     /// </remarks>
     Task<MultilingualGlossaryInfo> CreateMultilingualGlossaryAsync(
           string name,
@@ -58,9 +58,9 @@ namespace DeepL {
     /// </exception>
     /// <remarks>
     ///   Because the request creates a resource, it is retried only when it was not sent: after HTTP 429, a failure to
-    ///   resolve the server name, a refused connection or a connect timeout. Server errors, other timeouts and broken
-    ///   connections are not retried. A response body cut off mid-read is not retried either, but the
-    ///   <see cref="ConnectionException" /> has <see cref="DeepLException.ShouldRetry" /> <c>true</c>.
+    ///   resolve the server name, a refused connection, an unreachable host or network or a connect timeout. Server
+    ///   errors, other timeouts and broken connections are not retried. A response body cut off mid-read is not retried
+    ///   either, but the <see cref="ConnectionException" /> has <see cref="DeepLException.ShouldRetry" /> <c>true</c>.
     /// </remarks>
     Task<MultilingualGlossaryInfo> CreateMultilingualGlossaryAsync(
           string name,
@@ -89,9 +89,9 @@ namespace DeepL {
     /// </exception>
     /// <remarks>
     ///   Because the request creates a resource, it is retried only when it was not sent: after HTTP 429, a failure to
-    ///   resolve the server name, a refused connection or a connect timeout. Server errors, other timeouts and broken
-    ///   connections are not retried. A response body cut off mid-read is not retried either, but the
-    ///   <see cref="ConnectionException" /> has <see cref="DeepLException.ShouldRetry" /> <c>true</c>.
+    ///   resolve the server name, a refused connection, an unreachable host or network or a connect timeout. Server
+    ///   errors, other timeouts and broken connections are not retried. A response body cut off mid-read is not retried
+    ///   either, but the <see cref="ConnectionException" /> has <see cref="DeepLException.ShouldRetry" /> <c>true</c>.
     /// </remarks>
     Task<MultilingualGlossaryInfo> CreateMultilingualGlossaryFromCsvAsync(
           string name,
@@ -121,9 +121,9 @@ namespace DeepL {
     /// </exception>
     /// <remarks>
     ///   Because the request creates a resource, it is retried only when it was not sent: after HTTP 429, a failure to
-    ///   resolve the server name, a refused connection or a connect timeout. Server errors, other timeouts and broken
-    ///   connections are not retried. A response body cut off mid-read is not retried either, but the
-    ///   <see cref="ConnectionException" /> has <see cref="DeepLException.ShouldRetry" /> <c>true</c>.
+    ///   resolve the server name, a refused connection, an unreachable host or network or a connect timeout. Server
+    ///   errors, other timeouts and broken connections are not retried. A response body cut off mid-read is not retried
+    ///   either, but the <see cref="ConnectionException" /> has <see cref="DeepLException.ShouldRetry" /> <c>true</c>.
     /// </remarks>
     Task<MultilingualGlossaryInfo> CreateMultilingualGlossaryFromCsvAsync(
           string name,
@@ -1099,9 +1099,9 @@ namespace DeepL {
     /// </exception>
     /// <remarks>
     ///   Because the request creates a resource, it is retried only when it was not sent: after HTTP 429, a failure to
-    ///   resolve the server name, a refused connection or a connect timeout. Server errors, other timeouts and broken
-    ///   connections are not retried. A response body cut off mid-read is not retried either, but the
-    ///   <see cref="ConnectionException" /> has <see cref="DeepLException.ShouldRetry" /> <c>true</c>.
+    ///   resolve the server name, a refused connection, an unreachable host or network or a connect timeout. Server
+    ///   errors, other timeouts and broken connections are not retried. A response body cut off mid-read is not retried
+    ///   either, but the <see cref="ConnectionException" /> has <see cref="DeepLException.ShouldRetry" /> <c>true</c>.
     /// </remarks>
     Task<GlossaryInfo> CreateGlossaryAsync(
           string name,
@@ -1129,9 +1129,9 @@ namespace DeepL {
     /// </exception>
     /// <remarks>
     ///   Because the request creates a resource, it is retried only when it was not sent: after HTTP 429, a failure to
-    ///   resolve the server name, a refused connection or a connect timeout. Server errors, other timeouts and broken
-    ///   connections are not retried. A response body cut off mid-read is not retried either, but the
-    ///   <see cref="ConnectionException" /> has <see cref="DeepLException.ShouldRetry" /> <c>true</c>.
+    ///   resolve the server name, a refused connection, an unreachable host or network or a connect timeout. Server
+    ///   errors, other timeouts and broken connections are not retried. A response body cut off mid-read is not retried
+    ///   either, but the <see cref="ConnectionException" /> has <see cref="DeepLException.ShouldRetry" /> <c>true</c>.
     /// </remarks>
     Task<GlossaryInfo> CreateGlossaryFromCsvAsync(
           string name,

@@ -288,10 +288,11 @@ namespace DeepL.Internal {
 
     /// <summary>
     ///   Whether the request failed before it was sent: the server name could not be resolved, the connection was
-    ///   refused or connecting timed out.
+    ///   refused, the host or network was unreachable or connecting timed out.
     /// </summary>
     private static bool IsCertainlyNotSent(HttpRequestException exception) =>
-          IsNameResolutionFailure(exception) || IsConnectionRefused(exception) || IsConnectTimeout(exception);
+          IsNameResolutionFailure(exception) || IsConnectionRefused(exception) ||
+          IsHostOrNetworkUnreachable(exception) || IsConnectTimeout(exception);
 
     /// <summary>
     ///   Whether the request failed because the server name could not be resolved, so it was never sent.
@@ -331,6 +332,26 @@ namespace DeepL.Internal {
           case IOException _:
             return false;
           case SocketException socketException when socketException.SocketErrorCode == SocketError.TimedOut:
+            return true;
+        }
+      }
+
+      return false;
+    }
+
+    /// <summary>
+    ///   Whether the connection failed because the host or network is unreachable, so the request was never sent.
+    /// </summary>
+    private static bool IsHostOrNetworkUnreachable(HttpRequestException exception) {
+      for (Exception? inner = exception; inner != null; inner = inner.InnerException) {
+        switch (inner) {
+          // As for a connect timeout: the same error while sending or receiving is wrapped in an IOException.
+          case IOException _:
+            return false;
+          case SocketException socketException
+                when socketException.SocketErrorCode == SocketError.HostUnreachable ||
+                     socketException.SocketErrorCode == SocketError.NetworkUnreachable ||
+                     socketException.SocketErrorCode == SocketError.NetworkDown:
             return true;
         }
       }
@@ -636,7 +657,8 @@ namespace DeepL.Internal {
     /// <param name="bodyParams">Parameters to embed in the HTTP request body.</param>
     /// <param name="retryOnlyUnprocessed">
     ///   <c>true</c> for requests that are unsafe to repeat: they are retried only after HTTP 429, a name resolution
-    ///   failure, a refused connection or a connect timeout, not after server errors or other timeouts.
+    ///   failure, a refused connection, an unreachable host or network or a connect timeout, not after server errors or
+    ///   other timeouts.
     /// </param>
     /// <returns><see cref="HttpResponseMessage" /> received from DeepL API.</returns>
     /// <exception cref="ConnectionException">If any failure occurs while sending the request.</exception>
@@ -667,7 +689,8 @@ namespace DeepL.Internal {
     /// <param name="jsonOptions">Optional JSON serializer options.</param>
     /// <param name="retryOnlyUnprocessed">
     ///   <c>true</c> for requests that are unsafe to repeat: they are retried only after HTTP 429, a name resolution
-    ///   failure, a refused connection or a connect timeout, not after server errors or other timeouts.
+    ///   failure, a refused connection, an unreachable host or network or a connect timeout, not after server errors or
+    ///   other timeouts.
     /// </param>
     /// <returns><see cref="HttpResponseMessage" /> received from DeepL API.</returns>
     /// <exception cref="ConnectionException">If any failure occurs while sending the request.</exception>
@@ -740,7 +763,8 @@ namespace DeepL.Internal {
     /// <param name="fileName">If <see cref="file" /> is used, the name of file.</param>
     /// <param name="retryOnlyUnprocessed">
     ///   <c>true</c> for requests that are unsafe to repeat: they are retried only after HTTP 429, a name resolution
-    ///   failure, a refused connection or a connect timeout, not after server errors or other timeouts.
+    ///   failure, a refused connection, an unreachable host or network or a connect timeout, not after server errors or
+    ///   other timeouts.
     /// </param>
     /// <returns><see cref="HttpResponseMessage" /> received from DeepL API.</returns>
     /// <exception cref="ConnectionException">If any failure occurs while sending the request.</exception>

@@ -31,8 +31,8 @@ namespace DeepL {
     ///   proxy failures; <c>null</c> if unknown. For operations that create a resource (document upload, developer
     ///   key, glossary, style rule, custom instruction, style profile, spoken terms and translation memory import and
     ///   export creates), it is <c>true</c> only when the request was certainly not processed: HTTP 429, a name
-    ///   resolution failure, a refused connection or a connect timeout. A response body cut off mid-read is always
-    ///   <c>true</c>, also for these creates, which do not retry it themselves.
+    ///   resolution failure, a refused connection, an unreachable host or network or a connect timeout. A response body
+    ///   cut off mid-read is always <c>true</c>, also for these creates, which do not retry it themselves.
     /// </summary>
     public bool? ShouldRetry { get; internal set; }
   }

@@ -253,8 +253,8 @@ namespace DeepL {
     /// <summary>
     ///   Creates a developer key in the organization. To avoid creating duplicate keys, the request is retried only
     ///   when the API cannot have processed it: after HTTP 429 (too many requests), a failure to resolve the server
-    ///   name, a refused connection or a connect timeout. Server errors, other timeouts, broken connections and
-    ///   response bodies cut off mid-read are not retried; after such a
+    ///   name, a refused connection, an unreachable host or network or a connect timeout. Server errors, other
+    ///   timeouts, broken connections and response bodies cut off mid-read are not retried; after such a
     ///   <see cref="ConnectionException" /> or <see cref="DeepLException" />, call <see cref="ListDeveloperKeysAsync" />
     ///   to check whether the key was created.
     /// </summary>

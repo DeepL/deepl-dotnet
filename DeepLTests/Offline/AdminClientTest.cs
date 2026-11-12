@@ -664,6 +664,18 @@ namespace DeepLTests.Offline {
       await CreateAdminClientWithRetries(1).CreateDeveloperKeyAsync();
     }
 
+    [Theory]
+    [InlineData(SocketError.HostUnreachable)]
+    [InlineData(SocketError.NetworkUnreachable)]
+    [InlineData(SocketError.NetworkDown)]
+    public async Task TestCreateDeveloperKeyIsRetriedAfterUnreachableHostOrNetwork(SocketError error) {
+      ExpectJson(HttpMethod.Post, "v2/admin/developer-keys", "{}")
+            .Throw(new HttpRequestException("unreachable", new SocketException((int)error)));
+      ExpectJson(HttpMethod.Post, "v2/admin/developer-keys", "{}").RespondJson(DeveloperKeyJson);
+
+      await CreateAdminClientWithRetries(1).CreateDeveloperKeyAsync();
+    }
+
     [Fact]
     public async Task CreateDeveloperKeyRetriesRefusedConnection() {
       var listener = new TcpListener(IPAddress.Loopback, 0);
