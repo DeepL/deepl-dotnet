@@ -174,6 +174,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   connecting fails because the host or network is unreachable, as they do for a refused connection. The request was
   not sent, so a repeat is safe. They failed after one attempt before, and a failed create had `ShouldRetry` `false`;
   it is `true` now.
+- **Breaking:** language codes are checked before any request, by one rule: a required code that is `null` or empty or
+  whitespace-only throws, and an optional one that is empty or whitespace-only throws (`null` leaves it unset). A
+  `null` target language of `TranslateTextAsync()`, `TranslateDocumentUploadAsync()` and `TranslateDocumentAsync()`
+  throws an `ArgumentNullException` (an `ArgumentException`; for `TranslateDocumentAsync()` it is the `InnerException`
+  of the `DocumentTranslationException`) instead of a `NullReferenceException`. A whitespace-only source or target
+  language of those methods, of `RephraseTextAsync()` and of `CorrectTextAsync()` throws an `ArgumentException` too;
+  it was sent to the API before. An empty, whitespace-only or `null` language of a dictionary in
+  `CreateMultilingualGlossaryAsync()` and `UpdateMultilingualGlossaryAsync()`, of a term list of the spoken terms
+  creates, updates and `ReplaceSpokenTermsListAsync()`, and the `lang` of `GetSpokenTermsEntriesAsync()` and
+  `DeleteSpokenTermsListAsync()` throws an `ArgumentException` instead of being sent to the API. An empty or
+  whitespace-only `sourceLanguage` of a custom instruction in `CreateStyleRuleAsync()`,
+  `CreateStyleRuleCustomInstructionAsync()` and `UpdateStyleRuleCustomInstructionAsync()` throws an
+  `ArgumentException`; `null` still leaves it unset.
 
 ### Removed
 - Removed `Usage.Document` and `Usage.TeamDocument`; the API no longer returns document usage. `Usage.ToString()` no

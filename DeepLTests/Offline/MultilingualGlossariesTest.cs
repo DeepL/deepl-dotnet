@@ -413,6 +413,25 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
+    public async Task ThrowsArgumentExceptionForEmptyOrNullDictionaryLanguageBeforeAnyRequest() {
+      var client = CreateClient();
+      var invalid = new[] {
+        new MultilingualGlossaryDictionaryEntries("", "de", Apple),
+        new MultilingualGlossaryDictionaryEntries("en", " ", Apple),
+        new MultilingualGlossaryDictionaryEntries(null!, "de", Apple),
+        new MultilingualGlossaryDictionaryEntries("en", null!, Apple),
+      };
+      foreach (var dictionary in invalid) {
+        await Assert.ThrowsAnyAsync<ArgumentException>(
+              () => client.CreateMultilingualGlossaryAsync("n", new[] { dictionary }));
+        await Assert.ThrowsAnyAsync<ArgumentException>(
+              () => client.UpdateMultilingualGlossaryAsync(
+                    "g1",
+                    new UpdateMultilingualGlossaryOptions { Dictionaries = new[] { dictionary } }));
+      }
+    }
+
+    [Fact]
     public async Task ThrowsArgumentNullExceptionForNullGlossaryObject() {
       var client = CreateClient();
       var glossary = (MultilingualGlossaryInfo)null!;

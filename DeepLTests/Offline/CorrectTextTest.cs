@@ -79,6 +79,10 @@ namespace DeepLTests.Offline {
           await Assert.ThrowsAsync<ArgumentException>(() => CreateClient().CorrectTextAsync("", "de"));
 
     [Fact]
+    public async Task ThrowsArgumentExceptionWhenTargetLanguageIsWhitespace() =>
+          await Assert.ThrowsAsync<ArgumentException>(() => CreateClient().CorrectTextAsync("a", " "));
+
+    [Fact]
     public void IsAMemberOfIWriter() => AssertClientOverloadsDeclaredOn<IWriter>();
   }
 }

@@ -115,6 +115,20 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
+    public async Task RejectsEmptyOrNullLanguageWithoutSendingARequest() {
+      var client = CreateClient();
+      foreach (var lang in new string?[] { "", " ", null }) {
+        var invalid = new SpokenTermsEntries(lang!, new[] { "DeepL" });
+        await Assert.ThrowsAnyAsync<ArgumentException>(() => client.CreateSpokenTermsAsync("Terms", new[] { invalid }));
+        await Assert.ThrowsAnyAsync<ArgumentException>(
+              () => client.UpdateSpokenTermsAsync("st1", new UpdateSpokenTermsOptions { TermLists = new[] { invalid } }));
+        await Assert.ThrowsAnyAsync<ArgumentException>(() => client.ReplaceSpokenTermsListAsync("st1", invalid));
+        await Assert.ThrowsAnyAsync<ArgumentException>(() => client.GetSpokenTermsEntriesAsync("st1", lang!));
+        await Assert.ThrowsAnyAsync<ArgumentException>(() => client.DeleteSpokenTermsListAsync("st1", lang!));
+      }
+    }
+
+    [Fact]
     public async Task ParsesMicrosecondCreationTimeAndMissingTermLists() {
       ExpectNoBody(HttpMethod.Get, "v3/spoken-terms")
             .RespondJson(

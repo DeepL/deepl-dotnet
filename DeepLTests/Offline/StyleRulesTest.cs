@@ -309,6 +309,19 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
+    public async Task ThrowsArgumentExceptionWhenSourceLanguageIsEmpty() {
+      var client = CreateClient();
+      foreach (var language in new[] { "", " " }) {
+        await Assert.ThrowsAsync<ArgumentException>(
+              () => client.CreateStyleRuleCustomInstructionAsync("s1", "L", "P", language));
+        await Assert.ThrowsAsync<ArgumentException>(
+              () => client.UpdateStyleRuleCustomInstructionAsync("s1", "i1", "L", "P", language));
+        await Assert.ThrowsAsync<ArgumentException>(
+              () => client.CreateStyleRuleAsync("n", "en", null, new[] { new CustomInstruction("L", "P", language) }));
+      }
+    }
+
+    [Fact]
     public async Task ThrowsArgumentNullExceptionWhenConfiguredRulesAreNull() =>
           await Assert.ThrowsAsync<ArgumentNullException>(
                 () => CreateClient().UpdateStyleRuleConfiguredRulesAsync("s1", (Dictionary<string, Dictionary<string, string>>)null!));

@@ -220,6 +220,17 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
+    public async Task ThrowsArgumentNullExceptionWhenTargetLanguageIsNull() {
+      var client = CreateClient();
+      await Assert.ThrowsAsync<ArgumentNullException>(
+            () => client.TranslateDocumentUploadAsync(Text("hello"), "a.txt", null, (string)null!));
+      var exception = await Assert.ThrowsAsync<DocumentTranslationException>(
+            () => client.TranslateDocumentAsync(Text("hello"), "a.txt", new MemoryStream(), null, (string)null!));
+      Assert.IsType<ArgumentNullException>(exception.InnerException);
+      Assert.Null(exception.DocumentHandle);
+    }
+
+    [Fact]
     public async Task NamesBothFileNameSourcesWhenInputFileNameIsNull() {
       var exception = await Assert.ThrowsAsync<ArgumentException>(
             () => CreateClient().TranslateDocumentUploadAsync(Text("hello"), null!, null, "DE"));

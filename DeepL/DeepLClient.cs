@@ -815,10 +815,10 @@ namespace DeepL {
           string? translationMemoryId = null,
           ICollection<string>? glossaryIds = null,
           string? styleProfileId = null) {
+      CheckOptionalLanguage(sourceLanguageCode, nameof(sourceLanguageCode));
+      CheckRequiredLanguage(targetLanguageCode, nameof(targetLanguageCode));
       targetLanguageCode = LanguageCode.Standardize(targetLanguageCode);
       sourceLanguageCode = sourceLanguageCode == null ? null : LanguageCode.Standardize(sourceLanguageCode);
-
-      CheckValidLanguages(sourceLanguageCode, targetLanguageCode);
 
       var bodyParams = new Dictionary<string, object?> { ["target_lang"] = targetLanguageCode };
       if (sourceLanguageCode != null) {
@@ -876,20 +876,6 @@ namespace DeepL {
       }
 
       return bodyParams;
-    }
-
-    /// <summary>Checks the specified source and target language are valid, and throws an exception if not.</summary>
-    /// <param name="sourceLanguageCode">Language code of translation source language, or null if auto-detection is used.</param>
-    /// <param name="targetLanguageCode">Language code of translation target language.</param>
-    /// <exception cref="ArgumentException">If source or target language code are not valid.</exception>
-    private static void CheckValidLanguages(string? sourceLanguageCode, string targetLanguageCode) {
-      if (sourceLanguageCode is { Length: 0 }) {
-        throw new ArgumentException($"{nameof(sourceLanguageCode)} must not be empty");
-      }
-
-      if (targetLanguageCode.Length == 0) {
-        throw new ArgumentException($"{nameof(targetLanguageCode)} must not be empty");
-      }
     }
 
     /// <summary>
@@ -1012,7 +998,7 @@ namespace DeepL {
           CancellationToken cancellationToken = default) {
       var requestData = new Dictionary<string, object?>();
       if (targetLanguageCode != null) {
-        CheckValidLanguages(null, targetLanguageCode);
+        CheckOptionalLanguage(targetLanguageCode, nameof(targetLanguageCode));
         requestData["target_lang"] = targetLanguageCode;
       }
 
@@ -1050,7 +1036,7 @@ namespace DeepL {
           CancellationToken cancellationToken = default) {
       var requestData = new Dictionary<string, object?>();
       if (targetLanguageCode != null) {
-        CheckValidLanguages(null, targetLanguageCode);
+        CheckOptionalLanguage(targetLanguageCode, nameof(targetLanguageCode));
         requestData["target_lang"] = targetLanguageCode;
       }
 
@@ -1765,6 +1751,10 @@ namespace DeepL {
         throw new ArgumentException($"Parameter {nameof(language)} must not be empty");
       }
 
+      foreach (var instruction in customInstructions ?? Array.Empty<CustomInstruction>()) {
+        CheckOptionalLanguage(instruction?.SourceLanguage, nameof(CustomInstruction.SourceLanguage));
+      }
+
       var requestData = new Dictionary<string, object?> { ["name"] = name, ["language"] = language };
       if (configuredRules != null) requestData["configured_rules"] = configuredRules;
       if (customInstructions != null) requestData["custom_instructions"] = customInstructions;
@@ -1950,6 +1940,7 @@ namespace DeepL {
         throw new ArgumentException($"Parameter {nameof(prompt)} must not be empty");
       }
 
+      CheckOptionalLanguage(sourceLanguage, nameof(sourceLanguage));
       var requestData = new Dictionary<string, object?> { ["label"] = label, ["prompt"] = prompt };
       if (sourceLanguage != null) requestData["source_language"] = sourceLanguage;
       AddExtraBodyParameters(requestData, options);
@@ -2089,6 +2080,7 @@ namespace DeepL {
         throw new ArgumentException($"Parameter {nameof(prompt)} must not be empty");
       }
 
+      CheckOptionalLanguage(sourceLanguage, nameof(sourceLanguage));
       var requestData = new Dictionary<string, object?> { ["label"] = label, ["prompt"] = prompt };
       if (sourceLanguage != null) requestData["source_language"] = sourceLanguage;
       AddExtraBodyParameters(requestData, options);
@@ -2434,6 +2426,7 @@ namespace DeepL {
           string spokenTermsId,
           string lang,
           CancellationToken cancellationToken = default) {
+      CheckRequiredLanguage(lang, nameof(lang));
       using var responseMessage = await _client
             .ApiGetAsync(SpokenTermsPath(spokenTermsId) + "/entries", cancellationToken, new[] { ("lang", lang) })
             .ConfigureAwait(false);
@@ -2502,6 +2495,7 @@ namespace DeepL {
           string spokenTermsId,
           string lang,
           CancellationToken cancellationToken = default) {
+      CheckRequiredLanguage(lang, nameof(lang));
       using var responseMessage = await _client
             .ApiDeleteAsync(SpokenTermsPath(spokenTermsId) + "/term-lists", cancellationToken, new[] { ("lang", lang) })
             .ConfigureAwait(false);
@@ -3565,13 +3559,16 @@ namespace DeepL {
           string sourceLanguageCode,
           string targetLanguageCode,
           string entries,
-          string entriesFormat) =>
-          new Dictionary<string, string> {
-                ["source_lang"] = sourceLanguageCode,
-                ["target_lang"] = targetLanguageCode,
-                ["entries"] = entries,
-                ["entries_format"] = entriesFormat
-          };
+          string entriesFormat) {
+      CheckRequiredLanguage(sourceLanguageCode, nameof(sourceLanguageCode));
+      CheckRequiredLanguage(targetLanguageCode, nameof(targetLanguageCode));
+      return new Dictionary<string, string> {
+            ["source_lang"] = sourceLanguageCode,
+            ["target_lang"] = targetLanguageCode,
+            ["entries"] = entries,
+            ["entries_format"] = entriesFormat
+      };
+    }
 
     /// <summary>Returns the API path of the given v3 glossary, with the ID URL-encoded.</summary>
     /// <param name="glossaryId">ID of the glossary.</param>
@@ -3647,6 +3644,7 @@ namespace DeepL {
     /// <returns>Dictionary to serialize as the JSON body.</returns>
     /// <exception cref="ArgumentException">If any term is invalid.</exception>
     private static Dictionary<string, string> CreateSpokenTermsListBody(SpokenTermsEntries entries) {
+      CheckRequiredLanguage(entries.Lang, nameof(entries.Lang));
       // Trimmed like glossary terms; a newline inside a term would silently split it into several terms on the wire.
       var terms = entries.Entries.Select(term => term.Trim()).ToArray();
       foreach (var term in terms) {
@@ -3685,6 +3683,24 @@ namespace DeepL {
 
     /// <summary>Returns the ID of the given custom instruction, or an empty string if it or its ID is <c>null</c>.</summary>
     private static string InstructionId(CustomInstruction? instruction) => instruction?.Id ?? string.Empty;
+
+    /// <summary>Throws if the required language code is <c>null</c>, empty or whitespace-only.</summary>
+    private static void CheckRequiredLanguage(string? languageCode, string paramName) {
+      if (languageCode == null) {
+        throw new ArgumentNullException(paramName);
+      }
+
+      if (string.IsNullOrWhiteSpace(languageCode)) {
+        throw new ArgumentException($"Parameter {paramName} must not be empty", paramName);
+      }
+    }
+
+    /// <summary>Throws if the optional language code is given but empty or whitespace-only.</summary>
+    private static void CheckOptionalLanguage(string? languageCode, string paramName) {
+      if (languageCode != null && string.IsNullOrWhiteSpace(languageCode)) {
+        throw new ArgumentException($"Parameter {paramName} must not be empty", paramName);
+      }
+    }
 
     /// <summary>Returns the ID of the given multilingual glossary, throwing if it is <c>null</c>.</summary>
     private static string MultilingualGlossaryId(MultilingualGlossaryInfo glossary) =>

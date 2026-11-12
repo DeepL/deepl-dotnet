@@ -144,5 +144,9 @@ namespace DeepLTests.Offline {
     [Fact]
     public async Task ThrowsArgumentExceptionWhenTargetLanguageIsEmpty() =>
           await Assert.ThrowsAsync<ArgumentException>(() => CreateClient().RephraseTextAsync("a", ""));
+
+    [Fact]
+    public async Task ThrowsArgumentExceptionWhenTargetLanguageIsWhitespace() =>
+          await Assert.ThrowsAsync<ArgumentException>(() => CreateClient().RephraseTextAsync("a", " "));
   }
 }

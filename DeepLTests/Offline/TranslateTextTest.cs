@@ -420,6 +420,20 @@ namespace DeepLTests.Offline {
           await Assert.ThrowsAsync<ArgumentException>(() => CreateClient().TranslateTextAsync("a", "", "DE"));
 
     [Fact]
+    public async Task ThrowsArgumentNullExceptionWhenTargetLanguageIsNull() {
+      var exception = await Assert.ThrowsAsync<ArgumentNullException>(
+            () => CreateClient().TranslateTextAsync("a", null, (string)null!));
+      Assert.Equal("targetLanguageCode", exception.ParamName);
+    }
+
+    [Fact]
+    public async Task ThrowsArgumentExceptionWhenLanguageIsWhitespace() {
+      var client = CreateClient();
+      await Assert.ThrowsAsync<ArgumentException>(() => client.TranslateTextAsync("a", null, " "));
+      await Assert.ThrowsAsync<ArgumentException>(() => client.TranslateTextAsync("a", " ", "DE"));
+    }
+
+    [Fact]
     public async Task ThrowsArgumentExceptionWhenThresholdHasNoTranslationMemory() {
       var options = new TextTranslateOptions { TranslationMemoryThreshold = 80 };
       await Assert.ThrowsAsync<ArgumentException>(() => CreateClient().TranslateTextAsync("a", null, "DE", options));

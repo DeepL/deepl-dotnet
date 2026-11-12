@@ -1506,6 +1506,10 @@ invalid arguments are provided, they may raise the standard exceptions
 `ArgumentException`. A `null` resource object, such as a
 `MultilingualGlossaryInfo` or `StyleProfile`, throws an `ArgumentNullException`,
 a subclass of `ArgumentException`, without sending a request.
+A required language code that is `null` throws an `ArgumentNullException`, and
+one that is empty or whitespace-only an `ArgumentException`; an optional
+language code given as an empty or whitespace-only string throws an
+`ArgumentException`. Both are thrown without sending a request.
 
 | Exception | Raised when |
 |---|---|
