@@ -37,7 +37,9 @@ namespace DeepL {
     /// <param name="glossaries">
     ///   Glossaries to use in translation (maximum of 5). Neither the list nor an entry may be <c>null</c>.
     /// </param>
-    /// <exception cref="ArgumentNullException">If <paramref name="glossaries" /> is <c>null</c>.</exception>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="glossaries" /> or one of its entries is <c>null</c>.
+    /// </exception>
     public TextTranslateOptions(IEnumerable<GlossaryInfo> glossaries) : this() {
       foreach (var glossary in Argument.NoNullEntries(glossaries, nameof(glossaries))) {
         GlossaryIds.Add(glossary.GlossaryId);
@@ -51,7 +53,9 @@ namespace DeepL {
     /// <param name="glossaries">
     ///   Glossaries to use in translation (maximum of 5). Neither the list nor an entry may be <c>null</c>.
     /// </param>
-    /// <exception cref="ArgumentNullException">If <paramref name="glossaries" /> is <c>null</c>.</exception>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="glossaries" /> or one of its entries is <c>null</c>.
+    /// </exception>
     public TextTranslateOptions(IEnumerable<MultilingualGlossaryInfo> glossaries) : this() {
       foreach (var glossary in Argument.NoNullEntries(glossaries, nameof(glossaries))) {
         GlossaryIds.Add(glossary.GlossaryId);

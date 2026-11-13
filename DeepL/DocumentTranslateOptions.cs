@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using DeepL.Internal;
 using DeepL.Model;
 
 namespace DeepL {
@@ -17,24 +18,31 @@ namespace DeepL {
     public DocumentTranslateOptions() { }
 
     /// <summary>Initializes a new <see cref="DocumentTranslateOptions" /> object including the given v2 glossary.</summary>
-    /// <param name="glossary">Glossary to use in translation.</param>
+    /// <param name="glossary">Glossary to use in translation. Must not be <c>null</c>.</param>
+    /// <exception cref="ArgumentNullException">If <paramref name="glossary" /> is <c>null</c>.</exception>
     public DocumentTranslateOptions(GlossaryInfo glossary) : this() {
-      Glossary = glossary.GlossaryId;
+      Glossary = Argument.NotNull(glossary, nameof(glossary)).GlossaryId;
     }
 
     /// <summary>Initializes a new <see cref="DocumentTranslateOptions" /> object including the given v3 glossary.</summary>
-    /// <param name="glossary">Glossary to use in translation.</param>
+    /// <param name="glossary">Glossary to use in translation. Must not be <c>null</c>.</param>
+    /// <exception cref="ArgumentNullException">If <paramref name="glossary" /> is <c>null</c>.</exception>
     public DocumentTranslateOptions(MultilingualGlossaryInfo glossary) : this() {
-      Glossary = glossary.GlossaryId;
+      Glossary = Argument.NotNull(glossary, nameof(glossary)).GlossaryId;
     }
 
     /// <summary>
     ///   Initializes a new <see cref="DocumentTranslateOptions" /> object including the given v2 glossaries. Multiple
     ///   glossaries are applied in order, with the first matching term taking precedence.
     /// </summary>
-    /// <param name="glossaries">Glossaries to use in translation (maximum of 5).</param>
+    /// <param name="glossaries">
+    ///   Glossaries to use in translation (maximum of 5). Neither the list nor an entry may be <c>null</c>.
+    /// </param>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="glossaries" /> or one of its entries is <c>null</c>.
+    /// </exception>
     public DocumentTranslateOptions(IEnumerable<GlossaryInfo> glossaries) : this() {
-      foreach (var glossary in glossaries) {
+      foreach (var glossary in Argument.NoNullEntries(glossaries, nameof(glossaries))) {
         GlossaryIds.Add(glossary.GlossaryId);
       }
     }
@@ -43,29 +51,37 @@ namespace DeepL {
     ///   Initializes a new <see cref="DocumentTranslateOptions" /> object including the given multilingual glossaries.
     ///   Multiple glossaries are applied in order, with the first matching term taking precedence.
     /// </summary>
-    /// <param name="glossaries">Glossaries to use in translation (maximum of 5).</param>
+    /// <param name="glossaries">
+    ///   Glossaries to use in translation (maximum of 5). Neither the list nor an entry may be <c>null</c>.
+    /// </param>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="glossaries" /> or one of its entries is <c>null</c>.
+    /// </exception>
     public DocumentTranslateOptions(IEnumerable<MultilingualGlossaryInfo> glossaries) : this() {
-      foreach (var glossary in glossaries) {
+      foreach (var glossary in Argument.NoNullEntries(glossaries, nameof(glossaries))) {
         GlossaryIds.Add(glossary.GlossaryId);
       }
     }
 
     /// <summary>Initializes a new <see cref="DocumentTranslateOptions" /> object including the given style rule.</summary>
-    /// <param name="styleRule">Style rule to use in translation.</param>
+    /// <param name="styleRule">Style rule to use in translation. Must not be <c>null</c>.</param>
+    /// <exception cref="ArgumentNullException">If <paramref name="styleRule" /> is <c>null</c>.</exception>
     public DocumentTranslateOptions(StyleRuleInfo styleRule) : this() {
-      StyleRule = styleRule.StyleId;
+      StyleRule = Argument.NotNull(styleRule, nameof(styleRule)).StyleId;
     }
 
     /// <summary>Initializes a new <see cref="DocumentTranslateOptions" /> object including the given style profile.</summary>
-    /// <param name="styleProfile">Style profile to use in translation.</param>
+    /// <param name="styleProfile">Style profile to use in translation. Must not be <c>null</c>.</param>
+    /// <exception cref="ArgumentNullException">If <paramref name="styleProfile" /> is <c>null</c>.</exception>
     public DocumentTranslateOptions(StyleProfile styleProfile) : this() {
-      StyleProfile = styleProfile.StyleProfileId;
+      StyleProfile = Argument.NotNull(styleProfile, nameof(styleProfile)).StyleProfileId;
     }
 
     /// <summary>Initializes a new <see cref="DocumentTranslateOptions" /> object including the given translation memory.</summary>
-    /// <param name="translationMemory">Translation memory to use in translation.</param>
+    /// <param name="translationMemory">Translation memory to use in translation. Must not be <c>null</c>.</param>
+    /// <exception cref="ArgumentNullException">If <paramref name="translationMemory" /> is <c>null</c>.</exception>
     public DocumentTranslateOptions(TranslationMemoryInfo translationMemory) : this() {
-      TranslationMemory = translationMemory.TranslationMemoryId;
+      TranslationMemory = Argument.NotNull(translationMemory, nameof(translationMemory)).TranslationMemoryId;
     }
 
     /// <summary>Controls whether translations should lean toward formal or informal language.</summary>

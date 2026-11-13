@@ -324,7 +324,8 @@ Note that file paths are not accepted as strings, to avoid mixing up the file an
 `TranslateDocumentAsync()` returns the final `DocumentStatus` of the translation, for example to read
 `BilledCharacters`.
 
-A missing input file (or a directory as input) throws an `ArgumentException` before any request is sent.
+A missing input file (or a directory as input) throws an `ArgumentException`, and a `null` input or output an
+`ArgumentNullException`, before any request is sent.
 The input and output files are opened before any request is sent; if the input cannot be read or the
 output file already exists or cannot be created, a `DocumentTranslationException` is thrown with the
 `IOException` or `UnauthorizedAccessException` as `InnerException`. An existing output file is never
@@ -379,8 +380,8 @@ determine the file type. Pass it as the `inputFileName` argument, or set the
 `TranslateDocumentAsync()` manages the upload, wait until translation is complete, and download steps. If your
 application needs to execute these steps individually, you can instead use the following functions directly:
 
-- `TranslateDocumentUploadAsync()` (given a `FileInfo` of a missing file, it throws an `ArgumentException` before
-  any request is sent),
+- `TranslateDocumentUploadAsync()` (given a `FileInfo` of a missing file, it throws an `ArgumentException`, and
+  given `null` an `ArgumentNullException`, before any request is sent),
 - `TranslateDocumentGetStatusAsync()` (or `TranslateDocumentWaitUntilDoneAsync()`), and
 - `TranslateDocumentDownloadAsync()`
 

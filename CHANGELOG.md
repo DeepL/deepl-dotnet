@@ -201,6 +201,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `ArgumentNullException` (an `ArgumentException`) naming it before any request. They threw a `NullReferenceException`
   or sent the request before. Catch `ArgumentException` (or `ArgumentNullException`) instead of
   `NullReferenceException`.
+- **Breaking:** a `null` input or output file or stream, or a `null` `inputFileName`, in the
+  `TranslateDocumentAsync()`, `TranslateDocumentUploadAsync()` and `TranslateDocumentDownloadAsync()` overloads, and a
+  `null` argument of the `DocumentTranslateOptions` constructors now throw an `ArgumentNullException` (an
+  `ArgumentException`; for `TranslateDocumentAsync()` with streams it is the `InnerException` of the
+  `DocumentTranslationException`) before any request. They threw a `NullReferenceException` or a plain
+  `ArgumentException`, or failed only after the upload, before. Catch `ArgumentException` (or `ArgumentNullException`)
+  instead of `NullReferenceException`.
 
 ### Removed
 - Removed `Usage.Document` and `Usage.TeamDocument`; the API no longer returns document usage. `Usage.ToString()` no

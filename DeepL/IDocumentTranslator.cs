@@ -21,6 +21,10 @@ namespace DeepL {
     /// <param name="options"><see cref="DocumentTranslateOptions" /> influencing translation.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>The final <see cref="DocumentStatus" /> of the translation, with status done.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="inputFileInfo" /> or <paramref name="outputFileInfo" /> is <c>null</c>; raised before any
+    ///   request.
+    /// </exception>
     /// <exception cref="ArgumentException">
     ///   If the input file does not exist or is not a file; raised before any request.
     /// </exception>
@@ -65,7 +69,10 @@ namespace DeepL {
     ///   If cancellation was requested through <paramref name="cancellationToken" />; it is not wrapped.
     /// </exception>
     /// <exception cref="DocumentTranslationException">
-    ///   If an error occurs while translating the document. If the document was uploaded successfully, then the
+    ///   If an error occurs while translating the document, including an <see cref="ArgumentNullException" /> as
+    ///   <see cref="Exception.InnerException" /> if <paramref name="inputFile" />, <paramref name="inputFileName" /> or
+    ///   <paramref name="outputFile" /> is <c>null</c> (raised before any request). If the document was uploaded
+    ///   successfully, then the
     ///   <see cref="DocumentTranslationException.DocumentHandle" /> contains the document ID and key that may be used
     ///   to retrieve the document.
     /// </exception>
@@ -103,8 +110,10 @@ namespace DeepL {
     /// </exception>
     /// <exception cref="DocumentTranslationException">
     ///   If the <see cref="DocumentTranslateOptions.Timeout" /> expired, or an error occurs
-    ///   while translating the document, including a missing <see cref="DocumentTranslateOptions.Filename" />. If the
-    ///   document was uploaded successfully, then the <see cref="DocumentTranslationException.DocumentHandle" />
+    ///   while translating the document, including a missing <see cref="DocumentTranslateOptions.Filename" />. A
+    ///   <c>null</c> <paramref name="inputFile" /> or <paramref name="outputFile" />, or a missing
+    ///   <see cref="DocumentTranslateOptions.Filename" />, gives an <see cref="ArgumentNullException" /> as
+    ///   <see cref="Exception.InnerException" />, raised before any request. If the document was uploaded successfully, then the <see cref="DocumentTranslationException.DocumentHandle" />
     ///   contains the document ID and key that may be used to retrieve the document.
     /// </exception>
     /// <remarks>
@@ -131,6 +140,9 @@ namespace DeepL {
     /// <param name="options"><see cref="DocumentTranslateOptions" /> influencing translation.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="DocumentHandle" /> object associated with the in-progress document translation.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="inputFileInfo" /> is <c>null</c>; raised before any request.
+    /// </exception>
     /// <exception cref="ArgumentException">
     ///   If any argument is invalid, or the input file does not exist or is not a file; raised before any request.
     /// </exception>
@@ -170,6 +182,9 @@ namespace DeepL {
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="DocumentHandle" /> object associated with the in-progress document translation.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="inputFile" /> is <c>null</c> or <see cref="DocumentTranslateOptions.Filename" /> is not set.
+    /// </exception>
     /// <exception cref="ArgumentException">
     ///   If any argument is invalid, or <see cref="DocumentTranslateOptions.Filename" /> is not set.
     /// </exception>
@@ -198,6 +213,9 @@ namespace DeepL {
     /// <param name="options"><see cref="DocumentTranslateOptions" /> influencing translation.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="DocumentHandle" /> object associated with the in-progress document translation.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="inputFile" /> or <paramref name="inputFileName" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -273,6 +291,7 @@ namespace DeepL {
     /// <param name="handle"><see cref="DocumentHandle" /> associated with an in-progress document translation.</param>
     /// <param name="outputFileInfo"><see cref="FileInfo" /> object containing path to store translated document.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <exception cref="ArgumentNullException">If <paramref name="outputFileInfo" /> is <c>null</c>.</exception>
     /// <exception cref="IOException">If the output path is occupied.</exception>
     /// <exception cref="DocumentNotReadyException">
     ///   If the document is not ready to be downloaded, that is, the document status
@@ -295,6 +314,9 @@ namespace DeepL {
     /// <param name="handle"><see cref="DocumentHandle" /> associated with an in-progress document translation.</param>
     /// <param name="outputFile"><see cref="Stream" /> to store translated document content.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="outputFile" /> is <c>null</c>; raised before any request.
+    /// </exception>
     /// <exception cref="DocumentNotReadyException">
     ///   If the document is not ready to be downloaded, that is, the document status
     ///   is not <see cref="DocumentStatus.Done" />.

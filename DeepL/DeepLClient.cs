@@ -232,6 +232,7 @@ namespace DeepL {
           DocumentTranslateOptions? options = null,
           CancellationToken cancellationToken = default) {
       CheckDocumentInputFile(inputFileInfo);
+      Argument.NotNull(outputFileInfo, nameof(outputFileInfo));
       // Local file failures are wrapped like the failures of the translation itself. The output is opened with
       // CreateNew and outside the try below, so an occupied path is never deleted.
       using var inputFile = OpenLocalDocumentFile(inputFileInfo.OpenRead);
@@ -256,8 +257,12 @@ namespace DeepL {
       }
     }
 
-    /// <summary>Throws <see cref="ArgumentException" /> if the document input file does not exist or is not a file.</summary>
+    /// <summary>
+    ///   Throws <see cref="ArgumentNullException" /> if the document input file is <c>null</c>, and
+    ///   <see cref="ArgumentException" /> if it does not exist or is not a file.
+    /// </summary>
     private static void CheckDocumentInputFile(FileInfo inputFileInfo) {
+      Argument.NotNull(inputFileInfo, nameof(inputFileInfo));
       // FileInfo caches Exists from its first read; the caller may have read it before creating the file.
       inputFileInfo.Refresh();
       if (!inputFileInfo.Exists) {
@@ -288,6 +293,7 @@ namespace DeepL {
           CancellationToken cancellationToken = default) {
       DocumentHandle? handle = null;
       try {
+        Argument.NotNull(outputFile, nameof(outputFile));
         handle = await TranslateDocumentUploadAsync(
                     inputFile,
                     inputFileName,
@@ -369,9 +375,11 @@ namespace DeepL {
           string targetLanguageCode,
           DocumentTranslateOptions? options = null,
           CancellationToken cancellationToken = default) {
+      Argument.NotNull(inputFile, nameof(inputFile));
       // null if passed so, or if the overload without it is used and DocumentTranslateOptions.Filename is unset.
       if (inputFileName == null) {
-        throw new ArgumentException(
+        throw new ArgumentNullException(
+              nameof(inputFileName),
               $"{nameof(inputFileName)} or {nameof(DocumentTranslateOptions)}." +
               $"{nameof(DocumentTranslateOptions.Filename)} is required with stream input");
       }
@@ -493,6 +501,7 @@ namespace DeepL {
           DocumentHandle handle,
           FileInfo outputFileInfo,
           CancellationToken cancellationToken = default) {
+      Argument.NotNull(outputFileInfo, nameof(outputFileInfo));
       using var outputFileStream = outputFileInfo.Open(FileMode.CreateNew, FileAccess.Write);
       try {
         await TranslateDocumentDownloadAsync(handle, outputFileStream, cancellationToken).ConfigureAwait(false);
@@ -512,6 +521,7 @@ namespace DeepL {
           DocumentHandle handle,
           Stream outputFile,
           CancellationToken cancellationToken = default) {
+      Argument.NotNull(outputFile, nameof(outputFile));
       var bodyParams = new (string Key, string Value)[] { ("document_key", handle.DocumentKey) };
       using var responseMessage = await _client.ApiPostAsync(
                   $"v2/document/{Uri.EscapeDataString(handle.DocumentId)}/result",

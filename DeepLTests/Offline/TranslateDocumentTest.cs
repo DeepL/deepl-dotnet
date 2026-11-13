@@ -3,6 +3,7 @@
 // license that can be found in the LICENSE file.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -213,8 +214,8 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
-    public async Task ThrowsArgumentExceptionWhenStreamHasNoFilename() {
-      var exception = await Assert.ThrowsAsync<ArgumentException>(
+    public async Task ThrowsArgumentNullExceptionWhenStreamHasNoFilename() {
+      var exception = await Assert.ThrowsAsync<ArgumentNullException>(
             () => CreateClient().TranslateDocumentUploadAsync(Text("hello"), null, "DE", new DocumentTranslateOptions()));
       Assert.Contains("Filename", exception.Message);
     }
@@ -232,10 +233,51 @@ namespace DeepLTests.Offline {
 
     [Fact]
     public async Task NamesBothFileNameSourcesWhenInputFileNameIsNull() {
-      var exception = await Assert.ThrowsAsync<ArgumentException>(
+      var exception = await Assert.ThrowsAsync<ArgumentNullException>(
             () => CreateClient().TranslateDocumentUploadAsync(Text("hello"), null!, null, "DE"));
+      Assert.Equal("inputFileName", exception.ParamName);
       Assert.Contains("inputFileName", exception.Message);
       Assert.Contains("DocumentTranslateOptions.Filename", exception.Message);
+    }
+
+    [Fact]
+    public async Task ThrowsArgumentNullExceptionNamingTheNullArgument() {
+      var client = CreateClient();
+      var directory = Fixtures.TempDir();
+      var input = new FileInfo(Path.Combine(directory, "a.txt"));
+      File.WriteAllText(input.FullName, "hello");
+      var output = new FileInfo(Path.Combine(directory, "out.txt"));
+      var calls = new (string Param, Func<Task> Call)[] {
+        ("inputFileInfo", () => client.TranslateDocumentAsync((FileInfo)null!, output, null, "DE")),
+        ("outputFileInfo", () => client.TranslateDocumentAsync(input, (FileInfo)null!, null, "DE")),
+        ("inputFileInfo", () => client.TranslateDocumentUploadAsync((FileInfo)null!, null, "DE")),
+        ("inputFile", () => client.TranslateDocumentUploadAsync((Stream)null!, "a.txt", null, "DE")),
+        ("outputFileInfo", () => client.TranslateDocumentDownloadAsync(Handle, (FileInfo)null!)),
+        ("outputFile", () => client.TranslateDocumentDownloadAsync(Handle, (Stream)null!)),
+        ("glossary", () => Task.FromResult(new DocumentTranslateOptions((GlossaryInfo)null!))),
+        ("glossary", () => Task.FromResult(new DocumentTranslateOptions((MultilingualGlossaryInfo)null!))),
+        ("glossaries", () => Task.FromResult(new DocumentTranslateOptions((IEnumerable<GlossaryInfo>)null!))),
+        ("glossaries", () => Task.FromResult(new DocumentTranslateOptions(new GlossaryInfo[] { null! }))),
+        ("glossaries", () => Task.FromResult(new DocumentTranslateOptions((IEnumerable<MultilingualGlossaryInfo>)null!))),
+        ("glossaries", () => Task.FromResult(new DocumentTranslateOptions(new MultilingualGlossaryInfo[] { null! }))),
+        ("styleRule", () => Task.FromResult(new DocumentTranslateOptions((StyleRuleInfo)null!))),
+        ("styleProfile", () => Task.FromResult(new DocumentTranslateOptions((StyleProfile)null!))),
+        ("translationMemory", () => Task.FromResult(new DocumentTranslateOptions((TranslationMemoryInfo)null!))),
+      };
+      foreach (var (param, call) in calls) {
+        var exception = await Assert.ThrowsAsync<ArgumentNullException>(call);
+        Assert.Equal(param, exception.ParamName);
+      }
+
+      var wrappedCalls = new (string Param, Func<Task> Call)[] {
+        ("inputFile", () => client.TranslateDocumentAsync((Stream)null!, "a.txt", new MemoryStream(), null, "DE")),
+        ("outputFile", () => client.TranslateDocumentAsync(Text("hello"), "a.txt", (Stream)null!, null, "DE")),
+      };
+      foreach (var (param, call) in wrappedCalls) {
+        var exception = await Assert.ThrowsAsync<DocumentTranslationException>(call);
+        Assert.Equal(param, Assert.IsType<ArgumentNullException>(exception.InnerException).ParamName);
+        Assert.Null(exception.DocumentHandle);
+      }
     }
 
     [Fact]
