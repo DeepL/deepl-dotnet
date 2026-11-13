@@ -10,6 +10,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using DeepL;
+using DeepL.Model;
 using RichardSzalay.MockHttp;
 using Xunit;
 
@@ -140,6 +141,35 @@ namespace DeepLTests.Offline {
     [Fact]
     public async Task ThrowsArgumentExceptionWhenNameIsEmpty() =>
           await Assert.ThrowsAsync<ArgumentException>(() => CreateClient().CreateGlossaryAsync("", "en", "de", Entries));
+
+    [Fact]
+    public async Task ThrowsArgumentNullExceptionNamingTheNullArgument() {
+      var client = CreateClient();
+      var calls = new (string Param, Func<Task> Call)[] {
+        ("name", () => client.CreateGlossaryAsync(null!, "en", "de", Entries)),
+        ("sourceLanguageCode", () => client.CreateGlossaryAsync("n", null!, "de", Entries)),
+        ("targetLanguageCode", () => client.CreateGlossaryAsync("n", "en", null!, Entries)),
+        ("entries", () => client.CreateGlossaryAsync("n", "en", "de", null!)),
+        ("csvFile", () => client.CreateGlossaryFromCsvAsync("n", "en", "de", null!)),
+        ("glossaryId", () => client.GetGlossaryAsync(null!)),
+        ("glossaryId", () => client.WaitUntilGlossaryReadyAsync(null!)),
+        ("glossaryId", () => client.GetGlossaryEntriesAsync((string)null!)),
+        ("glossaryId", () => client.DeleteGlossaryAsync((string)null!)),
+        ("glossary", () => client.GetGlossaryEntriesAsync((GlossaryInfo)null!)),
+        ("glossary", () => client.DeleteGlossaryAsync((GlossaryInfo)null!)),
+        ("entryPairs", () => Task.FromResult(new GlossaryEntries((IEnumerable<KeyValuePair<string, string>>)null!))),
+        ("entryPairs", () => Task.FromResult(new GlossaryEntries((IEnumerable<(string Key, string Value)>)null!))),
+        ("entryPairs", () => Task.FromResult(new GlossaryEntries(new[] { ("a", (string)null!) }))),
+        ("entryPairs", () => Task.FromResult(new GlossaryEntries(new[] { ("a", (string)null!) }, skipChecks: true))),
+        ("entryPairs", () => Task.FromResult(new GlossaryEntries(new[] { new KeyValuePair<string, string>(null!, "b") }))),
+        ("contentTsv", () => Task.FromResult(GlossaryEntries.FromTsv(null!))),
+        ("contentTsv", () => Task.FromResult(GlossaryEntries.FromTsv(null!, true))),
+      };
+      foreach (var (param, call) in calls) {
+        var exception = await Assert.ThrowsAsync<ArgumentNullException>(call);
+        Assert.Equal(param, exception.ParamName);
+      }
+    }
 
     [Fact]
     public void ThrowsArgumentExceptionWhenEntriesAreInvalid() {

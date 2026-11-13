@@ -208,6 +208,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DocumentTranslationException`) before any request. They threw a `NullReferenceException` or a plain
   `ArgumentException`, or failed only after the upload, before. Catch `ArgumentException` (or `ArgumentNullException`)
   instead of `NullReferenceException`.
+- **Breaking:** `null` IDs, names, language codes, entries, CSV streams and dictionaries of the glossary methods, and
+  `null` arguments or terms of `GlossaryEntries` and `MultilingualGlossaryDictionaryEntries`, now throw an
+  `ArgumentNullException` (an `ArgumentException`) naming the parameter before any request. They threw a
+  `NullReferenceException` or a plain `ArgumentException`, or sent a request to `v2/glossaries/`, before. Catch
+  `ArgumentException` (or `ArgumentNullException`) instead of `NullReferenceException`.
 
 ### Removed
 - Removed `Usage.Document` and `Usage.TeamDocument`; the API no longer returns document usage. `Usage.ToString()` no

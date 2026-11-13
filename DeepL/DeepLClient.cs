@@ -569,7 +569,7 @@ namespace DeepL {
                 sourceLanguageCode,
                 targetLanguageCode,
                 "tsv",
-                entries.ToTsv(),
+                Argument.NotNull(entries, nameof(entries)).ToTsv(),
                 cancellationToken).ConfigureAwait(false);
 
     /// <inheritdoc />
@@ -584,13 +584,14 @@ namespace DeepL {
                 sourceLanguageCode,
                 targetLanguageCode,
                 "csv",
-                await new StreamReader(csvFile).ReadToEndAsync().ConfigureAwait(false),
+                await new StreamReader(Argument.NotNull(csvFile, nameof(csvFile))).ReadToEndAsync().ConfigureAwait(false),
                 cancellationToken).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<GlossaryInfo> GetGlossaryAsync(
           string glossaryId,
           CancellationToken cancellationToken = default) {
+      Argument.NotNull(glossaryId, nameof(glossaryId));
       using var responseMessage =
             await _client.ApiGetAsync($"v2/glossaries/{glossaryId}", cancellationToken)
                   .ConfigureAwait(false);
@@ -625,6 +626,7 @@ namespace DeepL {
     public async Task<GlossaryEntries> GetGlossaryEntriesAsync(
           string glossaryId,
           CancellationToken cancellationToken = default) {
+      Argument.NotNull(glossaryId, nameof(glossaryId));
       using var responseMessage = await _client.ApiGetAsync(
             $"v2/glossaries/{glossaryId}/entries",
             cancellationToken,
@@ -639,12 +641,13 @@ namespace DeepL {
     public async Task<GlossaryEntries> GetGlossaryEntriesAsync(
           GlossaryInfo glossary,
           CancellationToken cancellationToken = default) =>
-          await GetGlossaryEntriesAsync(glossary.GlossaryId, cancellationToken).ConfigureAwait(false);
+          await GetGlossaryEntriesAsync(GlossaryId(glossary), cancellationToken).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task DeleteGlossaryAsync(
           string glossaryId,
           CancellationToken cancellationToken = default) {
+      Argument.NotNull(glossaryId, nameof(glossaryId));
       using var responseMessage =
             await _client.ApiDeleteAsync($"v2/glossaries/{glossaryId}", cancellationToken)
                   .ConfigureAwait(false);
@@ -656,7 +659,7 @@ namespace DeepL {
     public async Task DeleteGlossaryAsync(
           GlossaryInfo glossary,
           CancellationToken cancellationToken = default) =>
-          await DeleteGlossaryAsync(glossary.GlossaryId, cancellationToken).ConfigureAwait(false);
+          await DeleteGlossaryAsync(GlossaryId(glossary), cancellationToken).ConfigureAwait(false);
 
     /// <summary>Internal function to retrieve available languages.</summary>
     /// <param name="target"><c>true</c> to retrieve target languages, <c>false</c> to retrieve source languages.</param>
@@ -920,9 +923,12 @@ namespace DeepL {
           string entriesFormat,
           string entries,
           CancellationToken cancellationToken) {
-      if (name.Length == 0) {
+      if (Argument.NotNull(name, nameof(name)).Length == 0) {
         throw new ArgumentException($"Parameter {nameof(name)} must not be empty");
       }
+
+      Argument.NotNull(sourceLanguageCode, nameof(sourceLanguageCode));
+      Argument.NotNull(targetLanguageCode, nameof(targetLanguageCode));
 
       sourceLanguageCode = LanguageCode.RemoveRegionalVariant(sourceLanguageCode);
       targetLanguageCode = LanguageCode.RemoveRegionalVariant(targetLanguageCode);
@@ -2549,15 +2555,16 @@ namespace DeepL {
           MultilingualGlossaryDictionaryEntries[] glossaryDicts,
           CreateMultilingualGlossaryOptions? options,
           CancellationToken cancellationToken = default) {
-      if (name.Length == 0) {
+      if (Argument.NotNull(name, nameof(name)).Length == 0) {
         throw new ArgumentException($"Parameter {nameof(name)} must not be empty");
       }
 
-      if (!glossaryDicts.Any()) throw new ArgumentException("Parameter dictionaries must not be empty");
+      var dictionaries = Argument.NoNullEntries(glossaryDicts, nameof(glossaryDicts));
+      if (dictionaries.Length == 0) throw new ArgumentException("Parameter dictionaries must not be empty");
 
       var requestData = new Dictionary<string, object?> {
             ["name"] = name,
-            ["dictionaries"] = glossaryDicts
+            ["dictionaries"] = dictionaries
                   .Select(dictionary => CreateGlossaryDictionaryBody(
                         dictionary.SourceLanguageCode,
                         dictionary.TargetLanguageCode,
@@ -2600,19 +2607,15 @@ namespace DeepL {
           Stream csvFile,
           CreateMultilingualGlossaryOptions? options,
           CancellationToken cancellationToken = default) {
-      if (name.Length == 0) {
+      if (Argument.NotNull(name, nameof(name)).Length == 0) {
         throw new ArgumentException($"Parameter {nameof(name)} must not be empty");
       }
 
-      if (string.IsNullOrWhiteSpace(sourceLanguageCode)) {
-        throw new ArgumentException($"Parameter {nameof(sourceLanguageCode)} must not be empty");
-      }
+      CheckRequiredLanguage(sourceLanguageCode, nameof(sourceLanguageCode));
+      CheckRequiredLanguage(targetLanguageCode, nameof(targetLanguageCode));
 
-      if (string.IsNullOrWhiteSpace(targetLanguageCode)) {
-        throw new ArgumentException($"Parameter {nameof(targetLanguageCode)} must not be empty");
-      }
-
-      var csvString = await new StreamReader(csvFile).ReadToEndAsync().ConfigureAwait(false);
+      var csvString = await new StreamReader(Argument.NotNull(csvFile, nameof(csvFile))).ReadToEndAsync()
+            .ConfigureAwait(false);
       var requestData = new Dictionary<string, object?> {
             ["name"] = name,
             ["dictionaries"] = new[] {
@@ -2635,8 +2638,7 @@ namespace DeepL {
     public async Task<MultilingualGlossaryInfo> GetMultilingualGlossaryAsync(
           string glossaryId,
           CancellationToken cancellationToken = default) {
-      if (string.IsNullOrWhiteSpace(glossaryId))
-        throw new ArgumentException($"Parameter {nameof(glossaryId)} must not be empty");
+      Argument.NotEmpty(glossaryId, nameof(glossaryId));
       using var responseMessage =
             await _client.ApiGetAsync(MultilingualGlossaryPath(glossaryId), cancellationToken)
                   .ConfigureAwait(false);
@@ -2657,9 +2659,7 @@ namespace DeepL {
           string sourceLanguageCode,
           string targetLanguageCode,
           CancellationToken cancellationToken = default) {
-      if (string.IsNullOrWhiteSpace(glossaryId)) {
-        throw new ArgumentException($"Parameter {nameof(glossaryId)} must not be empty");
-      }
+      Argument.NotEmpty(glossaryId, nameof(glossaryId));
 
       var queryParams = CreateLanguageQueryParams(sourceLanguageCode, targetLanguageCode);
 
@@ -2688,7 +2688,7 @@ namespace DeepL {
           CancellationToken cancellationToken = default) =>
           await GetMultilingualGlossaryDictionaryEntriesAsync(
                 MultilingualGlossaryId(glossary),
-                glossaryDict.SourceLanguageCode,
+                Argument.NotNull(glossaryDict, nameof(glossaryDict)).SourceLanguageCode,
                 glossaryDict.TargetLanguageCode,
                 cancellationToken).ConfigureAwait(false);
 
@@ -2699,7 +2699,7 @@ namespace DeepL {
           CancellationToken cancellationToken = default) =>
           await GetMultilingualGlossaryDictionaryEntriesAsync(
                 glossaryId,
-                glossaryDict.SourceLanguageCode,
+                Argument.NotNull(glossaryDict, nameof(glossaryDict)).SourceLanguageCode,
                 glossaryDict.TargetLanguageCode,
                 cancellationToken).ConfigureAwait(false);
 
@@ -2730,9 +2730,7 @@ namespace DeepL {
     public async Task DeleteMultilingualGlossaryAsync(
           string glossaryId,
           CancellationToken cancellationToken = default) {
-      if (string.IsNullOrWhiteSpace(glossaryId)) {
-        throw new ArgumentException($"Parameter {nameof(glossaryId)} must not be empty");
-      }
+      Argument.NotEmpty(glossaryId, nameof(glossaryId));
 
       using var responseMessage =
             await _client.ApiDeleteAsync(MultilingualGlossaryPath(glossaryId), cancellationToken)
@@ -2753,9 +2751,7 @@ namespace DeepL {
           string sourceLanguageCode,
           string targetLanguageCode,
           CancellationToken cancellationToken = default) {
-      if (string.IsNullOrWhiteSpace(glossaryId)) {
-        throw new ArgumentException($"Parameter {nameof(glossaryId)} must not be empty");
-      }
+      Argument.NotEmpty(glossaryId, nameof(glossaryId));
 
       var queryParams = CreateLanguageQueryParams(sourceLanguageCode, targetLanguageCode);
 
@@ -2785,7 +2781,7 @@ namespace DeepL {
           CancellationToken cancellationToken = default) =>
           await DeleteMultilingualGlossaryDictionaryAsync(
                 MultilingualGlossaryId(glossary),
-                glossaryDict.SourceLanguageCode,
+                Argument.NotNull(glossaryDict, nameof(glossaryDict)).SourceLanguageCode,
                 glossaryDict.TargetLanguageCode,
                 cancellationToken).ConfigureAwait(false);
 
@@ -2796,7 +2792,7 @@ namespace DeepL {
           CancellationToken cancellationToken = default) =>
           await DeleteMultilingualGlossaryDictionaryAsync(
                 glossaryId,
-                glossaryDict.SourceLanguageCode,
+                Argument.NotNull(glossaryDict, nameof(glossaryDict)).SourceLanguageCode,
                 glossaryDict.TargetLanguageCode,
                 cancellationToken).ConfigureAwait(false);
 
@@ -2811,7 +2807,7 @@ namespace DeepL {
                 glossaryId,
                 sourceLanguageCode,
                 targetLanguageCode,
-                entries.ToTsv(),
+                Argument.NotNull(entries, nameof(entries)).ToTsv(),
                 "tsv",
                 null,
                 cancellationToken).ConfigureAwait(false);
@@ -2827,7 +2823,7 @@ namespace DeepL {
                 MultilingualGlossaryId(glossary),
                 sourceLanguageCode,
                 targetLanguageCode,
-                entries.ToTsv(),
+                Argument.NotNull(entries, nameof(entries)).ToTsv(),
                 "tsv",
                 null,
                 cancellationToken).ConfigureAwait(false);
@@ -2839,7 +2835,7 @@ namespace DeepL {
           CancellationToken cancellationToken = default) =>
           await ReplaceMultilingualGlossaryDictionaryInternalAsync(
                 MultilingualGlossaryId(glossary),
-                glossaryDict.SourceLanguageCode,
+                Argument.NotNull(glossaryDict, nameof(glossaryDict)).SourceLanguageCode,
                 glossaryDict.TargetLanguageCode,
                 glossaryDict.Entries.ToTsv(),
                 "tsv",
@@ -2853,7 +2849,7 @@ namespace DeepL {
           CancellationToken cancellationToken = default) =>
           await ReplaceMultilingualGlossaryDictionaryInternalAsync(
                 glossaryId,
-                glossaryDict.SourceLanguageCode,
+                Argument.NotNull(glossaryDict, nameof(glossaryDict)).SourceLanguageCode,
                 glossaryDict.TargetLanguageCode,
                 glossaryDict.Entries.ToTsv(),
                 "tsv",
@@ -2904,7 +2900,7 @@ namespace DeepL {
                 glossaryId,
                 sourceLanguageCode,
                 targetLanguageCode,
-                entries.ToTsv(),
+                Argument.NotNull(entries, nameof(entries)).ToTsv(),
                 "tsv",
                 options,
                 cancellationToken).ConfigureAwait(false);
@@ -2933,7 +2929,7 @@ namespace DeepL {
           CancellationToken cancellationToken = default) =>
           await ReplaceMultilingualGlossaryDictionaryAsync(
                 glossaryId,
-                glossaryDict.SourceLanguageCode,
+                Argument.NotNull(glossaryDict, nameof(glossaryDict)).SourceLanguageCode,
                 glossaryDict.TargetLanguageCode,
                 glossaryDict.Entries,
                 options,
@@ -2947,7 +2943,7 @@ namespace DeepL {
           CancellationToken cancellationToken = default) =>
           await ReplaceMultilingualGlossaryDictionaryAsync(
                 MultilingualGlossaryId(glossary),
-                glossaryDict.SourceLanguageCode,
+                Argument.NotNull(glossaryDict, nameof(glossaryDict)).SourceLanguageCode,
                 glossaryDict.TargetLanguageCode,
                 glossaryDict.Entries,
                 options,
@@ -2994,17 +2990,9 @@ namespace DeepL {
           string entriesFormat,
           ReplaceMultilingualGlossaryDictionaryOptions? options,
           CancellationToken cancellationToken = default) {
-      if (string.IsNullOrWhiteSpace(glossaryId)) {
-        throw new ArgumentException($"Parameter {nameof(glossaryId)} must not be empty");
-      }
-
-      if (string.IsNullOrWhiteSpace(sourceLanguageCode)) {
-        throw new ArgumentException($"Parameter {nameof(sourceLanguageCode)} must not be empty");
-      }
-
-      if (string.IsNullOrWhiteSpace(targetLanguageCode)) {
-        throw new ArgumentException($"Parameter {nameof(targetLanguageCode)} must not be empty");
-      }
+      Argument.NotEmpty(glossaryId, nameof(glossaryId));
+      CheckRequiredLanguage(sourceLanguageCode, nameof(sourceLanguageCode));
+      CheckRequiredLanguage(targetLanguageCode, nameof(targetLanguageCode));
 
       var requestData = new Dictionary<string, object?> {
             ["source_lang"] = sourceLanguageCode,
@@ -3039,13 +3027,8 @@ namespace DeepL {
           string name,
           BaseRequestOptions? options,
           CancellationToken cancellationToken = default) {
-      if (string.IsNullOrWhiteSpace(glossaryId)) {
-        throw new ArgumentException($"Parameter {nameof(glossaryId)} must not be empty");
-      }
-
-      if (string.IsNullOrWhiteSpace(name)) {
-        throw new ArgumentException($"Parameter {nameof(name)} must not be empty");
-      }
+      Argument.NotEmpty(glossaryId, nameof(glossaryId));
+      Argument.NotEmpty(name, nameof(name));
 
       var requestData = new Dictionary<string, object?> { ["name"] = name };
       AddExtraBodyParameters(requestData, options);
@@ -3079,19 +3062,17 @@ namespace DeepL {
           string glossaryId,
           UpdateMultilingualGlossaryOptions? options = null,
           CancellationToken cancellationToken = default) {
-      if (string.IsNullOrWhiteSpace(glossaryId)) {
-        throw new ArgumentException($"Parameter {nameof(glossaryId)} must not be empty");
-      }
+      Argument.NotEmpty(glossaryId, nameof(glossaryId));
 
       var requestData = new Dictionary<string, object?>();
       if (options?.Name != null) requestData["name"] = options.Name;
       if (options?.Dictionaries != null) {
-        requestData["dictionaries"] = options.Dictionaries.Select(
-                    dictionary => CreateGlossaryDictionaryBody(
-                          dictionary.SourceLanguageCode,
-                          dictionary.TargetLanguageCode,
-                          dictionary.Entries.ToTsv(),
-                          "tsv"))
+        requestData["dictionaries"] = Argument.NoNullEntries(options.Dictionaries, nameof(options.Dictionaries))
+              .Select(dictionary => CreateGlossaryDictionaryBody(
+                    dictionary.SourceLanguageCode,
+                    dictionary.TargetLanguageCode,
+                    dictionary.Entries.ToTsv(),
+                    "tsv"))
               .ToList();
       }
 
@@ -3138,7 +3119,7 @@ namespace DeepL {
                 glossaryId,
                 sourceLanguageCode,
                 targetLanguageCode,
-                entries.ToTsv(),
+                Argument.NotNull(entries, nameof(entries)).ToTsv(),
                 "tsv",
                 options,
                 cancellationToken).ConfigureAwait(false);
@@ -3170,7 +3151,7 @@ namespace DeepL {
                 MultilingualGlossaryId(glossary),
                 sourceLanguageCode,
                 targetLanguageCode,
-                entries.ToTsv(),
+                Argument.NotNull(entries, nameof(entries)).ToTsv(),
                 "tsv",
                 options,
                 cancellationToken).ConfigureAwait(false);
@@ -3194,7 +3175,7 @@ namespace DeepL {
           CancellationToken cancellationToken = default) =>
           await UpdateMultilingualGlossaryDictionaryInternalAsync(
                 MultilingualGlossaryId(glossary),
-                glossaryDict.SourceLanguageCode,
+                Argument.NotNull(glossaryDict, nameof(glossaryDict)).SourceLanguageCode,
                 glossaryDict.TargetLanguageCode,
                 glossaryDict.Entries.ToTsv(),
                 "tsv",
@@ -3220,7 +3201,7 @@ namespace DeepL {
           CancellationToken cancellationToken = default) =>
           await UpdateMultilingualGlossaryDictionaryInternalAsync(
                 glossaryId,
-                glossaryDict.SourceLanguageCode,
+                Argument.NotNull(glossaryDict, nameof(glossaryDict)).SourceLanguageCode,
                 glossaryDict.TargetLanguageCode,
                 glossaryDict.Entries.ToTsv(),
                 "tsv",
@@ -3299,17 +3280,9 @@ namespace DeepL {
           string entriesFormat,
           BaseRequestOptions? options,
           CancellationToken cancellationToken) {
-      if (string.IsNullOrWhiteSpace(glossaryId)) {
-        throw new ArgumentException($"Parameter {nameof(glossaryId)} must not be empty");
-      }
-
-      if (string.IsNullOrWhiteSpace(sourceLanguageCode)) {
-        throw new ArgumentException($"Parameter {nameof(sourceLanguageCode)} must not be empty");
-      }
-
-      if (string.IsNullOrWhiteSpace(targetLanguageCode)) {
-        throw new ArgumentException($"Parameter {nameof(targetLanguageCode)} must not be empty");
-      }
+      Argument.NotEmpty(glossaryId, nameof(glossaryId));
+      CheckRequiredLanguage(sourceLanguageCode, nameof(sourceLanguageCode));
+      CheckRequiredLanguage(targetLanguageCode, nameof(targetLanguageCode));
 
       var requestData = new Dictionary<string, object?> {
             ["dictionaries"] = new[] {
@@ -3562,13 +3535,8 @@ namespace DeepL {
     private static (string Key, string Value)[] CreateLanguageQueryParams(
           string sourceLanguageCode,
           string targetLanguageCode) {
-      if (string.IsNullOrWhiteSpace(sourceLanguageCode)) {
-        throw new ArgumentException($"Parameter {nameof(sourceLanguageCode)} must not be empty");
-      }
-
-      if (string.IsNullOrWhiteSpace(targetLanguageCode)) {
-        throw new ArgumentException($"Parameter {nameof(targetLanguageCode)} must not be empty");
-      }
+      CheckRequiredLanguage(sourceLanguageCode, nameof(sourceLanguageCode));
+      CheckRequiredLanguage(targetLanguageCode, nameof(targetLanguageCode));
 
       return new (string Key, string Value)[] {
             ("source_lang", sourceLanguageCode), ("target_lang", targetLanguageCode)
@@ -3685,7 +3653,7 @@ namespace DeepL {
     /// <returns>The CSV content.</returns>
     /// <exception cref="ArgumentException">If the content is empty or contains only whitespace.</exception>
     private static async Task<string> ReadCsvAsync(Stream csvFile) {
-      var csv = await new StreamReader(csvFile).ReadToEndAsync().ConfigureAwait(false);
+      var csv = await new StreamReader(Argument.NotNull(csvFile, nameof(csvFile))).ReadToEndAsync().ConfigureAwait(false);
       if (string.IsNullOrWhiteSpace(csv)) {
         throw new ArgumentException($"Parameter {nameof(csvFile)} must not be empty", nameof(csvFile));
       }
@@ -3727,6 +3695,9 @@ namespace DeepL {
         throw new ArgumentException($"{optionName} must not be empty", optionName);
       }
     }
+
+    /// <summary>Returns the ID of the given v2 glossary, throwing if it is <c>null</c>.</summary>
+    private static string GlossaryId(GlossaryInfo glossary) => Argument.NotNull(glossary, nameof(glossary)).GlossaryId;
 
     /// <summary>Returns the ID of the given multilingual glossary, throwing if it is <c>null</c>.</summary>
     private static string MultilingualGlossaryId(MultilingualGlossaryInfo glossary) =>

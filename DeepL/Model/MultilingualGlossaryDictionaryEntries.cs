@@ -2,7 +2,9 @@
 // Use of this source code is governed by an MIT
 // license that can be found in the LICENSE file.
 
+using System;
 using System.Text.Json.Serialization;
+using DeepL.Internal;
 
 namespace DeepL.Model {
   /// <summary>Information about a glossary dictionary, including the entry list. </summary>
@@ -13,24 +15,27 @@ namespace DeepL.Model {
     /// </summary>
     /// <param name="sourceLanguageCode">Language code of the source terms in the glossary dictionary.</param>
     /// <param name="targetLanguageCode">Language code of the target terms in the glossary dictionary.</param>
-    /// <param name="entries"><see cref="GlossaryEntries" />The source-target entry pairs in the glossary dictionary.</param>
+    /// <param name="entries">
+    ///   <see cref="GlossaryEntries" />The source-target entry pairs in the glossary dictionary. Must not be <c>null</c>.
+    /// </param>
     /// <remarks>
     ///   The constructor for this class (and all other Model classes) should not be used by library users. Ideally it
     ///   would be marked <see langword="internal" />, but needs to be <see langword="public" /> for JSON deserialization.
     ///   In future this function may have backwards-incompatible changes.
     /// </remarks>
+    /// <exception cref="ArgumentNullException">If <paramref name="entries" /> is <c>null</c>.</exception>
     public MultilingualGlossaryDictionaryEntries(
           string sourceLanguageCode,
           string targetLanguageCode,
           GlossaryEntries entries) {
       (SourceLanguageCode, TargetLanguageCode, Entries) =
-            (sourceLanguageCode, targetLanguageCode, entries);
+            (sourceLanguageCode, targetLanguageCode, Argument.NotNull(entries, nameof(entries)));
     }
 
     internal MultilingualGlossaryDictionaryEntries(MultilingualGlossaryDictionaryEntriesResult dictionaryEntriesResult) {
       (SourceLanguageCode, TargetLanguageCode, Entries) =
             (dictionaryEntriesResult.SourceLanguageCode, dictionaryEntriesResult.TargetLanguageCode,
-                  GlossaryEntries.FromTsv(dictionaryEntriesResult.Entries, true));
+                  GlossaryEntries.FromTsv(dictionaryEntriesResult.Entries ?? string.Empty, true));
     }
 
     /// <summary>Language code of the source terms in the glossary.</summary>

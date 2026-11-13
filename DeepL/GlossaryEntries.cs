@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using DeepL.Internal;
 
 namespace DeepL {
   /// <summary>Stores the entries of a glossary.</summary>
@@ -20,11 +21,15 @@ namespace DeepL {
     /// <param name="entryPairs">Source-target entry pairs to convert.</param>
     /// <param name="skipChecks">If <c>true</c>, validity checks on the entries are skipped, defaults to <c>false</c>.</param>
     /// <returns>String containing the entries in TSV format.</returns>
+    /// <exception cref="ArgumentNullException">If <paramref name="entryPairs" /> or one of its terms is <c>null</c>.</exception>
     /// <exception cref="ArgumentException">If the entries fail any validity check.</exception>
     public GlossaryEntries(
           IEnumerable<KeyValuePair<string, string>> entryPairs,
           bool skipChecks = false) {
-      _contentTsv = ConvertToTsv(entryPairs.Select(pair => (pair.Key, pair.Value)), skipChecks);
+      _contentTsv = ConvertToTsv(
+            Argument.NotNull(entryPairs, nameof(entryPairs)).Select(pair => (pair.Key, pair.Value)),
+            skipChecks,
+            nameof(entryPairs));
     }
 
     /// <summary>
@@ -33,11 +38,12 @@ namespace DeepL {
     /// <param name="entryPairs">Source-target entry pairs to convert.</param>
     /// <param name="skipChecks">If <c>true</c>, validity checks on the entries are skipped, defaults to <c>false</c>.</param>
     /// <returns>String containing the entries in TSV format.</returns>
+    /// <exception cref="ArgumentNullException">If <paramref name="entryPairs" /> or one of its terms is <c>null</c>.</exception>
     /// <exception cref="ArgumentException">If the entries fail any validity check.</exception>
     public GlossaryEntries(
           IEnumerable<(string Key, string Value)> entryPairs,
           bool skipChecks = false) {
-      _contentTsv = ConvertToTsv(entryPairs, skipChecks);
+      _contentTsv = ConvertToTsv(Argument.NotNull(entryPairs, nameof(entryPairs)), skipChecks, nameof(entryPairs));
     }
 
     /// <summary>
@@ -64,9 +70,10 @@ namespace DeepL {
     /// <param name="contentTsv">String containing the entries in TSV format.</param>
     /// <param name="skipChecks">If <c>true</c>, validity checks on the entries are skipped, defaults to <c>false</c>.</param>
     /// <returns><see cref="GlossaryEntries" /> containing the source-target entry pairs.</returns>
+    /// <exception cref="ArgumentNullException">If <paramref name="contentTsv" /> is <c>null</c>.</exception>
     /// <exception cref="ArgumentException">If the entries fail any validity check.</exception>
     public static GlossaryEntries FromTsv(string contentTsv, bool skipChecks = false) =>
-          new GlossaryEntries(contentTsv, skipChecks);
+          new GlossaryEntries(Argument.NotNull(contentTsv, nameof(contentTsv)), skipChecks);
 
     /// <summary>
     ///   Converts the glossary entry list into a dictionary of source-target entry pairs. Whitespace is trimmed from the start
@@ -125,15 +132,17 @@ namespace DeepL {
     /// </summary>
     /// <param name="entries">IEnumerable of source-target entry pairs to convert.</param>
     /// <param name="skipChecks">If <c>true</c>, validity checks on the entries are skipped, defaults to <c>false</c>.</param>
+    /// <param name="paramName">Name of the public parameter holding the entries, for the null check.</param>
     /// <returns>String containing the entries in TSV format.</returns>
     private static string ConvertToTsv(
           IEnumerable<(string Key, string Value)> entries,
-          bool skipChecks = false) {
+          bool skipChecks,
+          string paramName) {
       var builder = new StringBuilder();
       var dictionary = skipChecks ? null : new Dictionary<string, string>();
       foreach (var pair in entries) {
-        var source = pair.Key.Trim();
-        var target = pair.Value.Trim();
+        var source = Argument.NotNull(pair.Key, paramName).Trim();
+        var target = Argument.NotNull(pair.Value, paramName).Trim();
         if (!skipChecks) {
           ValidateGlossaryTerm(source);
           ValidateGlossaryTerm(target);

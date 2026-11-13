@@ -28,7 +28,8 @@ namespace DeepL {
 
     /// <summary>
     ///   Dictionaries to update: the entries of each are merged into the glossary's dictionary for its language pair,
-    ///   which is created if it does not exist. The API currently accepts at most one dictionary per request.
+    ///   which is created if it does not exist. The API currently accepts at most one dictionary per request. An entry
+    ///   must not be <c>null</c>.
     /// </summary>
     public IEnumerable<MultilingualGlossaryDictionaryEntries>? Dictionaries { get; set; }
   }

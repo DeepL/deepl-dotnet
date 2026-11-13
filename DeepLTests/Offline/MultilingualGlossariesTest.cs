@@ -469,6 +469,58 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
+    public async Task ThrowsArgumentNullExceptionNamingTheNullArgument() {
+      var client = CreateClient();
+      var dictionary = new MultilingualGlossaryDictionaryEntries("en", "de", Apple);
+      var calls = new (string Param, Func<Task> Call)[] {
+        ("name", () => client.CreateMultilingualGlossaryAsync(null!, new[] { dictionary })),
+        ("name", () => client.CreateMultilingualGlossaryFromCsvAsync(null!, "en", "de", CsvStream())),
+        ("sourceLanguageCode", () => client.CreateMultilingualGlossaryFromCsvAsync("n", null!, "de", CsvStream())),
+        ("csvFile", () => client.CreateMultilingualGlossaryFromCsvAsync("n", "en", "de", null!)),
+        ("glossaryDicts", () => client.CreateMultilingualGlossaryAsync("n", null!)),
+        ("glossaryDicts", () => client.CreateMultilingualGlossaryAsync("n", new MultilingualGlossaryDictionaryEntries[] { null! })),
+        ("Dictionaries", () => client.UpdateMultilingualGlossaryAsync(
+              "g1",
+              new UpdateMultilingualGlossaryOptions { Dictionaries = new MultilingualGlossaryDictionaryEntries[] { null! } })),
+        ("entries", () => Task.FromResult(new MultilingualGlossaryDictionaryEntries("en", "de", null!))),
+        ("glossaryId", () => client.GetMultilingualGlossaryAsync((string)null!)),
+        ("glossaryId", () => client.GetMultilingualGlossaryDictionaryEntriesAsync((string)null!, "en", "de")),
+        ("glossaryId", () => client.DeleteMultilingualGlossaryAsync((string)null!)),
+        ("glossaryId", () => client.DeleteMultilingualGlossaryDictionaryAsync((string)null!, "en", "de")),
+        ("glossaryId", () => client.ReplaceMultilingualGlossaryDictionaryAsync((string)null!, "en", "de", Apple)),
+        ("glossaryId", () => client.UpdateMultilingualGlossaryNameAsync((string)null!, "n")),
+        ("glossaryId", () => client.UpdateMultilingualGlossaryAsync(
+              (string)null!,
+              new UpdateMultilingualGlossaryOptions { Name = "n" })),
+        ("glossaryId", () => client.UpdateMultilingualGlossaryDictionaryAsync((string)null!, "en", "de", Apple)),
+        ("name", () => client.UpdateMultilingualGlossaryNameAsync("g1", null!)),
+        ("sourceLanguageCode", () => client.GetMultilingualGlossaryDictionaryEntriesAsync("g1", null!, "de")),
+        ("targetLanguageCode", () => client.ReplaceMultilingualGlossaryDictionaryAsync("g1", "en", null!, Apple)),
+        ("sourceLanguageCode", () => client.UpdateMultilingualGlossaryDictionaryAsync("g1", null!, "de", Apple)),
+        ("glossaryDict", () => client.GetMultilingualGlossaryDictionaryEntriesAsync(
+              "g1",
+              (MultilingualGlossaryDictionaryInfo)null!)),
+        ("glossaryDict", () => client.DeleteMultilingualGlossaryDictionaryAsync(
+              "g1",
+              (MultilingualGlossaryDictionaryInfo)null!)),
+        ("glossaryDict", () => client.ReplaceMultilingualGlossaryDictionaryAsync(
+              "g1",
+              (MultilingualGlossaryDictionaryEntries)null!)),
+        ("glossaryDict", () => client.UpdateMultilingualGlossaryDictionaryAsync(
+              "g1",
+              (MultilingualGlossaryDictionaryEntries)null!)),
+        ("entries", () => client.ReplaceMultilingualGlossaryDictionaryAsync("g1", "en", "de", (GlossaryEntries)null!)),
+        ("entries", () => client.UpdateMultilingualGlossaryDictionaryAsync("g1", "en", "de", (GlossaryEntries)null!)),
+        ("csvFile", () => client.ReplaceMultilingualGlossaryDictionaryFromCsvAsync("g1", "en", "de", null!)),
+        ("csvFile", () => client.UpdateMultilingualGlossaryDictionaryFromCsvAsync("g1", "en", "de", null!)),
+      };
+      foreach (var (param, call) in calls) {
+        var exception = await Assert.ThrowsAsync<ArgumentNullException>(call);
+        Assert.Equal(param, exception.ParamName);
+      }
+    }
+
+    [Fact]
     public void DeclaresAllClientOverloadsOnIGlossaryManager() => AssertClientOverloadsDeclaredOn<IGlossaryManager>();
   }
 }

@@ -19,9 +19,16 @@ namespace DeepL {
     ///   used.
     /// </summary>
     /// <param name="name">User-defined name to assign to the glossary; must not be empty.</param>
-    /// <param name="glossaryDicts"><see cref="MultilingualGlossaryDictionaryInfo" />The dictionaries of the glossary</param>
+    /// <param name="glossaryDicts">
+    ///   <see cref="MultilingualGlossaryDictionaryInfo" />The dictionaries of the glossary; must not be empty or contain
+    ///   <c>null</c>.
+    /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="MultilingualGlossaryInfo" /> object with details about the newly created glossary.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="name" />, <paramref name="glossaryDicts" /> or an entry of
+    ///   <paramref name="glossaryDicts" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -44,13 +51,17 @@ namespace DeepL {
     ///   .
     /// </summary>
     /// <param name="name">User-defined name to assign to the glossary; must not be empty.</param>
-    /// <param name="glossaryDicts">The dictionaries of the glossary; must not be empty.</param>
+    /// <param name="glossaryDicts">The dictionaries of the glossary; must not be empty or contain <c>null</c>.</param>
     /// <param name="options">
     ///   Optional <see cref="CreateMultilingualGlossaryOptions" />, whose <c>ExtraBodyParameters</c> are added last to
     ///   the request body.
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="MultilingualGlossaryInfo" /> object with details about the newly created glossary.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="name" />, <paramref name="glossaryDicts" /> or an entry of
+    ///   <paramref name="glossaryDicts" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -82,6 +93,10 @@ namespace DeepL {
     /// <param name="csvFile"><see cref="Stream" /> containing CSV content.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="MultilingualGlossaryInfo" /> object with details about the newly created glossary.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="name" />, <paramref name="sourceLanguageCode" />, <paramref name="targetLanguageCode" /> or
+    ///   <paramref name="csvFile" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -114,6 +129,10 @@ namespace DeepL {
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="MultilingualGlossaryInfo" /> object with details about the newly created glossary.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="name" />, <paramref name="sourceLanguageCode" />, <paramref name="targetLanguageCode" /> or
+    ///   <paramref name="csvFile" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -142,6 +161,7 @@ namespace DeepL {
     /// <param name="glossaryId">ID of glossary to retrieve.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="MultilingualGlossaryInfo" /> object with details about the specified glossary.</returns>
+    /// <exception cref="ArgumentNullException">If <paramref name="glossaryId" /> is <c>null</c>.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -157,8 +177,8 @@ namespace DeepL {
     /// <param name="glossary">The glossary to retrieve.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="MultilingualGlossaryInfo" /> object with details about the specified glossary.</returns>
+    /// <exception cref="ArgumentNullException">If <paramref name="glossary" /> is <c>null</c>.</exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
-    /// <exception cref="ArgumentNullException">If <paramref name="glossary" /> is null.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -190,6 +210,10 @@ namespace DeepL {
     /// <param name="targetLanguageCode">Target language code of the requested glossary dictionary.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="MultilingualGlossaryDictionaryEntries" /> object containing a glossary dictionary with entries.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="glossaryId" />, <paramref name="sourceLanguageCode" /> or
+    ///   <paramref name="targetLanguageCode" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -208,6 +232,9 @@ namespace DeepL {
     /// <param name="glossaryDict">The requested glossary dictionary.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="MultilingualGlossaryDictionaryEntries" /> object containing a glossary dictionary with entries.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="glossaryId" /> or <paramref name="glossaryDict" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -226,7 +253,10 @@ namespace DeepL {
     /// <param name="targetLanguageCode">Target language code of the requested glossary dictionary.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="MultilingualGlossaryDictionaryEntries" /> object containing a glossary dictionary with entries.</returns>
-    /// <exception cref="ArgumentNullException">If <paramref name="glossary" /> is null.</exception>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="glossary" />, <paramref name="sourceLanguageCode" /> or
+    ///   <paramref name="targetLanguageCode" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -245,7 +275,9 @@ namespace DeepL {
     /// <param name="glossaryDict">The requested glossary dictionary.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="MultilingualGlossaryDictionaryEntries" /> object containing a glossary dictionary with entries.</returns>
-    /// <exception cref="ArgumentNullException">If <paramref name="glossary" /> is null.</exception>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="glossary" /> or <paramref name="glossaryDict" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -268,6 +300,10 @@ namespace DeepL {
     /// <returns>
     ///   <see cref="MultilingualGlossaryDictionaryInfo" /> object with details about the newly replaced glossary dictionary.
     /// </returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="glossaryId" />, <paramref name="sourceLanguageCode" />,
+    ///   <paramref name="targetLanguageCode" /> or <paramref name="entries" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -294,6 +330,9 @@ namespace DeepL {
     /// <returns>
     ///   <see cref="MultilingualGlossaryDictionaryInfo" /> object with details about the newly replaced glossary dictionary.
     /// </returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="glossaryId" /> or <paramref name="glossaryDict" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -318,8 +357,10 @@ namespace DeepL {
     /// <returns>
     ///   <see cref="MultilingualGlossaryDictionaryInfo" /> object with details about the newly replaced glossary dictionary.
     /// </returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="glossary" /> or <paramref name="glossaryDict" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
-    /// <exception cref="ArgumentNullException">If <paramref name="glossary" /> is null.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -342,8 +383,11 @@ namespace DeepL {
     /// <returns>
     ///   <see cref="MultilingualGlossaryDictionaryInfo" /> object with details about the newly replaced glossary dictionary.
     /// </returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="glossary" />, <paramref name="sourceLanguageCode" />,
+    ///   <paramref name="targetLanguageCode" /> or <paramref name="entries" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
-    /// <exception cref="ArgumentNullException">If <paramref name="glossary" /> is null.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -370,6 +414,10 @@ namespace DeepL {
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="MultilingualGlossaryDictionaryInfo" /> object with details about the replaced dictionary.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="glossaryId" />, <paramref name="sourceLanguageCode" />,
+    ///   <paramref name="targetLanguageCode" /> or <paramref name="entries" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -398,8 +446,11 @@ namespace DeepL {
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="MultilingualGlossaryDictionaryInfo" /> object with details about the replaced dictionary.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="glossary" />, <paramref name="sourceLanguageCode" />,
+    ///   <paramref name="targetLanguageCode" /> or <paramref name="entries" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
-    /// <exception cref="ArgumentNullException">If <paramref name="glossary" /> is null.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -426,6 +477,9 @@ namespace DeepL {
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="MultilingualGlossaryDictionaryInfo" /> object with details about the replaced dictionary.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="glossaryId" /> or <paramref name="glossaryDict" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -451,8 +505,10 @@ namespace DeepL {
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="MultilingualGlossaryDictionaryInfo" /> object with details about the replaced dictionary.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="glossary" /> or <paramref name="glossaryDict" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
-    /// <exception cref="ArgumentNullException">If <paramref name="glossary" /> is null.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -476,10 +532,13 @@ namespace DeepL {
     /// <returns>
     ///   <see cref="MultilingualGlossaryDictionaryInfo" /> object with details about the newly replaced glossary dictionary.
     /// </returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="glossary" />, <paramref name="sourceLanguageCode" />,
+    ///   <paramref name="targetLanguageCode" /> or <paramref name="csvFile" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">
     ///   If any argument is invalid, or the CSV content is empty or contains only whitespace.
     /// </exception>
-    /// <exception cref="ArgumentNullException">If <paramref name="glossary" /> is null.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -504,6 +563,10 @@ namespace DeepL {
     /// <returns>
     ///   <see cref="MultilingualGlossaryDictionaryInfo" /> object with details about the newly replaced glossary dictionary.
     /// </returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="glossaryId" />, <paramref name="sourceLanguageCode" />,
+    ///   <paramref name="targetLanguageCode" /> or <paramref name="csvFile" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">
     ///   If any argument is invalid, or the CSV content is empty or contains only whitespace.
     /// </exception>
@@ -533,6 +596,10 @@ namespace DeepL {
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="MultilingualGlossaryDictionaryInfo" /> object with details about the replaced dictionary.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="glossaryId" />, <paramref name="sourceLanguageCode" />,
+    ///   <paramref name="targetLanguageCode" /> or <paramref name="csvFile" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">
     ///   If any argument is invalid, or the CSV content is empty or contains only whitespace.
     /// </exception>
@@ -563,10 +630,13 @@ namespace DeepL {
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="MultilingualGlossaryDictionaryInfo" /> object with details about the replaced dictionary.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="glossary" />, <paramref name="sourceLanguageCode" />,
+    ///   <paramref name="targetLanguageCode" /> or <paramref name="csvFile" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">
     ///   If any argument is invalid, or the CSV content is empty or contains only whitespace.
     /// </exception>
-    /// <exception cref="ArgumentNullException">If <paramref name="glossary" /> is null.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -589,6 +659,9 @@ namespace DeepL {
     /// <returns>
     ///   <see cref="MultilingualGlossaryInfo" /> object with details about the glossary with the newly updated name
     /// </returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="glossaryId" /> or <paramref name="name" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -611,6 +684,9 @@ namespace DeepL {
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="MultilingualGlossaryInfo" /> object with details about the renamed glossary.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="glossaryId" /> or <paramref name="name" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -630,8 +706,10 @@ namespace DeepL {
     /// <param name="name">The new name of the glossary; must not be empty.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="MultilingualGlossaryInfo" /> object with details about the renamed glossary.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="glossary" /> or <paramref name="name" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
-    /// <exception cref="ArgumentNullException">If <paramref name="glossary" /> is null.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -653,8 +731,10 @@ namespace DeepL {
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="MultilingualGlossaryInfo" /> object with details about the renamed glossary.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="glossary" /> or <paramref name="name" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
-    /// <exception cref="ArgumentNullException">If <paramref name="glossary" /> is null.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -679,6 +759,10 @@ namespace DeepL {
     ///   <see cref="MultilingualGlossaryInfo" /> object with details about the glossary with the newly updated glossary
     ///   dictionary.
     /// </returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="glossaryId" />, <paramref name="sourceLanguageCode" />,
+    ///   <paramref name="targetLanguageCode" /> or <paramref name="entries" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -705,8 +789,11 @@ namespace DeepL {
     ///   <see cref="MultilingualGlossaryInfo" /> object with details about the glossary with the newly updated glossary
     ///   dictionary.
     /// </returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="glossary" />, <paramref name="sourceLanguageCode" />,
+    ///   <paramref name="targetLanguageCode" /> or <paramref name="entries" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
-    /// <exception cref="ArgumentNullException">If <paramref name="glossary" /> is null.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -730,6 +817,9 @@ namespace DeepL {
     ///   <see cref="MultilingualGlossaryInfo" /> object with details about the glossary with the newly updated glossary
     ///   dictionary.
     /// </returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="glossaryId" /> or <paramref name="glossaryDict" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -751,8 +841,10 @@ namespace DeepL {
     ///   <see cref="MultilingualGlossaryInfo" /> object with details about the glossary with the newly updated glossary
     ///   dictionary.
     /// </returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="glossary" /> or <paramref name="glossaryDict" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
-    /// <exception cref="ArgumentNullException">If <paramref name="glossary" /> is null.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -778,6 +870,10 @@ namespace DeepL {
     /// <returns>
     ///   <see cref="MultilingualGlossaryInfo" /> object with details about the glossary with the updated dictionary.
     /// </returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="glossaryId" />, <paramref name="sourceLanguageCode" />,
+    ///   <paramref name="targetLanguageCode" /> or <paramref name="entries" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -807,8 +903,11 @@ namespace DeepL {
     /// <returns>
     ///   <see cref="MultilingualGlossaryInfo" /> object with details about the glossary with the updated dictionary.
     /// </returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="glossary" />, <paramref name="sourceLanguageCode" />,
+    ///   <paramref name="targetLanguageCode" /> or <paramref name="entries" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
-    /// <exception cref="ArgumentNullException">If <paramref name="glossary" /> is null.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -835,8 +934,10 @@ namespace DeepL {
     /// <returns>
     ///   <see cref="MultilingualGlossaryInfo" /> object with details about the glossary with the updated dictionary.
     /// </returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="glossary" /> or <paramref name="glossaryDict" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
-    /// <exception cref="ArgumentNullException">If <paramref name="glossary" /> is null.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -861,6 +962,9 @@ namespace DeepL {
     /// <returns>
     ///   <see cref="MultilingualGlossaryInfo" /> object with details about the glossary with the updated dictionary.
     /// </returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="glossaryId" /> or <paramref name="glossaryDict" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -886,6 +990,10 @@ namespace DeepL {
     ///   <see cref="MultilingualGlossaryInfo" /> object with details about the glossary with the newly updated glossary
     ///   dictionary.
     /// </returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="glossaryId" />, <paramref name="sourceLanguageCode" />,
+    ///   <paramref name="targetLanguageCode" /> or <paramref name="csvFile" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">
     ///   If any argument is invalid, or the CSV content is empty or contains only whitespace.
     /// </exception>
@@ -914,10 +1022,13 @@ namespace DeepL {
     ///   <see cref="MultilingualGlossaryInfo" /> object with details about the glossary with the newly updated glossary
     ///   dictionary.
     /// </returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="glossary" />, <paramref name="sourceLanguageCode" />,
+    ///   <paramref name="targetLanguageCode" /> or <paramref name="csvFile" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">
     ///   If any argument is invalid, or the CSV content is empty or contains only whitespace.
     /// </exception>
-    /// <exception cref="ArgumentNullException">If <paramref name="glossary" /> is null.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -945,6 +1056,10 @@ namespace DeepL {
     /// <returns>
     ///   <see cref="MultilingualGlossaryInfo" /> object with details about the glossary with the updated dictionary.
     /// </returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="glossaryId" />, <paramref name="sourceLanguageCode" />,
+    ///   <paramref name="targetLanguageCode" /> or <paramref name="csvFile" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">
     ///   If any argument is invalid, or the CSV content is empty or contains only whitespace.
     /// </exception>
@@ -976,10 +1091,13 @@ namespace DeepL {
     /// <returns>
     ///   <see cref="MultilingualGlossaryInfo" /> object with details about the glossary with the updated dictionary.
     /// </returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="glossary" />, <paramref name="sourceLanguageCode" />,
+    ///   <paramref name="targetLanguageCode" /> or <paramref name="csvFile" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">
     ///   If any argument is invalid, or the CSV content is empty or contains only whitespace.
     /// </exception>
-    /// <exception cref="ArgumentNullException">If <paramref name="glossary" /> is null.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -995,6 +1113,7 @@ namespace DeepL {
     /// <summary>Deletes the glossary with the specified ID.</summary>
     /// <param name="glossaryId">ID of glossary to delete.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <exception cref="ArgumentNullException">If <paramref name="glossaryId" /> is <c>null</c>.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -1006,7 +1125,7 @@ namespace DeepL {
     /// <summary>Deletes the specified glossary.</summary>
     /// <param name="glossary"><see cref="MultilingualGlossaryInfo" /> object corresponding to glossary to delete.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
-    /// <exception cref="ArgumentNullException">If <paramref name="glossary" /> is null.</exception>
+    /// <exception cref="ArgumentNullException">If <paramref name="glossary" /> is <c>null</c>.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -1023,6 +1142,10 @@ namespace DeepL {
     /// <param name="sourceLanguageCode">Source language code of the glossary dictionary to be deleted.</param>
     /// <param name="targetLanguageCode">Target language code of the glossary dictionary to be deleted.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="glossaryId" />, <paramref name="sourceLanguageCode" /> or
+    ///   <paramref name="targetLanguageCode" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -1039,6 +1162,9 @@ namespace DeepL {
     ///   <see cref="MultilingualGlossaryDictionaryInfo" /> object corresponding to glossary dictionary to delete.
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="glossaryId" /> or <paramref name="glossaryDict" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -1053,7 +1179,10 @@ namespace DeepL {
     /// <param name="sourceLanguageCode">Source language code of the glossary dictionary to be deleted.</param>
     /// <param name="targetLanguageCode">Target language code of the glossary dictionary to be deleted.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
-    /// <exception cref="ArgumentNullException">If <paramref name="glossary" /> is null.</exception>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="glossary" />, <paramref name="sourceLanguageCode" /> or
+    ///   <paramref name="targetLanguageCode" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -1070,7 +1199,9 @@ namespace DeepL {
     ///   <see cref="MultilingualGlossaryDictionaryInfo" /> object corresponding to glossary dictionary to delete.
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
-    /// <exception cref="ArgumentNullException">If <paramref name="glossary" /> is null.</exception>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="glossary" /> or <paramref name="glossaryDict" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -1092,6 +1223,10 @@ namespace DeepL {
     /// <param name="entries">Glossary entry list.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="GlossaryInfo" /> object with details about the newly created glossary.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="name" />, <paramref name="sourceLanguageCode" />, <paramref name="targetLanguageCode" /> or
+    ///   <paramref name="entries" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -1122,6 +1257,10 @@ namespace DeepL {
     /// <param name="csvFile"><see cref="Stream" /> containing CSV content.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="GlossaryInfo" /> object with details about the newly created glossary.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="name" />, <paramref name="sourceLanguageCode" />, <paramref name="targetLanguageCode" /> or
+    ///   <paramref name="csvFile" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -1148,6 +1287,7 @@ namespace DeepL {
     /// <param name="glossaryId">ID of glossary to retrieve.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="GlossaryInfo" /> object with details about the specified glossary.</returns>
+    /// <exception cref="ArgumentNullException">If <paramref name="glossaryId" /> is <c>null</c>.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -1159,6 +1299,7 @@ namespace DeepL {
     /// <summary>Asynchronously waits until the given glossary is ready to be used for translations.</summary>
     /// <param name="glossaryId">ID of glossary to ensure ready.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <exception cref="ArgumentNullException">If <paramref name="glossaryId" /> is <c>null</c>.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -1187,6 +1328,7 @@ namespace DeepL {
     /// <param name="glossaryId">ID of glossary for which to retrieve entries.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="GlossaryEntries" /> containing entry pairs of the glossary.</returns>
+    /// <exception cref="ArgumentNullException">If <paramref name="glossaryId" /> is <c>null</c>.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -1201,6 +1343,7 @@ namespace DeepL {
     /// <param name="glossary"><see cref="GlossaryInfo" /> object corresponding to glossary for which to retrieve entries.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="GlossaryEntries" /> containing entry pairs of the glossary.</returns>
+    /// <exception cref="ArgumentNullException">If <paramref name="glossary" /> is <c>null</c>.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -1212,6 +1355,7 @@ namespace DeepL {
     /// <summary>Deletes the glossary with the specified ID.</summary>
     /// <param name="glossaryId">ID of glossary to delete.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <exception cref="ArgumentNullException">If <paramref name="glossaryId" /> is <c>null</c>.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -1223,6 +1367,7 @@ namespace DeepL {
     /// <summary>Deletes the specified glossary.</summary>
     /// <param name="glossary"><see cref="GlossaryInfo" /> object corresponding to glossary to delete.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <exception cref="ArgumentNullException">If <paramref name="glossary" /> is <c>null</c>.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -1244,6 +1389,10 @@ namespace DeepL {
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="MultilingualGlossaryInfo" /> object with details about the updated glossary.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="glossaryId" /> or an entry of <see cref="UpdateMultilingualGlossaryOptions.Dictionaries" />
+    ///   is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -1262,8 +1411,11 @@ namespace DeepL {
     /// <param name="options">The <see cref="UpdateMultilingualGlossaryOptions" /> to apply.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="MultilingualGlossaryInfo" /> object with details about the updated glossary.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="glossary" /> or an entry of <see cref="UpdateMultilingualGlossaryOptions.Dictionaries" />
+    ///   is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
-    /// <exception cref="ArgumentNullException">If <paramref name="glossary" /> is null.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
