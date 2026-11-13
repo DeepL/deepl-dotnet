@@ -191,6 +191,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   empty or whitespace-only entry of `GlossaryIds`, in `TextTranslateOptions` or `DocumentTranslateOptions` now throw an
   `ArgumentException` without sending a request (for `TranslateDocumentAsync()` it is the `InnerException` of the
   `DocumentTranslationException`). They were sent to the API before. Leave the option unset (`null`) instead.
+- **Breaking:** the `CustomInstruction` parameter of the `GetStyleRuleCustomInstructionAsync()`,
+  `UpdateStyleRuleCustomInstructionAsync()` and `DeleteStyleRuleCustomInstructionAsync()` overloads is renamed from
+  `instruction` to `instructionId`, the name it has in the overloads taking an ID. Calls that pass it by name must use
+  `instructionId:`.
 
 ### Removed
 - Removed `Usage.Document` and `Usage.TeamDocument`; the API no longer returns document usage. `Usage.ToString()` no

@@ -2032,17 +2032,17 @@ namespace DeepL {
     /// <inheritdoc />
     public async Task<CustomInstruction> GetStyleRuleCustomInstructionAsync(
           string styleId,
-          CustomInstruction instruction,
+          CustomInstruction instructionId,
           CancellationToken cancellationToken = default) =>
-          await GetStyleRuleCustomInstructionAsync(styleId, InstructionId(instruction), cancellationToken)
+          await GetStyleRuleCustomInstructionAsync(styleId, InstructionId(instructionId), cancellationToken)
                 .ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<CustomInstruction> GetStyleRuleCustomInstructionAsync(
           StyleRuleInfo styleRule,
-          CustomInstruction instruction,
+          CustomInstruction instructionId,
           CancellationToken cancellationToken = default) =>
-          await GetStyleRuleCustomInstructionAsync(StyleRuleId(styleRule), InstructionId(instruction), cancellationToken)
+          await GetStyleRuleCustomInstructionAsync(StyleRuleId(styleRule), InstructionId(instructionId), cancellationToken)
                 .ConfigureAwait(false);
 
     /// <inheritdoc />
@@ -2125,14 +2125,14 @@ namespace DeepL {
     /// <inheritdoc />
     public async Task<CustomInstruction> UpdateStyleRuleCustomInstructionAsync(
           string styleId,
-          CustomInstruction instruction,
+          CustomInstruction instructionId,
           string label,
           string prompt,
           string? sourceLanguage = null,
           CancellationToken cancellationToken = default) =>
           await UpdateStyleRuleCustomInstructionAsync(
                       styleId,
-                      InstructionId(instruction),
+                      InstructionId(instructionId),
                       label,
                       prompt,
                       sourceLanguage,
@@ -2143,14 +2143,14 @@ namespace DeepL {
     /// <inheritdoc />
     public async Task<CustomInstruction> UpdateStyleRuleCustomInstructionAsync(
           StyleRuleInfo styleRule,
-          CustomInstruction instruction,
+          CustomInstruction instructionId,
           string label,
           string prompt,
           string? sourceLanguage = null,
           CancellationToken cancellationToken = default) =>
           await UpdateStyleRuleCustomInstructionAsync(
                       StyleRuleId(styleRule),
-                      InstructionId(instruction),
+                      InstructionId(instructionId),
                       label,
                       prompt,
                       sourceLanguage,
@@ -2180,7 +2180,7 @@ namespace DeepL {
     /// <inheritdoc />
     public async Task<CustomInstruction> UpdateStyleRuleCustomInstructionAsync(
           string styleId,
-          CustomInstruction instruction,
+          CustomInstruction instructionId,
           string label,
           string prompt,
           string? sourceLanguage,
@@ -2188,7 +2188,7 @@ namespace DeepL {
           CancellationToken cancellationToken = default) =>
           await UpdateStyleRuleCustomInstructionAsync(
                       styleId,
-                      InstructionId(instruction),
+                      InstructionId(instructionId),
                       label,
                       prompt,
                       sourceLanguage,
@@ -2199,7 +2199,7 @@ namespace DeepL {
     /// <inheritdoc />
     public async Task<CustomInstruction> UpdateStyleRuleCustomInstructionAsync(
           StyleRuleInfo styleRule,
-          CustomInstruction instruction,
+          CustomInstruction instructionId,
           string label,
           string prompt,
           string? sourceLanguage,
@@ -2207,7 +2207,7 @@ namespace DeepL {
           CancellationToken cancellationToken = default) =>
           await UpdateStyleRuleCustomInstructionAsync(
                       StyleRuleId(styleRule),
-                      InstructionId(instruction),
+                      InstructionId(instructionId),
                       label,
                       prompt,
                       sourceLanguage,
@@ -2247,17 +2247,17 @@ namespace DeepL {
     /// <inheritdoc />
     public async Task DeleteStyleRuleCustomInstructionAsync(
           string styleId,
-          CustomInstruction instruction,
+          CustomInstruction instructionId,
           CancellationToken cancellationToken = default) =>
-          await DeleteStyleRuleCustomInstructionAsync(styleId, InstructionId(instruction), cancellationToken)
+          await DeleteStyleRuleCustomInstructionAsync(styleId, InstructionId(instructionId), cancellationToken)
                 .ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task DeleteStyleRuleCustomInstructionAsync(
           StyleRuleInfo styleRule,
-          CustomInstruction instruction,
+          CustomInstruction instructionId,
           CancellationToken cancellationToken = default) =>
-          await DeleteStyleRuleCustomInstructionAsync(StyleRuleId(styleRule), InstructionId(instruction), cancellationToken)
+          await DeleteStyleRuleCustomInstructionAsync(StyleRuleId(styleRule), InstructionId(instructionId), cancellationToken)
                 .ConfigureAwait(false);
 
     /// <inheritdoc />

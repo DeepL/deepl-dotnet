@@ -70,12 +70,12 @@ namespace DeepLTests.Offline {
       ExpectNoBody(HttpMethod.Delete, path).Respond(HttpStatusCode.NoContent);
       ExpectNoBody(HttpMethod.Delete, path).Respond(HttpStatusCode.NoContent);
       var client = CreateClient();
-      Assert.Equal("i1", (await client.GetStyleRuleCustomInstructionAsync("s1", Instruction())).Id);
-      await client.GetStyleRuleCustomInstructionAsync(Info(), Instruction());
-      await client.UpdateStyleRuleCustomInstructionAsync("s1", Instruction(), "New", "Newer");
-      await client.UpdateStyleRuleCustomInstructionAsync(Info(), Instruction(), "New", "Newer");
-      await client.DeleteStyleRuleCustomInstructionAsync("s1", Instruction());
-      await client.DeleteStyleRuleCustomInstructionAsync(Info(), Instruction());
+      Assert.Equal("i1", (await client.GetStyleRuleCustomInstructionAsync("s1", instructionId: Instruction())).Id);
+      await client.GetStyleRuleCustomInstructionAsync(Info(), instructionId: Instruction());
+      await client.UpdateStyleRuleCustomInstructionAsync("s1", instructionId: Instruction(), "New", "Newer");
+      await client.UpdateStyleRuleCustomInstructionAsync(Info(), instructionId: Instruction(), "New", "Newer");
+      await client.DeleteStyleRuleCustomInstructionAsync("s1", instructionId: Instruction());
+      await client.DeleteStyleRuleCustomInstructionAsync(Info(), instructionId: Instruction());
     }
 
     [Fact]

@@ -487,7 +487,7 @@ namespace DeepL {
     ///   <see cref="GetStyleRuleCustomInstructionAsync(string, string, CancellationToken)" />.
     /// </summary>
     /// <param name="styleId">The ID of the style rule.</param>
-    /// <param name="instruction">The custom instruction to retrieve.</param>
+    /// <param name="instructionId">The custom instruction to retrieve.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="CustomInstruction" /> object for the requested instruction.</returns>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
@@ -498,7 +498,7 @@ namespace DeepL {
     /// </exception>
     Task<CustomInstruction> GetStyleRuleCustomInstructionAsync(
           string styleId,
-          CustomInstruction instruction,
+          CustomInstruction instructionId,
           CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -506,7 +506,7 @@ namespace DeepL {
     ///   <see cref="GetStyleRuleCustomInstructionAsync(string, string, CancellationToken)" />.
     /// </summary>
     /// <param name="styleRule">The style rule.</param>
-    /// <param name="instruction">The custom instruction to retrieve.</param>
+    /// <param name="instructionId">The custom instruction to retrieve.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="CustomInstruction" /> object for the requested instruction.</returns>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
@@ -517,7 +517,7 @@ namespace DeepL {
     /// </exception>
     Task<CustomInstruction> GetStyleRuleCustomInstructionAsync(
           StyleRuleInfo styleRule,
-          CustomInstruction instruction,
+          CustomInstruction instructionId,
           CancellationToken cancellationToken = default);
 
     /// <summary>Updates a custom instruction for a style rule.</summary>
@@ -601,7 +601,7 @@ namespace DeepL {
     ///   <see cref="UpdateStyleRuleCustomInstructionAsync(string, string, string, string, string?, CancellationToken)" />.
     /// </summary>
     /// <param name="styleId">The ID of the style rule.</param>
-    /// <param name="instruction">The custom instruction to update.</param>
+    /// <param name="instructionId">The custom instruction to update.</param>
     /// <param name="label">New label for the custom instruction.</param>
     /// <param name="prompt">New prompt text for the custom instruction.</param>
     /// <param name="sourceLanguage">Optional source language code.</param>
@@ -615,7 +615,7 @@ namespace DeepL {
     /// </exception>
     Task<CustomInstruction> UpdateStyleRuleCustomInstructionAsync(
           string styleId,
-          CustomInstruction instruction,
+          CustomInstruction instructionId,
           string label,
           string prompt,
           string? sourceLanguage = null,
@@ -626,7 +626,7 @@ namespace DeepL {
     ///   <see cref="UpdateStyleRuleCustomInstructionAsync(string, string, string, string, string?, CancellationToken)" />.
     /// </summary>
     /// <param name="styleRule">The style rule.</param>
-    /// <param name="instruction">The custom instruction to update.</param>
+    /// <param name="instructionId">The custom instruction to update.</param>
     /// <param name="label">New label for the custom instruction.</param>
     /// <param name="prompt">New prompt text for the custom instruction.</param>
     /// <param name="sourceLanguage">Optional source language code.</param>
@@ -640,7 +640,7 @@ namespace DeepL {
     /// </exception>
     Task<CustomInstruction> UpdateStyleRuleCustomInstructionAsync(
           StyleRuleInfo styleRule,
-          CustomInstruction instruction,
+          CustomInstruction instructionId,
           string label,
           string prompt,
           string? sourceLanguage = null,
@@ -683,7 +683,7 @@ namespace DeepL {
     ///   .
     /// </summary>
     /// <param name="styleId">The ID of the style rule.</param>
-    /// <param name="instruction">The custom instruction to update.</param>
+    /// <param name="instructionId">The custom instruction to update.</param>
     /// <param name="label">New label for the custom instruction.</param>
     /// <param name="prompt">New prompt text for the custom instruction.</param>
     /// <param name="sourceLanguage">Optional source language code.</param>
@@ -701,7 +701,7 @@ namespace DeepL {
     /// </exception>
     Task<CustomInstruction> UpdateStyleRuleCustomInstructionAsync(
           string styleId,
-          CustomInstruction instruction,
+          CustomInstruction instructionId,
           string label,
           string prompt,
           string? sourceLanguage,
@@ -714,7 +714,7 @@ namespace DeepL {
     ///   .
     /// </summary>
     /// <param name="styleRule">The style rule.</param>
-    /// <param name="instruction">The custom instruction to update.</param>
+    /// <param name="instructionId">The custom instruction to update.</param>
     /// <param name="label">New label for the custom instruction.</param>
     /// <param name="prompt">New prompt text for the custom instruction.</param>
     /// <param name="sourceLanguage">Optional source language code.</param>
@@ -732,7 +732,7 @@ namespace DeepL {
     /// </exception>
     Task<CustomInstruction> UpdateStyleRuleCustomInstructionAsync(
           StyleRuleInfo styleRule,
-          CustomInstruction instruction,
+          CustomInstruction instructionId,
           string label,
           string prompt,
           string? sourceLanguage,
@@ -776,7 +776,7 @@ namespace DeepL {
     ///   <see cref="DeleteStyleRuleCustomInstructionAsync(string, string, CancellationToken)" />.
     /// </summary>
     /// <param name="styleId">The ID of the style rule.</param>
-    /// <param name="instruction">The custom instruction to delete.</param>
+    /// <param name="instructionId">The custom instruction to delete.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="NotFoundException">If the specified style rule or custom instruction was not found.</exception>
@@ -786,7 +786,7 @@ namespace DeepL {
     /// </exception>
     Task DeleteStyleRuleCustomInstructionAsync(
           string styleId,
-          CustomInstruction instruction,
+          CustomInstruction instructionId,
           CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -794,7 +794,7 @@ namespace DeepL {
     ///   <see cref="DeleteStyleRuleCustomInstructionAsync(string, string, CancellationToken)" />.
     /// </summary>
     /// <param name="styleRule">The style rule.</param>
-    /// <param name="instruction">The custom instruction to delete.</param>
+    /// <param name="instructionId">The custom instruction to delete.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="NotFoundException">If the specified style rule or custom instruction was not found.</exception>
@@ -804,7 +804,7 @@ namespace DeepL {
     /// </exception>
     Task DeleteStyleRuleCustomInstructionAsync(
           StyleRuleInfo styleRule,
-          CustomInstruction instruction,
+          CustomInstruction instructionId,
           CancellationToken cancellationToken = default);
   }
 }
