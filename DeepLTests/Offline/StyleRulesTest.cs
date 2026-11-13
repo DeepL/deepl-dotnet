@@ -327,6 +327,50 @@ namespace DeepLTests.Offline {
                 () => CreateClient().UpdateStyleRuleConfiguredRulesAsync("s1", (Dictionary<string, Dictionary<string, string>>)null!));
 
     [Fact]
+    public async Task ThrowsArgumentNullExceptionNamingTheNullArgument() {
+      var client = CreateClient();
+      var noId = (string)null!;
+      var noRule = (StyleRuleInfo)null!;
+      var noInstruction = (CustomInstruction)null!;
+      var calls = new (string Param, Func<Task> Call)[] {
+        ("name", () => client.CreateStyleRuleAsync(null!, "en")),
+        ("language", () => client.CreateStyleRuleAsync("n", null!)),
+        ("customInstructions", () => client.CreateStyleRuleAsync("n", "en", null, new CustomInstruction[] { null! })),
+        ("styleId", () => client.GetStyleRuleAsync(noId)),
+        ("styleId", () => client.UpdateStyleRuleNameAsync(noId, "n")),
+        ("styleId", () => client.DeleteStyleRuleAsync(noId)),
+        ("styleId", () => client.UpdateStyleRuleConfiguredRulesAsync(noId, Rules())),
+        ("styleId", () => client.CreateStyleRuleCustomInstructionAsync(noId, "L", "P")),
+        ("styleId", () => client.GetStyleRuleCustomInstructionAsync(noId, "i1")),
+        ("styleId", () => client.UpdateStyleRuleCustomInstructionAsync(noId, "i1", "L", "P")),
+        ("styleId", () => client.DeleteStyleRuleCustomInstructionAsync(noId, "i1")),
+        ("name", () => client.UpdateStyleRuleNameAsync("s1", null!)),
+        ("label", () => client.CreateStyleRuleCustomInstructionAsync("s1", null!, "P")),
+        ("prompt", () => client.CreateStyleRuleCustomInstructionAsync("s1", "L", null!)),
+        ("label", () => client.UpdateStyleRuleCustomInstructionAsync("s1", "i1", null!, "P")),
+        ("prompt", () => client.UpdateStyleRuleCustomInstructionAsync("s1", "i1", "L", null!)),
+        ("instructionId", () => client.GetStyleRuleCustomInstructionAsync("s1", noId)),
+        ("instructionId", () => client.UpdateStyleRuleCustomInstructionAsync("s1", noId, "L", "P")),
+        ("instructionId", () => client.DeleteStyleRuleCustomInstructionAsync("s1", noId)),
+        ("instructionId", () => client.GetStyleRuleCustomInstructionAsync("s1", noInstruction)),
+        ("instructionId", () => client.UpdateStyleRuleCustomInstructionAsync("s1", noInstruction, "L", "P")),
+        ("instructionId", () => client.DeleteStyleRuleCustomInstructionAsync("s1", noInstruction)),
+        ("styleRule", () => client.GetStyleRuleAsync(noRule)),
+        ("styleRule", () => client.UpdateStyleRuleNameAsync(noRule, "n")),
+        ("styleRule", () => client.DeleteStyleRuleAsync(noRule)),
+        ("styleRule", () => client.UpdateStyleRuleConfiguredRulesAsync(noRule, Rules())),
+        ("styleRule", () => client.CreateStyleRuleCustomInstructionAsync(noRule, "L", "P")),
+        ("styleRule", () => client.GetStyleRuleCustomInstructionAsync(noRule, "i1")),
+        ("styleRule", () => client.UpdateStyleRuleCustomInstructionAsync(noRule, "i1", "L", "P")),
+        ("styleRule", () => client.DeleteStyleRuleCustomInstructionAsync(noRule, "i1")),
+      };
+      foreach (var (param, call) in calls) {
+        var exception = await Assert.ThrowsAsync<ArgumentNullException>(call);
+        Assert.Equal(param, exception.ParamName);
+      }
+    }
+
+    [Fact]
     public void DeclaresAllClientOverloadsOnIStyleRuleManager() => AssertClientOverloadsDeclaredOn<IStyleRuleManager>();
   }
 }

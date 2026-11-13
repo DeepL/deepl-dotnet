@@ -1775,16 +1775,13 @@ namespace DeepL {
           CustomInstruction[]? customInstructions,
           CreateStyleRuleOptions? options,
           CancellationToken cancellationToken = default) {
-      if (string.IsNullOrWhiteSpace(name)) {
-        throw new ArgumentException($"Parameter {nameof(name)} must not be empty");
-      }
+      Argument.NotEmpty(name, nameof(name));
 
-      if (string.IsNullOrWhiteSpace(language)) {
-        throw new ArgumentException($"Parameter {nameof(language)} must not be empty");
-      }
-
-      foreach (var instruction in customInstructions ?? Array.Empty<CustomInstruction>()) {
-        CheckOptionalLanguage(instruction?.SourceLanguage, nameof(CustomInstruction.SourceLanguage));
+      CheckRequiredLanguage(language, nameof(language));
+      foreach (var instruction in customInstructions == null
+                     ? Array.Empty<CustomInstruction>()
+                     : Argument.NoNullEntries(customInstructions, nameof(customInstructions))) {
+        CheckOptionalLanguage(instruction.SourceLanguage, nameof(CustomInstruction.SourceLanguage));
       }
 
       var requestData = new Dictionary<string, object?> { ["name"] = name, ["language"] = language };
@@ -1804,9 +1801,7 @@ namespace DeepL {
     public async Task<StyleRuleInfo> GetStyleRuleAsync(
           string styleId,
           CancellationToken cancellationToken = default) {
-      if (string.IsNullOrWhiteSpace(styleId)) {
-        throw new ArgumentException($"Parameter {nameof(styleId)} must not be empty");
-      }
+      Argument.NotEmpty(styleId, nameof(styleId));
 
       using var responseMessage =
             await _client.ApiGetAsync($"v3/style_rules/{Uri.EscapeDataString(styleId)}", cancellationToken)
@@ -1835,13 +1830,9 @@ namespace DeepL {
           string name,
           UpdateStyleRuleNameOptions? options,
           CancellationToken cancellationToken = default) {
-      if (string.IsNullOrWhiteSpace(styleId)) {
-        throw new ArgumentException($"Parameter {nameof(styleId)} must not be empty");
-      }
+      Argument.NotEmpty(styleId, nameof(styleId));
 
-      if (string.IsNullOrWhiteSpace(name)) {
-        throw new ArgumentException($"Parameter {nameof(name)} must not be empty");
-      }
+      Argument.NotEmpty(name, nameof(name));
 
       var requestData = new Dictionary<string, object?> { ["name"] = name };
       AddExtraBodyParameters(requestData, options);
@@ -1872,9 +1863,7 @@ namespace DeepL {
     public async Task DeleteStyleRuleAsync(
           string styleId,
           CancellationToken cancellationToken = default) {
-      if (string.IsNullOrWhiteSpace(styleId)) {
-        throw new ArgumentException($"Parameter {nameof(styleId)} must not be empty");
-      }
+      Argument.NotEmpty(styleId, nameof(styleId));
 
       using var responseMessage =
             await _client.ApiDeleteAsync($"v3/style_rules/{Uri.EscapeDataString(styleId)}", cancellationToken)
@@ -1903,9 +1892,7 @@ namespace DeepL {
           Dictionary<string, Dictionary<string, string>> configuredRules,
           UpdateStyleRuleConfiguredRulesOptions? options,
           CancellationToken cancellationToken = default) {
-      if (string.IsNullOrWhiteSpace(styleId)) {
-        throw new ArgumentException($"Parameter {nameof(styleId)} must not be empty");
-      }
+      Argument.NotEmpty(styleId, nameof(styleId));
 
       if (configuredRules == null) {
         throw new ArgumentNullException(nameof(configuredRules));
@@ -1960,17 +1947,11 @@ namespace DeepL {
           string? sourceLanguage,
           CreateStyleRuleCustomInstructionOptions? options,
           CancellationToken cancellationToken = default) {
-      if (string.IsNullOrWhiteSpace(styleId)) {
-        throw new ArgumentException($"Parameter {nameof(styleId)} must not be empty");
-      }
+      Argument.NotEmpty(styleId, nameof(styleId));
 
-      if (string.IsNullOrWhiteSpace(label)) {
-        throw new ArgumentException($"Parameter {nameof(label)} must not be empty");
-      }
+      Argument.NotEmpty(label, nameof(label));
 
-      if (string.IsNullOrWhiteSpace(prompt)) {
-        throw new ArgumentException($"Parameter {nameof(prompt)} must not be empty");
-      }
+      Argument.NotEmpty(prompt, nameof(prompt));
 
       CheckOptionalLanguage(sourceLanguage, nameof(sourceLanguage));
       var requestData = new Dictionary<string, object?> { ["label"] = label, ["prompt"] = prompt };
@@ -2028,13 +2009,9 @@ namespace DeepL {
           string styleId,
           string instructionId,
           CancellationToken cancellationToken = default) {
-      if (string.IsNullOrWhiteSpace(styleId)) {
-        throw new ArgumentException($"Parameter {nameof(styleId)} must not be empty");
-      }
+      Argument.NotEmpty(styleId, nameof(styleId));
 
-      if (string.IsNullOrWhiteSpace(instructionId)) {
-        throw new ArgumentException($"Parameter {nameof(instructionId)} must not be empty");
-      }
+      Argument.NotEmpty(instructionId, nameof(instructionId));
 
       using var responseMessage =
             await _client.ApiGetAsync(
@@ -2096,21 +2073,13 @@ namespace DeepL {
           string? sourceLanguage,
           UpdateStyleRuleCustomInstructionOptions? options,
           CancellationToken cancellationToken = default) {
-      if (string.IsNullOrWhiteSpace(styleId)) {
-        throw new ArgumentException($"Parameter {nameof(styleId)} must not be empty");
-      }
+      Argument.NotEmpty(styleId, nameof(styleId));
 
-      if (string.IsNullOrWhiteSpace(instructionId)) {
-        throw new ArgumentException($"Parameter {nameof(instructionId)} must not be empty");
-      }
+      Argument.NotEmpty(instructionId, nameof(instructionId));
 
-      if (string.IsNullOrWhiteSpace(label)) {
-        throw new ArgumentException($"Parameter {nameof(label)} must not be empty");
-      }
+      Argument.NotEmpty(label, nameof(label));
 
-      if (string.IsNullOrWhiteSpace(prompt)) {
-        throw new ArgumentException($"Parameter {nameof(prompt)} must not be empty");
-      }
+      Argument.NotEmpty(prompt, nameof(prompt));
 
       CheckOptionalLanguage(sourceLanguage, nameof(sourceLanguage));
       var requestData = new Dictionary<string, object?> { ["label"] = label, ["prompt"] = prompt };
@@ -2244,13 +2213,9 @@ namespace DeepL {
           string styleId,
           string instructionId,
           CancellationToken cancellationToken = default) {
-      if (string.IsNullOrWhiteSpace(styleId)) {
-        throw new ArgumentException($"Parameter {nameof(styleId)} must not be empty");
-      }
+      Argument.NotEmpty(styleId, nameof(styleId));
 
-      if (string.IsNullOrWhiteSpace(instructionId)) {
-        throw new ArgumentException($"Parameter {nameof(instructionId)} must not be empty");
-      }
+      Argument.NotEmpty(instructionId, nameof(instructionId));
 
       using var responseMessage =
             await _client.ApiDeleteAsync(
@@ -3672,11 +3637,16 @@ namespace DeepL {
       }
     }
 
-    /// <summary>Returns the ID of the given style rule, or an empty string if it is <c>null</c>.</summary>
-    private static string StyleRuleId(StyleRuleInfo? styleRule) => styleRule?.StyleId ?? string.Empty;
+    /// <summary>Returns the ID of the given style rule, throwing if it is <c>null</c>.</summary>
+    private static string StyleRuleId(StyleRuleInfo styleRule) =>
+          Argument.NotNull(styleRule, nameof(styleRule)).StyleId ?? string.Empty;
 
-    /// <summary>Returns the ID of the given custom instruction, or an empty string if it or its ID is <c>null</c>.</summary>
-    private static string InstructionId(CustomInstruction? instruction) => instruction?.Id ?? string.Empty;
+    /// <summary>
+    ///   Returns the ID of the given custom instruction, throwing if it is <c>null</c>, or an empty string if its ID is
+    ///   <c>null</c>.
+    /// </summary>
+    private static string InstructionId(CustomInstruction instructionId) =>
+          Argument.NotNull(instructionId, nameof(instructionId)).Id ?? string.Empty;
 
     /// <summary>Throws if the required language code is <c>null</c>, empty or whitespace-only.</summary>
     private static void CheckRequiredLanguage(string? languageCode, string paramName) =>

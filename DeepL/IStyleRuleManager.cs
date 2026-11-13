@@ -37,6 +37,10 @@ namespace DeepL {
     /// <param name="customInstructions">Optional custom instructions.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="StyleRuleInfo" /> object for the newly created style rule.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="name" />, <paramref name="language" /> or an entry of
+    ///   <paramref name="customInstructions" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -73,6 +77,10 @@ namespace DeepL {
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="StyleRuleInfo" /> object for the newly created style rule.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="name" />, <paramref name="language" /> or an entry of
+    ///   <paramref name="customInstructions" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -96,6 +104,7 @@ namespace DeepL {
     /// <param name="styleId">The ID of the style rule to retrieve.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="StyleRuleInfo" /> object for the requested style rule.</returns>
+    /// <exception cref="ArgumentNullException">If <paramref name="styleId" /> is <c>null</c>.</exception>
     /// <exception cref="NotFoundException">If the specified style rule was not found.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -111,6 +120,7 @@ namespace DeepL {
     /// <param name="styleRule">The style rule to retrieve.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="StyleRuleInfo" /> object for the requested style rule.</returns>
+    /// <exception cref="ArgumentNullException">If <paramref name="styleRule" /> is <c>null</c>.</exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="NotFoundException">If the specified style rule was not found.</exception>
     /// <exception cref="DeepLException">
@@ -126,6 +136,9 @@ namespace DeepL {
     /// <param name="name">The new name for the style rule.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="StyleRuleInfo" /> object for the updated style rule.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="styleId" /> or <paramref name="name" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="NotFoundException">If the specified style rule was not found.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -147,6 +160,9 @@ namespace DeepL {
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="StyleRuleInfo" /> object for the updated style rule.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="styleId" /> or <paramref name="name" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="NotFoundException">If the specified style rule was not found.</exception>
     /// <exception cref="DeepLException">
@@ -167,6 +183,9 @@ namespace DeepL {
     /// <param name="name">The new name for the style rule.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="StyleRuleInfo" /> object for the updated style rule.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="styleRule" /> or <paramref name="name" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="NotFoundException">If the specified style rule was not found.</exception>
     /// <exception cref="DeepLException">
@@ -190,6 +209,9 @@ namespace DeepL {
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="StyleRuleInfo" /> object for the updated style rule.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="styleRule" /> or <paramref name="name" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="NotFoundException">If the specified style rule was not found.</exception>
     /// <exception cref="DeepLException">
@@ -205,6 +227,7 @@ namespace DeepL {
     /// <summary>Deletes a style rule.</summary>
     /// <param name="styleId">The ID of the style rule to delete.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <exception cref="ArgumentNullException">If <paramref name="styleId" /> is <c>null</c>.</exception>
     /// <exception cref="NotFoundException">If the specified style rule was not found.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -217,6 +240,7 @@ namespace DeepL {
     /// <summary>Deletes the given style rule, like <see cref="DeleteStyleRuleAsync(string, CancellationToken)" />.</summary>
     /// <param name="styleRule">The style rule to delete.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <exception cref="ArgumentNullException">If <paramref name="styleRule" /> is <c>null</c>.</exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="NotFoundException">If the specified style rule was not found.</exception>
     /// <exception cref="DeepLException">
@@ -235,6 +259,9 @@ namespace DeepL {
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="StyleRuleInfo" /> object for the updated style rule.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="styleId" /> or <paramref name="configuredRules" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="NotFoundException">If the specified style rule was not found.</exception>
     /// <exception cref="DeepLException">
@@ -262,6 +289,9 @@ namespace DeepL {
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="StyleRuleInfo" /> object for the updated style rule.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="styleId" /> or <paramref name="configuredRules" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="NotFoundException">If the specified style rule was not found.</exception>
     /// <exception cref="DeepLException">
@@ -286,6 +316,9 @@ namespace DeepL {
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="StyleRuleInfo" /> object for the updated style rule.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="styleRule" /> or <paramref name="configuredRules" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="NotFoundException">If the specified style rule was not found.</exception>
     /// <exception cref="DeepLException">
@@ -313,6 +346,9 @@ namespace DeepL {
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="StyleRuleInfo" /> object for the updated style rule.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="styleRule" /> or <paramref name="configuredRules" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="NotFoundException">If the specified style rule was not found.</exception>
     /// <exception cref="DeepLException">
@@ -332,6 +368,9 @@ namespace DeepL {
     /// <param name="sourceLanguage">Optional source language code.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="CustomInstruction" /> object for the newly created instruction.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="styleId" />, <paramref name="label" /> or <paramref name="prompt" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="NotFoundException">If the specified style rule was not found.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -364,6 +403,9 @@ namespace DeepL {
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="CustomInstruction" /> object for the newly created instruction.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="styleId" />, <paramref name="label" /> or <paramref name="prompt" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="NotFoundException">If the specified style rule was not found.</exception>
     /// <exception cref="DeepLException">
@@ -394,6 +436,9 @@ namespace DeepL {
     /// <param name="sourceLanguage">Optional source language code.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="CustomInstruction" /> object for the newly created instruction.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="styleRule" />, <paramref name="label" /> or <paramref name="prompt" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="NotFoundException">If the specified style rule was not found.</exception>
     /// <exception cref="DeepLException">
@@ -428,6 +473,9 @@ namespace DeepL {
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="CustomInstruction" /> object for the newly created instruction.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="styleRule" />, <paramref name="label" /> or <paramref name="prompt" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="NotFoundException">If the specified style rule was not found.</exception>
     /// <exception cref="DeepLException">
@@ -453,6 +501,9 @@ namespace DeepL {
     /// <param name="instructionId">The ID of the custom instruction.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="CustomInstruction" /> object for the requested instruction.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="styleId" /> or <paramref name="instructionId" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="NotFoundException">If the specified style rule or custom instruction was not found.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -471,6 +522,9 @@ namespace DeepL {
     /// <param name="instructionId">The ID of the custom instruction.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="CustomInstruction" /> object for the requested instruction.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="styleRule" /> or <paramref name="instructionId" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="NotFoundException">If the specified style rule or custom instruction was not found.</exception>
     /// <exception cref="DeepLException">
@@ -490,6 +544,9 @@ namespace DeepL {
     /// <param name="instructionId">The custom instruction to retrieve.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="CustomInstruction" /> object for the requested instruction.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="styleId" /> or <paramref name="instructionId" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="NotFoundException">If the specified style rule or custom instruction was not found.</exception>
     /// <exception cref="DeepLException">
@@ -509,6 +566,9 @@ namespace DeepL {
     /// <param name="instructionId">The custom instruction to retrieve.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="CustomInstruction" /> object for the requested instruction.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="styleRule" /> or <paramref name="instructionId" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="NotFoundException">If the specified style rule or custom instruction was not found.</exception>
     /// <exception cref="DeepLException">
@@ -528,6 +588,10 @@ namespace DeepL {
     /// <param name="sourceLanguage">Optional source language code.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="CustomInstruction" /> object for the updated instruction.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="styleId" />, <paramref name="instructionId" />, <paramref name="label" /> or
+    ///   <paramref name="prompt" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="NotFoundException">If the specified style rule or custom instruction was not found.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -556,6 +620,10 @@ namespace DeepL {
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="CustomInstruction" /> object for the updated instruction.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="styleId" />, <paramref name="instructionId" />, <paramref name="label" /> or
+    ///   <paramref name="prompt" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="NotFoundException">If the specified style rule or custom instruction was not found.</exception>
     /// <exception cref="DeepLException">
@@ -582,6 +650,10 @@ namespace DeepL {
     /// <param name="sourceLanguage">Optional source language code.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="CustomInstruction" /> object for the updated instruction.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="styleRule" />, <paramref name="instructionId" />, <paramref name="label" /> or
+    ///   <paramref name="prompt" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="NotFoundException">If the specified style rule or custom instruction was not found.</exception>
     /// <exception cref="DeepLException">
@@ -607,6 +679,10 @@ namespace DeepL {
     /// <param name="sourceLanguage">Optional source language code.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="CustomInstruction" /> object for the updated instruction.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="styleId" />, <paramref name="instructionId" />, <paramref name="label" /> or
+    ///   <paramref name="prompt" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="NotFoundException">If the specified style rule or custom instruction was not found.</exception>
     /// <exception cref="DeepLException">
@@ -632,6 +708,10 @@ namespace DeepL {
     /// <param name="sourceLanguage">Optional source language code.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="CustomInstruction" /> object for the updated instruction.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="styleRule" />, <paramref name="instructionId" />, <paramref name="label" /> or
+    ///   <paramref name="prompt" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="NotFoundException">If the specified style rule or custom instruction was not found.</exception>
     /// <exception cref="DeepLException">
@@ -662,6 +742,10 @@ namespace DeepL {
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="CustomInstruction" /> object for the updated instruction.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="styleRule" />, <paramref name="instructionId" />, <paramref name="label" /> or
+    ///   <paramref name="prompt" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="NotFoundException">If the specified style rule or custom instruction was not found.</exception>
     /// <exception cref="DeepLException">
@@ -693,6 +777,10 @@ namespace DeepL {
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="CustomInstruction" /> object for the updated instruction.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="styleId" />, <paramref name="instructionId" />, <paramref name="label" /> or
+    ///   <paramref name="prompt" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="NotFoundException">If the specified style rule or custom instruction was not found.</exception>
     /// <exception cref="DeepLException">
@@ -724,6 +812,10 @@ namespace DeepL {
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="CustomInstruction" /> object for the updated instruction.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="styleRule" />, <paramref name="instructionId" />, <paramref name="label" /> or
+    ///   <paramref name="prompt" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="NotFoundException">If the specified style rule or custom instruction was not found.</exception>
     /// <exception cref="DeepLException">
@@ -743,6 +835,9 @@ namespace DeepL {
     /// <param name="styleId">The ID of the style rule.</param>
     /// <param name="instructionId">The ID of the custom instruction to delete.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="styleId" /> or <paramref name="instructionId" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="NotFoundException">If the specified style rule or custom instruction was not found.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -760,6 +855,9 @@ namespace DeepL {
     /// <param name="styleRule">The style rule.</param>
     /// <param name="instructionId">The ID of the custom instruction to delete.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="styleRule" /> or <paramref name="instructionId" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="NotFoundException">If the specified style rule or custom instruction was not found.</exception>
     /// <exception cref="DeepLException">
@@ -778,6 +876,9 @@ namespace DeepL {
     /// <param name="styleId">The ID of the style rule.</param>
     /// <param name="instructionId">The custom instruction to delete.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="styleId" /> or <paramref name="instructionId" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="NotFoundException">If the specified style rule or custom instruction was not found.</exception>
     /// <exception cref="DeepLException">
@@ -796,6 +897,9 @@ namespace DeepL {
     /// <param name="styleRule">The style rule.</param>
     /// <param name="instructionId">The custom instruction to delete.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="styleRule" /> or <paramref name="instructionId" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="NotFoundException">If the specified style rule or custom instruction was not found.</exception>
     /// <exception cref="DeepLException">

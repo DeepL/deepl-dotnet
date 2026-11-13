@@ -213,6 +213,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `ArgumentNullException` (an `ArgumentException`) naming the parameter before any request. They threw a
   `NullReferenceException` or a plain `ArgumentException`, or sent a request to `v2/glossaries/`, before. Catch
   `ArgumentException` (or `ArgumentNullException`) instead of `NullReferenceException`.
+- **Breaking:** `null` IDs, names, languages, labels, prompts, `StyleRuleInfo` and `CustomInstruction` objects and
+  `customInstructions` entries of the style rule methods now throw an `ArgumentNullException` (an `ArgumentException`)
+  naming the parameter before any request. They threw a plain `ArgumentException` or sent JSON `null` before. `catch
+  (ArgumentException)` still catches them; code comparing the exact exception type must expect
+  `ArgumentNullException`.
 
 ### Removed
 - Removed `Usage.Document` and `Usage.TeamDocument`; the API no longer returns document usage. `Usage.ToString()` no
