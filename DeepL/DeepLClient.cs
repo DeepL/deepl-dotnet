@@ -166,7 +166,9 @@ namespace DeepL {
     ///   <c>true</c> if the Authentication Key belongs to an API Free account (ends with <c>:fx</c>), <c>false</c> if it
     ///   belongs to an API Pro account.
     /// </returns>
-    public static bool IsFreeAccountAuthKey(string authKey) => authKey.TrimEnd().EndsWith(":fx");
+    /// <exception cref="ArgumentNullException">If <paramref name="authKey" /> is <c>null</c>.</exception>
+    public static bool IsFreeAccountAuthKey(string authKey) =>
+          Argument.NotNull(authKey, nameof(authKey)).TrimEnd().EndsWith(":fx");
 
     /// <inheritdoc />
     public async Task<Usage> GetUsageAsync(CancellationToken cancellationToken = default) {
@@ -3289,6 +3291,9 @@ namespace DeepL {
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>Array of <see cref="LanguageSupport" /> objects, one per supported language.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="resource" /> or an entry of <paramref name="include" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If <paramref name="resource" /> is empty.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -3300,7 +3305,7 @@ namespace DeepL {
           CancellationToken cancellationToken = default) {
       var options = new GetLanguagesForResourceOptions();
       if (include != null) {
-        options.Include.AddRange(include);
+        options.Include.AddRange(Argument.NoNullEntries(include, nameof(include)));
       }
 
       return await GetLanguagesForResourceAsync(resource, options, cancellationToken).ConfigureAwait(false);
@@ -3320,6 +3325,10 @@ namespace DeepL {
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>Array of <see cref="LanguageSupport" /> objects, one per supported language.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="resource" /> or an entry of <see cref="GetLanguagesForResourceOptions.Include" /> is
+    ///   <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If <paramref name="resource" /> is empty.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -3329,13 +3338,14 @@ namespace DeepL {
           string resource,
           GetLanguagesForResourceOptions? options,
           CancellationToken cancellationToken = default) {
-      if (string.IsNullOrEmpty(resource)) {
+      if (Argument.NotNull(resource, nameof(resource)).Length == 0) {
         throw new ArgumentException($"Parameter {nameof(resource)} must not be empty");
       }
 
       var queryParams = new List<(string Key, string Value)> { ("resource", resource) };
       if (options != null) {
-        queryParams.AddRange(options.Include.Select(value => ("include", value)));
+        queryParams.AddRange(
+              Argument.NoNullEntries(options.Include, nameof(options.Include)).Select(value => ("include", value)));
       }
 
       using var responseMessage = await _client

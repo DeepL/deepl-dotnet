@@ -20,7 +20,7 @@ namespace DeepL {
     ///   Values controlling which languages and features are returned, for example
     ///   <see cref="LanguageSupport.IncludeBeta" /> or <see cref="LanguageSupport.IncludeExternal" />; other strings are
     ///   sent unchanged. Each value is sent as an <c>include</c> query parameter. By default the list is empty and only
-    ///   stable languages and features are returned.
+    ///   stable languages and features are returned. An entry must not be <c>null</c>.
     /// </summary>
     public List<string> Include { get; } = new List<string>();
   }

@@ -117,6 +117,22 @@ namespace DeepLTests.Offline {
           await Assert.ThrowsAsync<ArgumentException>(() => CreateClient().GetLanguagesForResourceAsync(""));
 
     [Fact]
+    public async Task ThrowsArgumentNullExceptionNamingTheNullArgument() {
+      var client = CreateClient();
+      var calls = new (string Param, Func<Task> Call)[] {
+        ("resource", () => client.GetLanguagesForResourceAsync(null!)),
+        ("include", () => client.GetLanguagesForResourceAsync("translate_text", new[] { "beta", null! })),
+        ("Include", () => client.GetLanguagesForResourceAsync(
+              "translate_text",
+              new GetLanguagesForResourceOptions { Include = { null! } })),
+      };
+      foreach (var (param, call) in calls) {
+        var exception = await Assert.ThrowsAsync<ArgumentNullException>(call);
+        Assert.Equal(param, exception.ParamName);
+      }
+    }
+
+    [Fact]
     public async Task ThrowsDeepLExceptionWhenResourceIsInvalid() {
       ExpectNoBody(HttpMethod.Get, "v3/languages")
             .WithExactQueryString("resource=invalid_resource")

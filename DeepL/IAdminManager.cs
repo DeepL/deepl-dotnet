@@ -286,6 +286,7 @@ namespace DeepL {
     /// <param name="options">Optional <see cref="DeactivateDeveloperKeyOptions" />.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="DeveloperKey" /> describing the deactivated key.</returns>
+    /// <exception cref="ArgumentNullException">If <paramref name="keyId" /> is <c>null</c>.</exception>
     /// <exception cref="ArgumentException">If <paramref name="keyId" /> is empty.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -301,7 +302,7 @@ namespace DeepL {
     /// <param name="options">Optional <see cref="DeactivateDeveloperKeyOptions" />.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="DeveloperKey" /> describing the deactivated key.</returns>
-    /// <exception cref="ArgumentNullException">If <paramref name="key" /> is null.</exception>
+    /// <exception cref="ArgumentNullException">If <paramref name="key" /> is <c>null</c>.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -317,6 +318,9 @@ namespace DeepL {
     /// <param name="options">Optional <see cref="RenameDeveloperKeyOptions" />.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="DeveloperKey" /> describing the renamed key.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="keyId" /> or <paramref name="label" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If <paramref name="keyId" /> is empty.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -334,7 +338,9 @@ namespace DeepL {
     /// <param name="options">Optional <see cref="RenameDeveloperKeyOptions" />.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="DeveloperKey" /> describing the renamed key.</returns>
-    /// <exception cref="ArgumentNullException">If <paramref name="key" /> is null.</exception>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="key" /> or <paramref name="label" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -355,7 +361,9 @@ namespace DeepL {
     /// <param name="options">Optional <see cref="SetDeveloperKeyUsageLimitsOptions" />.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="DeveloperKey" /> describing the modified key.</returns>
-    /// <exception cref="ArgumentNullException">If <paramref name="limits" /> is null.</exception>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="keyId" /> or <paramref name="limits" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If <paramref name="keyId" /> is empty.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -377,7 +385,9 @@ namespace DeepL {
     /// <param name="options">Optional <see cref="SetDeveloperKeyUsageLimitsOptions" />.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns><see cref="DeveloperKey" /> describing the modified key.</returns>
-    /// <exception cref="ArgumentNullException">If <paramref name="key" /> or <paramref name="limits" /> is null.</exception>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="key" /> or <paramref name="limits" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.

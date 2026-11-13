@@ -236,7 +236,7 @@ namespace DeepL {
           CancellationToken cancellationToken = default) =>
           PutDeveloperKeyAsync(
                 "v2/admin/developer-keys/label",
-                new Dictionary<string, object?> { ["key_id"] = CheckKeyId(keyId), ["label"] = label },
+                new Dictionary<string, object?> { ["key_id"] = CheckKeyId(keyId), ["label"] = Argument.NotNull(label, nameof(label)) },
                 options,
                 cancellationToken);
 
@@ -322,12 +322,9 @@ namespace DeepL {
       }
     }
 
-    private static DeveloperKey CheckKey(DeveloperKey key) => key ?? throw new ArgumentNullException(nameof(key));
+    private static DeveloperKey CheckKey(DeveloperKey key) => Argument.NotNull(key, nameof(key));
 
-    private static string CheckKeyId(string keyId) =>
-          string.IsNullOrWhiteSpace(keyId)
-                ? throw new ArgumentException($"Parameter {nameof(keyId)} must not be empty")
-                : keyId;
+    private static string CheckKeyId(string keyId) => Argument.NotEmpty(keyId, nameof(keyId));
 
     private const string DateFormat = "yyyy-MM-dd";
 

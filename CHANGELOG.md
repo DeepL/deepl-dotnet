@@ -233,6 +233,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `null` `contentType` of `UploadTranslationMemoryFileAsync()` now uses `application/xml`; it threw an
   `ArgumentException` before. Catch `ArgumentException` (or `ArgumentNullException`) instead of
   `NullReferenceException`.
+- **Breaking:** `IsFreeAccountAuthKey(null)`, a `null` resource or `include` entry of
+  `GetLanguagesForResourceAsync()`, and a `null` key ID or label of the developer key methods now throw an
+  `ArgumentNullException` (an `ArgumentException`) naming the parameter before any request. They threw a
+  `NullReferenceException`, a plain `ArgumentException` or an `ArgumentNullException` naming `stringToEscape`, or sent
+  JSON `null`, before. Catch `ArgumentException` (or `ArgumentNullException`) instead of `NullReferenceException`.
 
 ### Removed
 - Removed `Usage.Document` and `Usage.TeamDocument`; the API no longer returns document usage. `Usage.ToString()` no

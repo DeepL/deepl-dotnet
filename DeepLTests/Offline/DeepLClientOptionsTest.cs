@@ -214,6 +214,10 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
+    public void ThrowsArgumentNullExceptionNamingTheNullArgument() =>
+          Assert.Equal("authKey", Assert.Throws<ArgumentNullException>(() => DeepLClient.IsFreeAccountAuthKey(null!)).ParamName);
+
+    [Fact]
     public void ReportsVersions() {
       Assert.Equal("1.23.0", DeepLClient.Version());
       // The assembly version must remain unchanged for binary compatibility, except for the major version.

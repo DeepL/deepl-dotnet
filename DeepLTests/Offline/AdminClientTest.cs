@@ -239,6 +239,24 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
+    public async Task TestThrowsArgumentNullExceptionNamingTheNullArgument() {
+      var client = CreateAdminClient();
+      var calls = new (string Param, Func<Task> Call)[] {
+        ("keyId", () => client.DeactivateDeveloperKeyAsync((string)null!)),
+        ("keyId", () => client.RenameDeveloperKeyAsync((string)null!, "l")),
+        ("keyId", () => client.SetDeveloperKeyUsageLimitsAsync(
+              (string)null!,
+              new DeveloperKeyUsageLimitsUpdate { Characters = 0 })),
+        ("label", () => client.RenameDeveloperKeyAsync(KeyId, null!)),
+        ("label", () => client.RenameDeveloperKeyAsync(Key, null!)),
+      };
+      foreach (var (param, call) in calls) {
+        var exception = await Assert.ThrowsAsync<ArgumentNullException>(call);
+        Assert.Equal(param, exception.ParamName);
+      }
+    }
+
+    [Fact]
     public async Task TestDateTimeArgumentsAreSentAsUtcDate() {
       ExpectNoBody(HttpMethod.Get, "v2/admin/analytics?start_date=2026-10-19&end_date=2026-10-21")
             .RespondJson("{}");
