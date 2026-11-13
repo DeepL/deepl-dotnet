@@ -74,7 +74,8 @@ with `:fx`). The client uses this to choose the server URL.
 ### Translating text
 
 To translate text, call `TranslateTextAsync()`. The first argument is a string containing the text to translate, or
-`IEnumerable` of strings to translate multiple texts.
+`IEnumerable` of strings to translate multiple texts. A `null` text throws an `ArgumentNullException` and an empty one an
+`ArgumentException`, without sending a request.
 
 The second and third arguments are case-insensitive language codes for the source and target language respectively,
 for example `"DE"`, `"FR"`.
@@ -168,7 +169,8 @@ foreach (var formality in new[] { Formality.Less, Formality.More }) {
   `GlossaryIds = { "YOUR_GLOSSARY_ID", glossaryInfo }`. Glossaries are applied in
   order, with the first matching term taking precedence. It cannot be combined
   with `Glossary`. An empty or whitespace-only entry throws an
-  `ArgumentException`.
+  `ArgumentException`. A `null` entry throws an `ArgumentNullException`; the
+  same holds for the tag lists and `CustomInstructions`.
 - `StyleRule`: specifies a style rule to use with translation: its ID, or a
   `StyleRuleInfo`.
 - `StyleProfile`: specifies a style profile to use with translation: its ID, or
@@ -239,6 +241,8 @@ For a detailed explanation of the XML handling options, see the [API documentati
 You can use the Write API to improve or rephrase text. This is implemented in
 the `RephraseTextAsync()` method. The first argument is a string containing the text
 you want to translate, or a list of strings if you want to translate multiple texts.
+A `null` text throws an `ArgumentNullException` and an empty one an
+`ArgumentException`, without sending a request.
 
 `targetLanguageCode` optionally specifies the target language, e.g. when you want to change
 the variant of a text (for example, you can send an english text to the write API and
@@ -1505,15 +1509,22 @@ do {
 
 ### Exceptions
 
-All library functions may raise `DeepLException` or one of its subclasses. If
-invalid arguments are provided, they may raise the standard exceptions
-`ArgumentException`. A `null` resource object, such as a
-`MultilingualGlossaryInfo` or `StyleProfile`, throws an `ArgumentNullException`,
-a subclass of `ArgumentException`, without sending a request.
-A required language code that is `null` throws an `ArgumentNullException`, and
-one that is empty or whitespace-only an `ArgumentException`; an optional
-language code given as an empty or whitespace-only string throws an
-`ArgumentException`. Both are thrown without sending a request.
+All library functions may raise `DeepLException` or one of its subclasses.
+Invalid arguments throw an `ArgumentException` without sending a request. A
+`null` required argument, such as an ID, a name, a text, a stream or a resource
+object like a `MultilingualGlossaryInfo` or `StyleProfile`, and a `null` entry
+of a list argument or option, such as the texts, `GlossaryIds` or the glossary
+dictionaries, throw an `ArgumentNullException` naming the parameter, a subclass
+of `ArgumentException`. A `null` optional argument or option is unset, like an
+omitted one; in `TextTranslateOptions` and `DocumentTranslateOptions` this holds
+for the resource properties (`Glossary = null`), while their constructors
+require the resource. An empty or whitespace-only ID or required language code
+throws an `ArgumentException`, and so does an optional language code given as an
+empty or whitespace-only string. `TranslateDocumentAsync()` and
+`ExportTranslationMemoryToFilepathAsync()` throw these errors as the
+`InnerException` of their `DocumentTranslationException` /
+`TranslationMemoryJobException`; a missing or `null` input file of
+`TranslateDocumentAsync()` is thrown directly.
 
 | Exception | Raised when |
 |---|---|

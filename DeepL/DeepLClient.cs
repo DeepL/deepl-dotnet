@@ -22,11 +22,12 @@ using DeepL.Model;
 namespace DeepL {
   public interface IWriter : IDisposable {
     /// <summary>Rephrase specified texts, improving them by fixing grammar and spelling errors.</summary>
-    /// <param name="texts">Texts to improve; must not be empty.</param>
+    /// <param name="texts">Texts to improve; none may be <c>null</c> or empty.</param>
     /// <param name="targetLanguageCode">Language code of the desired output language.</param>
     /// <param name="options">Extra <see cref="TextRephraseOptions" /> influencing rephrasing.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>Texts without grammatical or spelling errors.</returns>
+    /// <exception cref="ArgumentNullException">If <paramref name="texts" /> or one of its entries is <c>null</c>.</exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -39,11 +40,12 @@ namespace DeepL {
           CancellationToken cancellationToken = default);
 
     /// <summary>Rephrase specified text, improving them by fixing grammar and spelling errors.</summary>
-    /// <param name="text">Text to improve; must not be empty.</param>
+    /// <param name="text">Text to improve; must not be <c>null</c> or empty.</param>
     /// <param name="targetLanguageCode">Language code of the desired output language.</param>
     /// <param name="options">Extra <see cref="TextRephraseOptions" /> influencing rephrasing.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>Texts without grammatical or spelling errors.</returns>
+    /// <exception cref="ArgumentNullException">If <paramref name="text" /> is <c>null</c>.</exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -56,11 +58,12 @@ namespace DeepL {
           CancellationToken cancellationToken = default);
 
     /// <summary>Correct specified text, improving it by fixing grammar and spelling errors.</summary>
-    /// <param name="text">Text to improve; must not be empty.</param>
+    /// <param name="text">Text to improve; must not be <c>null</c> or empty.</param>
     /// <param name="targetLanguageCode">Language code of the desired output language.</param>
     /// <param name="options">Extra <see cref="CorrectTextOptions" /> influencing correction.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>Text without grammatical or spelling errors.</returns>
+    /// <exception cref="ArgumentNullException">If <paramref name="text" /> is <c>null</c>.</exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -73,11 +76,12 @@ namespace DeepL {
           CancellationToken cancellationToken = default);
 
     /// <summary>Correct specified texts, improving them by fixing grammar and spelling errors.</summary>
-    /// <param name="texts">Texts to improve; must not be empty.</param>
+    /// <param name="texts">Texts to improve; none may be <c>null</c> or empty.</param>
     /// <param name="targetLanguageCode">Language code of the desired output language.</param>
     /// <param name="options">Extra <see cref="CorrectTextOptions" /> influencing correction.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>Texts without grammatical or spelling errors.</returns>
+    /// <exception cref="ArgumentNullException">If <paramref name="texts" /> or one of its entries is <c>null</c>.</exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -181,9 +185,7 @@ namespace DeepL {
           TextTranslateOptions? options = null,
           CancellationToken cancellationToken = default) {
       var requestData = CreateHttpParams(sourceLanguageCode, targetLanguageCode, options);
-      var textList = texts
-            .Select(text => text.Length > 0 ? text : throw new ArgumentException("text must not be empty"))
-            .ToArray();
+      var textList = CheckTexts(texts);
       requestData["text"] = textList;
       // Added after the texts, so that an extra "text" parameter replaces them like any other field.
       AddExtraBodyParameters(requestData, options);
@@ -214,7 +216,7 @@ namespace DeepL {
           TextTranslateOptions? options = null,
           CancellationToken cancellationToken = default)
       => (await TranslateTextAsync(
-                  new[] { text },
+                  new[] { Argument.NotNull(text, nameof(text)) },
                   sourceLanguageCode,
                   targetLanguageCode,
                   options,
@@ -755,15 +757,15 @@ namespace DeepL {
       }
 
       if (options.NonSplittingTags.Count > 0) {
-        requestData["non_splitting_tags"] = SplitTags(options.NonSplittingTags);
+        requestData["non_splitting_tags"] = SplitTags(options.NonSplittingTags, nameof(options.NonSplittingTags));
       }
 
       if (options.SplittingTags.Count > 0) {
-        requestData["splitting_tags"] = SplitTags(options.SplittingTags);
+        requestData["splitting_tags"] = SplitTags(options.SplittingTags, nameof(options.SplittingTags));
       }
 
       if (options.IgnoreTags.Count > 0) {
-        requestData["ignore_tags"] = SplitTags(options.IgnoreTags);
+        requestData["ignore_tags"] = SplitTags(options.IgnoreTags, nameof(options.IgnoreTags));
       }
 
       if (options.ModelTypeValue != null) {
@@ -773,15 +775,16 @@ namespace DeepL {
       }
 
       if (options.CustomInstructions.Count > 0) {
-        requestData["custom_instructions"] = options.CustomInstructions.ToArray();
+        requestData["custom_instructions"] =
+              Argument.NoNullEntries(options.CustomInstructions, nameof(options.CustomInstructions));
       }
 
       return requestData;
     }
 
     /// <summary>Returns the tags of a tag list option as an array, splitting entries that hold comma-separated tags.</summary>
-    private static string[] SplitTags(IEnumerable<string> tags) =>
-          tags.SelectMany(tag => tag.Split(','))
+    private static string[] SplitTags(IEnumerable<string> tags, string optionName) =>
+          Argument.NoNullEntries(tags, optionName).SelectMany(tag => tag.Split(','))
                 .Select(tag => tag.Trim())
                 .Where(tag => tag.Length > 0)
                 .ToArray();
@@ -829,6 +832,7 @@ namespace DeepL {
       CheckOptionalId(styleId, "StyleRule");
       CheckOptionalId(styleProfileId, "StyleProfile");
       CheckOptionalId(translationMemoryId, "TranslationMemory");
+      if (glossaryIds != null) Argument.NoNullEntries(glossaryIds, nameof(TextTranslateOptions.GlossaryIds));
       if (glossaryIds != null && glossaryIds.Any(id => id != null && string.IsNullOrWhiteSpace(id))) {
         throw new ArgumentException("GlossaryIds must not contain empty or whitespace-only IDs", "GlossaryIds");
       }
@@ -992,7 +996,7 @@ namespace DeepL {
           string? targetLanguageCode = null,
           TextRephraseOptions? options = null,
           CancellationToken cancellationToken = default) => (await RephraseTextAsync(
-                new[] { text },
+                new[] { Argument.NotNull(text, nameof(text)) },
                 targetLanguageCode,
                 options,
                 cancellationToken)
@@ -1010,7 +1014,7 @@ namespace DeepL {
         requestData["target_lang"] = targetLanguageCode;
       }
 
-      var textList = CheckWriteTexts(texts);
+      var textList = CheckTexts(texts);
       if (options != null && options.WritingStyle != null) {
         requestData["writing_style"] = options.WritingStyle;
       }
@@ -1030,7 +1034,7 @@ namespace DeepL {
           string? targetLanguageCode = null,
           CorrectTextOptions? options = null,
           CancellationToken cancellationToken = default) => (await CorrectTextAsync(
-                new[] { text },
+                new[] { Argument.NotNull(text, nameof(text)) },
                 targetLanguageCode,
                 options,
                 cancellationToken)
@@ -1048,16 +1052,20 @@ namespace DeepL {
         requestData["target_lang"] = targetLanguageCode;
       }
 
-      var textList = CheckWriteTexts(texts);
+      var textList = CheckTexts(texts);
       return await WriteAsync("v2/write/correct", requestData, textList, options, cancellationToken)
             .ConfigureAwait(false);
     }
 
-    /// <summary>Returns the texts of a Write API request as a list, checking that none is empty.</summary>
-    /// <exception cref="ArgumentException">If any text is empty.</exception>
-    private static List<string> CheckWriteTexts(IEnumerable<string> texts) =>
-          texts.Select(text => text.Length > 0 ? text : throw new ArgumentException("text must not be empty"))
-                .ToList();
+    /// <summary>Returns the texts to translate or improve, throwing if the list or a text is <c>null</c> or a text is empty.</summary>
+    private static string[] CheckTexts(IEnumerable<string> texts) {
+      var textList = Argument.NoNullEntries(texts, nameof(texts));
+      if (textList.Any(text => text.Length == 0)) {
+        throw new ArgumentException("text must not be empty");
+      }
+
+      return textList;
+    }
 
     /// <summary>
     ///   Sends a Write API request with the given parameters, then the texts, then the extra body parameters of the
@@ -1067,10 +1075,10 @@ namespace DeepL {
     private async Task<WriteResult[]> WriteAsync(
           string path,
           Dictionary<string, object?> requestData,
-          List<string> texts,
+          string[] texts,
           BaseRequestOptions? options,
           CancellationToken cancellationToken) {
-      requestData["text"] = texts.ToArray();
+      requestData["text"] = texts;
       AddExtraBodyParameters(requestData, options);
 
       using var responseMessage = await _client
@@ -1080,9 +1088,9 @@ namespace DeepL {
       await DeepLHttpClient.CheckStatusCodeAsync(responseMessage).ConfigureAwait(false);
       var result = await JsonUtils.DeserializeAsync<TextRephraseResult>(responseMessage).ConfigureAwait(false);
       var improvements = result.Improvements;
-      if (improvements == null || improvements.Length < texts.Count) {
+      if (improvements == null || improvements.Length < texts.Length) {
         throw new DeepLException(
-              $"Expected {texts.Count} improvements in the response, received {improvements?.Length ?? 0}");
+              $"Expected {texts.Length} improvements in the response, received {improvements?.Length ?? 0}");
       }
 
       return improvements;
@@ -3693,15 +3701,8 @@ namespace DeepL {
     private static string InstructionId(CustomInstruction? instruction) => instruction?.Id ?? string.Empty;
 
     /// <summary>Throws if the required language code is <c>null</c>, empty or whitespace-only.</summary>
-    private static void CheckRequiredLanguage(string? languageCode, string paramName) {
-      if (languageCode == null) {
-        throw new ArgumentNullException(paramName);
-      }
-
-      if (string.IsNullOrWhiteSpace(languageCode)) {
-        throw new ArgumentException($"Parameter {paramName} must not be empty", paramName);
-      }
-    }
+    private static void CheckRequiredLanguage(string? languageCode, string paramName) =>
+          Argument.NotEmpty(languageCode, paramName);
 
     /// <summary>Throws if the optional language code is given but empty or whitespace-only.</summary>
     private static void CheckOptionalLanguage(string? languageCode, string paramName) {
@@ -3719,23 +3720,23 @@ namespace DeepL {
 
     /// <summary>Returns the ID of the given multilingual glossary, throwing if it is <c>null</c>.</summary>
     private static string MultilingualGlossaryId(MultilingualGlossaryInfo glossary) =>
-          (glossary ?? throw new ArgumentNullException(nameof(glossary))).GlossaryId;
+          Argument.NotNull(glossary, nameof(glossary)).GlossaryId;
 
     /// <summary>Returns the ID of the given translation memory, throwing if it is <c>null</c>.</summary>
     private static string TranslationMemoryId(TranslationMemoryInfo translationMemory) =>
-          (translationMemory ?? throw new ArgumentNullException(nameof(translationMemory))).TranslationMemoryId;
+          Argument.NotNull(translationMemory, nameof(translationMemory)).TranslationMemoryId;
 
     /// <summary>Returns the ID of the given translation memory job, throwing if it is <c>null</c>.</summary>
     private static string TranslationMemoryJobId(TranslationMemoryJob job) =>
-          (job ?? throw new ArgumentNullException(nameof(job))).JobId;
+          Argument.NotNull(job, nameof(job)).JobId;
 
     /// <summary>Returns the ID of the given style profile, throwing if it is <c>null</c>.</summary>
     private static string StyleProfileId(StyleProfile styleProfile) =>
-          (styleProfile ?? throw new ArgumentNullException(nameof(styleProfile))).StyleProfileId;
+          Argument.NotNull(styleProfile, nameof(styleProfile)).StyleProfileId;
 
     /// <summary>Returns the ID of the given spoken terms collection, throwing if it is <c>null</c>.</summary>
     private static string SpokenTermsId(SpokenTerms spokenTerms) =>
-          (spokenTerms ?? throw new ArgumentNullException(nameof(spokenTerms))).SpokenTermsId;
+          Argument.NotNull(spokenTerms, nameof(spokenTerms)).SpokenTermsId;
 
     /// <summary>
     ///   Adds the extra body parameters of the options last to form fields, replacing fields with the same key; a

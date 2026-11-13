@@ -11,12 +11,19 @@ namespace DeepL {
   /// <summary>Translates text with the DeepL API. Implemented by <see cref="DeepLClient" />.</summary>
   public interface ITextTranslator : IDisposable {
     /// <summary>Translate specified texts from source language into target language.</summary>
-    /// <param name="texts">Texts to translate; must not be empty.</param>
+    /// <param name="texts">Texts to translate; none may be <c>null</c> or empty.</param>
     /// <param name="sourceLanguageCode">Language code of the input language, or null to use auto-detection.</param>
     /// <param name="targetLanguageCode">Language code of the desired output language.</param>
     /// <param name="options">Extra <see cref="TextTranslateOptions" /> influencing translation.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>Texts translated into specified target language.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="texts" />, one of its entries, or
+    ///   an entry of a list option (<see cref="TextTranslateOptions.GlossaryIds" />,
+    ///   <see cref="TextTranslateOptions.IgnoreTags" />, <see cref="TextTranslateOptions.NonSplittingTags" />,
+    ///   <see cref="TextTranslateOptions.SplittingTags" />, <see cref="TextTranslateOptions.CustomInstructions" />) is
+    ///   <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -30,12 +37,19 @@ namespace DeepL {
           CancellationToken cancellationToken = default);
 
     /// <summary>Translate specified text from source language into target language.</summary>
-    /// <param name="text">Text to translate; must not be empty.</param>
+    /// <param name="text">Text to translate; must not be <c>null</c> or empty.</param>
     /// <param name="sourceLanguageCode">Language code of the input language, or null to use auto-detection.</param>
     /// <param name="targetLanguageCode">Language code of the desired output language.</param>
     /// <param name="options"><see cref="TextTranslateOptions" /> influencing translation.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>Text translated into specified target language.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="text" /> or
+    ///   an entry of a list option (<see cref="TextTranslateOptions.GlossaryIds" />,
+    ///   <see cref="TextTranslateOptions.IgnoreTags" />, <see cref="TextTranslateOptions.NonSplittingTags" />,
+    ///   <see cref="TextTranslateOptions.SplittingTags" />, <see cref="TextTranslateOptions.CustomInstructions" />) is
+    ///   <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a

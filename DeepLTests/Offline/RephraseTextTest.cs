@@ -142,6 +142,23 @@ namespace DeepLTests.Offline {
           await Assert.ThrowsAsync<ArgumentException>(() => CreateClient().RephraseTextAsync("", "en"));
 
     [Fact]
+    public async Task ThrowsArgumentNullExceptionNamingTheNullArgument() {
+      var client = CreateClient();
+      var calls = new (string Param, Func<Task> Call)[] {
+        ("text", () => client.RephraseTextAsync((string)null!)),
+        ("texts", () => client.RephraseTextAsync((IEnumerable<string>)null!)),
+        ("texts", () => client.RephraseTextAsync(new[] { "a", null! })),
+        ("text", () => client.CorrectTextAsync((string)null!)),
+        ("texts", () => client.CorrectTextAsync((IEnumerable<string>)null!)),
+        ("texts", () => client.CorrectTextAsync(new[] { "a", null! })),
+      };
+      foreach (var (param, call) in calls) {
+        var exception = await Assert.ThrowsAsync<ArgumentNullException>(call);
+        Assert.Equal(param, exception.ParamName);
+      }
+    }
+
+    [Fact]
     public async Task ThrowsArgumentExceptionWhenTargetLanguageIsEmpty() =>
           await Assert.ThrowsAsync<ArgumentException>(() => CreateClient().RephraseTextAsync("a", ""));
 

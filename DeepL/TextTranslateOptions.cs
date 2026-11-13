@@ -2,7 +2,9 @@
 // Use of this source code is governed by an MIT
 // license that can be found in the LICENSE file.
 
+using System;
 using System.Collections.Generic;
+using DeepL.Internal;
 using DeepL.Model;
 
 namespace DeepL {
@@ -15,24 +17,29 @@ namespace DeepL {
     public TextTranslateOptions() { }
 
     /// <summary>Initializes a new <see cref="TextTranslateOptions" /> object including the given v2 glossary.</summary>
-    /// <param name="glossary">Glossary to use in translation.</param>
+    /// <param name="glossary">Glossary to use in translation. Must not be <c>null</c>.</param>
+    /// <exception cref="ArgumentNullException">If <paramref name="glossary" /> is <c>null</c>.</exception>
     public TextTranslateOptions(GlossaryInfo glossary) : this() {
-      Glossary = glossary.GlossaryId;
+      Glossary = Argument.NotNull(glossary, nameof(glossary)).GlossaryId;
     }
 
     /// <summary>Initializes a new <see cref="TextTranslateOptions" /> object including the given multilingual glossary.</summary>
-    /// <param name="glossary">Glossary to use in translation.</param>
+    /// <param name="glossary">Glossary to use in translation. Must not be <c>null</c>.</param>
+    /// <exception cref="ArgumentNullException">If <paramref name="glossary" /> is <c>null</c>.</exception>
     public TextTranslateOptions(MultilingualGlossaryInfo glossary) : this() {
-      Glossary = glossary.GlossaryId;
+      Glossary = Argument.NotNull(glossary, nameof(glossary)).GlossaryId;
     }
 
     /// <summary>
     ///   Initializes a new <see cref="TextTranslateOptions" /> object including the given v2 glossaries. Multiple
     ///   glossaries are applied in order, with the first matching term taking precedence.
     /// </summary>
-    /// <param name="glossaries">Glossaries to use in translation (maximum of 5).</param>
+    /// <param name="glossaries">
+    ///   Glossaries to use in translation (maximum of 5). Neither the list nor an entry may be <c>null</c>.
+    /// </param>
+    /// <exception cref="ArgumentNullException">If <paramref name="glossaries" /> is <c>null</c>.</exception>
     public TextTranslateOptions(IEnumerable<GlossaryInfo> glossaries) : this() {
-      foreach (var glossary in glossaries) {
+      foreach (var glossary in Argument.NoNullEntries(glossaries, nameof(glossaries))) {
         GlossaryIds.Add(glossary.GlossaryId);
       }
     }
@@ -41,29 +48,35 @@ namespace DeepL {
     ///   Initializes a new <see cref="TextTranslateOptions" /> object including the given multilingual glossaries.
     ///   Multiple glossaries are applied in order, with the first matching term taking precedence.
     /// </summary>
-    /// <param name="glossaries">Glossaries to use in translation (maximum of 5).</param>
+    /// <param name="glossaries">
+    ///   Glossaries to use in translation (maximum of 5). Neither the list nor an entry may be <c>null</c>.
+    /// </param>
+    /// <exception cref="ArgumentNullException">If <paramref name="glossaries" /> is <c>null</c>.</exception>
     public TextTranslateOptions(IEnumerable<MultilingualGlossaryInfo> glossaries) : this() {
-      foreach (var glossary in glossaries) {
+      foreach (var glossary in Argument.NoNullEntries(glossaries, nameof(glossaries))) {
         GlossaryIds.Add(glossary.GlossaryId);
       }
     }
 
     /// <summary>Initializes a new <see cref="TextTranslateOptions" /> object including the given style rule.</summary>
-    /// <param name="styleRule">Style rule to use in translation.</param>
+    /// <param name="styleRule">Style rule to use in translation. Must not be <c>null</c>.</param>
+    /// <exception cref="ArgumentNullException">If <paramref name="styleRule" /> is <c>null</c>.</exception>
     public TextTranslateOptions(StyleRuleInfo styleRule) : this() {
-      StyleRule = styleRule.StyleId;
+      StyleRule = Argument.NotNull(styleRule, nameof(styleRule)).StyleId;
     }
 
     /// <summary>Initializes a new <see cref="TextTranslateOptions" /> object including the given style profile.</summary>
-    /// <param name="styleProfile">Style profile to use in translation.</param>
+    /// <param name="styleProfile">Style profile to use in translation. Must not be <c>null</c>.</param>
+    /// <exception cref="ArgumentNullException">If <paramref name="styleProfile" /> is <c>null</c>.</exception>
     public TextTranslateOptions(StyleProfile styleProfile) : this() {
-      StyleProfile = styleProfile.StyleProfileId;
+      StyleProfile = Argument.NotNull(styleProfile, nameof(styleProfile)).StyleProfileId;
     }
 
     /// <summary>Initializes a new <see cref="TextTranslateOptions" /> object including the given translation memory.</summary>
-    /// <param name="translationMemory">Translation memory to use in translation.</param>
+    /// <param name="translationMemory">Translation memory to use in translation. Must not be <c>null</c>.</param>
+    /// <exception cref="ArgumentNullException">If <paramref name="translationMemory" /> is <c>null</c>.</exception>
     public TextTranslateOptions(TranslationMemoryInfo translationMemory) : this() {
-      TranslationMemory = translationMemory.TranslationMemoryId;
+      TranslationMemory = Argument.NotNull(translationMemory, nameof(translationMemory)).TranslationMemoryId;
     }
 
     /// <summary>
@@ -96,7 +109,7 @@ namespace DeepL {
     ///   Specifies multiple glossaries to use with the translation (maximum of 5): their IDs, or
     ///   <see cref="GlossaryInfo" /> and <see cref="MultilingualGlossaryInfo" /> objects, which convert to their IDs.
     ///   Glossaries are applied in order, with the first matching term taking precedence. Cannot be combined with
-    ///   <see cref="Glossary" />.
+    ///   <see cref="Glossary" />. An entry must not be <c>null</c>.
     /// </summary>
     /// <remarks>
     ///   If the source language is omitted, DeepL detects it and every listed glossary must contain a
@@ -127,10 +140,16 @@ namespace DeepL {
     /// <summary>Specifies the minimum similarity threshold for translation memory matches (0-100).</summary>
     public int? TranslationMemoryThreshold { get; set; }
 
-    /// <summary>Specifies a list of XML tags containing content that should not be translated.</summary>
+    /// <summary>
+    ///   Specifies a list of XML tags containing content that should not be translated.
+    ///   An entry must not be <c>null</c>.
+    /// </summary>
     public List<string> IgnoreTags { get; } = new List<string>();
 
-    /// <summary>Specifies a list of XML tags that should not be used to split text into sentences.</summary>
+    /// <summary>
+    ///   Specifies a list of XML tags that should not be used to split text into sentences.
+    ///   An entry must not be <c>null</c>.
+    /// </summary>
     public List<string> NonSplittingTags { get; } = new List<string>();
 
     /// <summary>Set to <c>false</c> to disable automatic tag detection, default is <c>true</c>.</summary>
@@ -154,7 +173,10 @@ namespace DeepL {
     /// </summary>
     public string? SplitSentences { get; set; }
 
-    /// <summary>Specifies a list of XML tags that should be used to split text into sentences.</summary>
+    /// <summary>
+    ///   Specifies a list of XML tags that should be used to split text into sentences.
+    ///   An entry must not be <c>null</c>.
+    /// </summary>
     public List<string> SplittingTags { get; } = new List<string>();
 
     /// <summary>
@@ -185,7 +207,7 @@ namespace DeepL {
 
     /// <summary>
     ///   A list of custom instructions to guide the translation.
-    ///   Maximum of 10 instructions, each with a maximum length of 300 characters.
+    ///   Maximum of 10 instructions, each with a maximum length of 300 characters. An entry must not be <c>null</c>.
     /// </summary>
     public List<string> CustomInstructions { get; } = new List<string>();
   }

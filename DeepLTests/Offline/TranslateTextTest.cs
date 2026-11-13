@@ -427,6 +427,35 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
+    public async Task ThrowsArgumentNullExceptionNamingTheNullArgument() {
+      var client = CreateClient();
+      Task<TextResult> TranslateWith(TextTranslateOptions options) => client.TranslateTextAsync("a", null, "DE", options);
+      var calls = new (string Param, Func<Task> Call)[] {
+        ("text", () => client.TranslateTextAsync((string)null!, null, "DE")),
+        ("texts", () => client.TranslateTextAsync((IEnumerable<string>)null!, null, "DE")),
+        ("texts", () => client.TranslateTextAsync(new[] { "a", null! }, null, "DE")),
+        ("GlossaryIds", () => TranslateWith(new TextTranslateOptions { GlossaryIds = { "g1", null! } })),
+        ("IgnoreTags", () => TranslateWith(new TextTranslateOptions { IgnoreTags = { null! } })),
+        ("NonSplittingTags", () => TranslateWith(new TextTranslateOptions { NonSplittingTags = { null! } })),
+        ("SplittingTags", () => TranslateWith(new TextTranslateOptions { SplittingTags = { null! } })),
+        ("CustomInstructions", () => TranslateWith(new TextTranslateOptions { CustomInstructions = { null! } })),
+        ("glossary", () => Task.FromResult(new TextTranslateOptions((GlossaryInfo)null!))),
+        ("glossary", () => Task.FromResult(new TextTranslateOptions((MultilingualGlossaryInfo)null!))),
+        ("glossaries", () => Task.FromResult(new TextTranslateOptions((IEnumerable<GlossaryInfo>)null!))),
+        ("glossaries", () => Task.FromResult(new TextTranslateOptions(new GlossaryInfo[] { null! }))),
+        ("glossaries", () => Task.FromResult(new TextTranslateOptions((IEnumerable<MultilingualGlossaryInfo>)null!))),
+        ("glossaries", () => Task.FromResult(new TextTranslateOptions(new MultilingualGlossaryInfo[] { null! }))),
+        ("styleRule", () => Task.FromResult(new TextTranslateOptions((StyleRuleInfo)null!))),
+        ("styleProfile", () => Task.FromResult(new TextTranslateOptions((StyleProfile)null!))),
+        ("translationMemory", () => Task.FromResult(new TextTranslateOptions((TranslationMemoryInfo)null!))),
+      };
+      foreach (var (param, call) in calls) {
+        var exception = await Assert.ThrowsAsync<ArgumentNullException>(call);
+        Assert.Equal(param, exception.ParamName);
+      }
+    }
+
+    [Fact]
     public async Task ThrowsArgumentExceptionWhenLanguageIsWhitespace() {
       var client = CreateClient();
       await Assert.ThrowsAsync<ArgumentException>(() => client.TranslateTextAsync("a", null, " "));

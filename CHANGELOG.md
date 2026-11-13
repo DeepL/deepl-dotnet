@@ -195,6 +195,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `UpdateStyleRuleCustomInstructionAsync()` and `DeleteStyleRuleCustomInstructionAsync()` overloads is renamed from
   `instruction` to `instructionId`, the name it has in the overloads taking an ID. Calls that pass it by name must use
   `instructionId:`.
+- **Breaking:** a `null` text, texts list or text entry in `TranslateTextAsync()`, `RephraseTextAsync()` and
+  `CorrectTextAsync()`, a `null` entry of `GlossaryIds`, `IgnoreTags`, `NonSplittingTags`, `SplittingTags` or
+  `CustomInstructions`, and a `null` argument of the `TextTranslateOptions` constructors now throw an
+  `ArgumentNullException` (an `ArgumentException`) naming it before any request. They threw a `NullReferenceException`
+  or sent the request before. Catch `ArgumentException` (or `ArgumentNullException`) instead of
+  `NullReferenceException`.
 
 ### Removed
 - Removed `Usage.Document` and `Usage.TeamDocument`; the API no longer returns document usage. `Usage.ToString()` no
