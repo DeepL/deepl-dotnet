@@ -29,19 +29,20 @@ namespace DeepL {
 
     /// <summary>
     ///   IDs of the glossaries to link, highest priority first. On update, the list replaces the linked glossaries in
-    ///   full; an empty list unlinks all glossaries.
+    ///   full; an empty list unlinks all glossaries. An entry must not be <c>null</c>.
     /// </summary>
     public IEnumerable<string>? GlossaryIds { get; set; }
 
     /// <summary>
     ///   IDs of the style rule lists to link, at most one per target language. On update, the list replaces the linked
-    ///   style rule lists in full; an empty list unlinks all style rule lists.
+    ///   style rule lists in full; an empty list unlinks all style rule lists. An entry must not be <c>null</c>.
     /// </summary>
     public IEnumerable<string>? StyleRuleIds { get; set; }
 
     /// <summary>
     ///   IDs of the translation memories to link, at most one per source language. On update, the list replaces the
-    ///   linked translation memories in full; an empty list unlinks all translation memories.
+    ///   linked translation memories in full; an empty list unlinks all translation memories. An entry must not be
+    ///   <c>null</c>.
     /// </summary>
     public IEnumerable<string>? TranslationMemoryIds { get; set; }
 

@@ -129,6 +129,33 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
+    public async Task ThrowsArgumentNullExceptionNamingTheNullArgument() {
+      var client = CreateClient();
+      var calls = new (string Param, Func<Task> Call)[] {
+        ("name", () => client.CreateStyleProfileAsync(null!)),
+        ("styleProfileId", () => client.GetStyleProfileAsync((string)null!)),
+        ("styleProfileId", () => client.UpdateStyleProfileAsync((string)null!, new UpdateStyleProfileOptions { Name = "New" })),
+        ("styleProfileId", () => client.DeleteStyleProfileAsync((string)null!)),
+        ("GlossaryIds", () => client.CreateStyleProfileAsync(
+              "n",
+              new CreateStyleProfileOptions { GlossaryIds = new[] { "g1", null! } })),
+        ("StyleRuleIds", () => client.CreateStyleProfileAsync(
+              "n",
+              new CreateStyleProfileOptions { StyleRuleIds = new[] { "s1", null! } })),
+        ("TranslationMemoryIds", () => client.CreateStyleProfileAsync(
+              "n",
+              new CreateStyleProfileOptions { TranslationMemoryIds = new[] { "t1", null! } })),
+        ("GlossaryIds", () => client.UpdateStyleProfileAsync(
+              "p1",
+              new UpdateStyleProfileOptions { GlossaryIds = new string[] { null! } })),
+      };
+      foreach (var (param, call) in calls) {
+        var exception = await Assert.ThrowsAsync<ArgumentNullException>(call);
+        Assert.Equal(param, exception.ParamName);
+      }
+    }
+
+    [Fact]
     public async Task ParsesEveryFieldOfTheSpecExample() {
       ExpectNoBody(HttpMethod.Get, "v3/style_profiles/sp1").RespondJson(ProfileReply);
 

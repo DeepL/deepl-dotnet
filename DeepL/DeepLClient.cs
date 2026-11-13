@@ -2275,7 +2275,7 @@ namespace DeepL {
             .ApiPostJsonAsync(
                   "v3/style_profiles",
                   cancellationToken,
-                  CreateStyleProfileBody(name, options),
+                  CreateStyleProfileBody(Argument.NotNull(name, nameof(name)), options),
                   SerializationOptions,
                   true)
             .ConfigureAwait(false);
@@ -3538,11 +3538,10 @@ namespace DeepL {
     /// <summary>Returns the API path of the given style profile.</summary>
     /// <param name="styleProfileId">ID of the style profile.</param>
     /// <returns>The relative path of the style profile.</returns>
+    /// <exception cref="ArgumentNullException">If the ID is <c>null</c>.</exception>
     /// <exception cref="ArgumentException">If the ID is empty.</exception>
     private static string StyleProfilePath(string styleProfileId) {
-      if (string.IsNullOrWhiteSpace(styleProfileId)) {
-        throw new ArgumentException($"Parameter {nameof(styleProfileId)} must not be empty");
-      }
+      Argument.NotEmpty(styleProfileId, nameof(styleProfileId));
 
       return $"v3/style_profiles/{Uri.EscapeDataString(styleProfileId)}";
     }
@@ -3562,9 +3561,19 @@ namespace DeepL {
       if (options == null) return body;
       if (options.Description != null) body["description"] = options.Description;
       if (options.Industry != null) body["industry"] = options.Industry;
-      if (options.GlossaryIds != null) body["glossary_ids"] = options.GlossaryIds.ToArray();
-      if (options.StyleRuleIds != null) body["style_rule_ids"] = options.StyleRuleIds.ToArray();
-      if (options.TranslationMemoryIds != null) body["translation_memory_ids"] = options.TranslationMemoryIds.ToArray();
+      if (options.GlossaryIds != null) {
+        body["glossary_ids"] = Argument.NoNullEntries(options.GlossaryIds, nameof(options.GlossaryIds));
+      }
+
+      if (options.StyleRuleIds != null) {
+        body["style_rule_ids"] = Argument.NoNullEntries(options.StyleRuleIds, nameof(options.StyleRuleIds));
+      }
+
+      if (options.TranslationMemoryIds != null) {
+        body["translation_memory_ids"] =
+              Argument.NoNullEntries(options.TranslationMemoryIds, nameof(options.TranslationMemoryIds));
+      }
+
       if (options.GlossaryPriorityOrderEnabled != null) {
         body["glossary_priority_order_enabled"] = options.GlossaryPriorityOrderEnabled.Value;
       }

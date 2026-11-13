@@ -218,6 +218,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   naming the parameter before any request. They threw a plain `ArgumentException` or sent JSON `null` before. `catch
   (ArgumentException)` still catches them; code comparing the exact exception type must expect
   `ArgumentNullException`.
+- **Breaking:** a `null` name or style profile ID and a `null` entry of `GlossaryIds`, `StyleRuleIds` or
+  `TranslationMemoryIds` of the style profile methods now throw an `ArgumentNullException` (an `ArgumentException`)
+  before any request. They threw a plain `ArgumentException` or sent the request before. `catch (ArgumentException)`
+  still catches them; code comparing the exact exception type must expect `ArgumentNullException`.
 
 ### Removed
 - Removed `Usage.Document` and `Usage.TeamDocument`; the API no longer returns document usage. `Usage.ToString()` no

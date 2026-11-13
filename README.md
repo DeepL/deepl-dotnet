@@ -903,7 +903,7 @@ await client.DeleteStyleRuleAsync("YOUR_STYLE_ID");
 A style profile is a named set of glossaries, style rule lists and translation
 memories, with an optional description and industry. Every style profile
 management method accepts either its ID or a `StyleProfile` object; an empty ID
-throws an `ArgumentException`, and a `null` `StyleProfile` an
+throws an `ArgumentException`, and a `null` ID or `StyleProfile` an
 `ArgumentNullException`, without sending a request.
 
 The optional fields are set with `CreateStyleProfileOptions` when creating and
