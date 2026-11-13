@@ -462,6 +462,23 @@ namespace DeepLTests.Offline {
       await Assert.ThrowsAsync<ArgumentException>(() => CreateClient().TranslateTextAsync("a", null, "DE", options));
     }
 
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    public async Task ThrowsArgumentExceptionWhenResourceIdIsEmpty(string id) {
+      var client = CreateClient();
+      var options = new[] {
+        new TextTranslateOptions { GlossaryIds = { "g1", id } },
+        new TextTranslateOptions { Glossary = id },
+        new TextTranslateOptions { StyleRule = id },
+        new TextTranslateOptions { StyleProfile = id },
+        new TextTranslateOptions { TranslationMemory = id },
+      };
+      foreach (var option in options) {
+        await Assert.ThrowsAsync<ArgumentException>(() => client.TranslateTextAsync("a", null, "DE", option));
+      }
+    }
+
     [Fact]
     public void MapsEachModelTypeToDistinctApiValue() {
       var values = Enum.GetValues(typeof(ModelType)).Cast<ModelType>().Select(type => type.ToApiValue()).ToArray();

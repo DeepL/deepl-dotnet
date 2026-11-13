@@ -670,6 +670,23 @@ namespace DeepLTests.Offline {
             () => CreateClient().TranslateDocumentUploadAsync(Text("hello"), "a.txt", null, "DE", options));
     }
 
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    public async Task ThrowsArgumentExceptionWhenResourceIdIsEmpty(string id) {
+      var client = CreateClient();
+      var options = new[] {
+        new DocumentTranslateOptions { GlossaryIds = { "g1", id } },
+        new DocumentTranslateOptions { Glossary = id },
+        new DocumentTranslateOptions { StyleRule = id },
+        new DocumentTranslateOptions { StyleProfile = id },
+        new DocumentTranslateOptions { TranslationMemory = id },
+      };
+      foreach (var option in options) {
+        await Assert.ThrowsAsync<ArgumentException>(() => client.TranslateDocumentUploadAsync(Text("hello"), "a.txt", "EN", "DE", option));
+      }
+    }
+
     [Fact]
     public async Task ThrowsArgumentExceptionWhenThresholdHasNoTranslationMemory() {
       var options = new DocumentTranslateOptions { TranslationMemoryThreshold = 80 };

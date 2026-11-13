@@ -825,6 +825,14 @@ namespace DeepL {
         bodyParams["source_lang"] = sourceLanguageCode;
       }
 
+      CheckOptionalId(glossaryId, "Glossary");
+      CheckOptionalId(styleId, "StyleRule");
+      CheckOptionalId(styleProfileId, "StyleProfile");
+      CheckOptionalId(translationMemoryId, "TranslationMemory");
+      if (glossaryIds != null && glossaryIds.Any(id => id != null && string.IsNullOrWhiteSpace(id))) {
+        throw new ArgumentException("GlossaryIds must not contain empty or whitespace-only IDs", "GlossaryIds");
+      }
+
       var hasGlossaryIds = glossaryIds != null && glossaryIds.Count > 0;
 
       if (glossaryId != null && hasGlossaryIds) {
@@ -3699,6 +3707,13 @@ namespace DeepL {
     private static void CheckOptionalLanguage(string? languageCode, string paramName) {
       if (languageCode != null && string.IsNullOrWhiteSpace(languageCode)) {
         throw new ArgumentException($"Parameter {paramName} must not be empty", paramName);
+      }
+    }
+
+    /// <summary>Throws if the optional resource ID is given but empty or whitespace-only.</summary>
+    private static void CheckOptionalId(string? id, string optionName) {
+      if (id != null && string.IsNullOrWhiteSpace(id)) {
+        throw new ArgumentException($"{optionName} must not be empty", optionName);
       }
     }
 

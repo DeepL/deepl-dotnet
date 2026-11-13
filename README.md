@@ -158,13 +158,17 @@ foreach (var formality in new[] { Formality.Less, Formality.More }) {
 - `FormalityValue`: the `formality` value as a string, sent unchanged instead
   of `Formality` if set. Use it for values the enum does not have.
 - `Glossary`: specifies a glossary to use with translation: its ID, or a
-  `GlossaryInfo` or `MultilingualGlossaryInfo` (they convert to their ID).
+  `GlossaryInfo` or `MultilingualGlossaryInfo` (they convert to their ID). An
+  empty or whitespace-only ID throws an `ArgumentException` without sending a
+  request; the same holds for `StyleRule`, `StyleProfile` and
+  `TranslationMemory`.
 - `GlossaryIds`: specifies multiple glossaries to use with translation (up to 5),
   as a list of glossary IDs; `GlossaryInfo` and `MultilingualGlossaryInfo`
   objects can be added to it as well, for example
   `GlossaryIds = { "YOUR_GLOSSARY_ID", glossaryInfo }`. Glossaries are applied in
   order, with the first matching term taking precedence. It cannot be combined
-  with `Glossary`.
+  with `Glossary`. An empty or whitespace-only entry throws an
+  `ArgumentException`.
 - `StyleRule`: specifies a style rule to use with translation: its ID, or a
   `StyleRuleInfo`.
 - `StyleProfile`: specifies a style profile to use with translation: its ID, or
