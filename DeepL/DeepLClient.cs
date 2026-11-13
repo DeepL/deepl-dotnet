@@ -1317,9 +1317,7 @@ namespace DeepL {
           long contentLength,
           CreateTranslationMemoryImportOptions? options,
           CancellationToken cancellationToken = default) {
-      if (string.IsNullOrWhiteSpace(fileName)) {
-        throw new ArgumentException($"Parameter {nameof(fileName)} must not be empty");
-      }
+      Argument.NotEmpty(fileName, nameof(fileName));
 
       if (contentLength <= 0) {
         throw new ArgumentException($"Parameter {nameof(contentLength)} must be greater than 0");
@@ -1356,10 +1354,10 @@ namespace DeepL {
     public async Task UploadTranslationMemoryFileAsync(
           TranslationMemoryImport translationMemoryImport,
           Stream fileContent,
-          string contentType = "application/xml",
+          string? contentType = "application/xml",
           CancellationToken cancellationToken = default) =>
           await UploadTranslationMemoryFileAsync(
-                      translationMemoryImport.UploadUrl,
+                      Argument.NotNull(translationMemoryImport, nameof(translationMemoryImport)).UploadUrl,
                       fileContent,
                       contentType,
                       cancellationToken)
@@ -1369,16 +1367,16 @@ namespace DeepL {
     public async Task UploadTranslationMemoryFileAsync(
           string uploadUrl,
           Stream fileContent,
-          string contentType = "application/xml",
+          string? contentType = "application/xml",
           CancellationToken cancellationToken = default) {
-      if (string.IsNullOrWhiteSpace(uploadUrl)) {
-        throw new ArgumentException($"Parameter {nameof(uploadUrl)} must not be empty");
-      }
+      Argument.NotEmpty(uploadUrl, nameof(uploadUrl));
 
       if (!Uri.TryCreate(uploadUrl, UriKind.Absolute, out var parsedUploadUrl) ||
           (parsedUploadUrl.Scheme != Uri.UriSchemeHttp && parsedUploadUrl.Scheme != Uri.UriSchemeHttps)) {
         throw new ArgumentException($"Parameter {nameof(uploadUrl)} must be an absolute http or https URL");
       }
+
+      Argument.NotNull(fileContent, nameof(fileContent));
 
       // Buffer the file before sending it. Requests are retried on 429 and 5xx responses, and a
       // StreamContent body would already be at the end of the stream on the second attempt,
@@ -1387,7 +1385,7 @@ namespace DeepL {
       await fileContent.CopyToAsync(buffer, 81920, cancellationToken).ConfigureAwait(false);
 
       using var content = new ByteArrayContent(buffer.ToArray());
-      content.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+      content.Headers.ContentType = new MediaTypeHeaderValue(contentType ?? "application/xml");
       using var responseMessage = await _client
             .AssetCallAsync(HttpMethod.Put, uploadUrl, cancellationToken, content).ConfigureAwait(false);
 
@@ -1432,9 +1430,7 @@ namespace DeepL {
     public async Task<TranslationMemoryJob> GetTranslationMemoryJobAsync(
           string jobId,
           CancellationToken cancellationToken = default) {
-      if (string.IsNullOrWhiteSpace(jobId)) {
-        throw new ArgumentException($"Parameter {nameof(jobId)} must not be empty");
-      }
+      Argument.NotEmpty(jobId, nameof(jobId));
 
       using var responseMessage = await _client
             .ApiGetAsync($"v3/translation_memories/jobs/{Uri.EscapeDataString(jobId)}", cancellationToken)
@@ -1526,6 +1522,8 @@ namespace DeepL {
           TranslationMemoryJob job,
           Stream outputFile,
           CancellationToken cancellationToken = default) {
+      Argument.NotNull(job, nameof(job));
+      Argument.NotNull(outputFile, nameof(outputFile));
       var downloadUrl = job.Result?.DownloadUrl;
       if (string.IsNullOrEmpty(downloadUrl)) {
         throw new DeepLException(
@@ -1551,6 +1549,7 @@ namespace DeepL {
           TranslationMemoryJob job,
           string outputFilePath,
           CancellationToken cancellationToken = default) {
+      Argument.NotNull(job, nameof(job));
       var outputFileInfo = new FileInfo(outputFilePath);
       // CreateNew rather than Create: the catch below deletes the file to clean up a partial
       // download, so truncating an existing one would let a failed export destroy the caller's
@@ -1660,12 +1659,24 @@ namespace DeepL {
           string translationMemoryId,
           string outputFilePath,
           TimeSpan? timeout,
-          CancellationToken cancellationToken = default) {
+          CancellationToken cancellationToken = default) =>
+          await ExportTranslationMemoryToFilepathAsync(() => translationMemoryId, outputFilePath, timeout, cancellationToken)
+                .ConfigureAwait(false);
+
+    /// <summary>
+    ///   Exports the translation memory whose ID <paramref name="translationMemoryId" /> returns; argument errors of
+    ///   that function are wrapped like the failures of the export itself.
+    /// </summary>
+    private async Task<TranslationMemoryJob> ExportTranslationMemoryToFilepathAsync(
+          Func<string> translationMemoryId,
+          string outputFilePath,
+          TimeSpan? timeout,
+          CancellationToken cancellationToken) {
       string? jobId = null;
       TranslationMemoryJob? job = null;
       try {
         return await ExportTranslationMemoryToFilepathCoreAsync(
-                    translationMemoryId,
+                    translationMemoryId(),
                     outputFilePath,
                     timeout,
                     created => jobId = created,
@@ -1735,9 +1746,8 @@ namespace DeepL {
           TranslationMemoryInfo translationMemory,
           string outputFilePath,
           CancellationToken cancellationToken = default) =>
-          // A null object reaches the wrapped empty-ID check, like an empty ID.
           await ExportTranslationMemoryToFilepathAsync(
-                      translationMemory?.TranslationMemoryId!,
+                      () => TranslationMemoryId(translationMemory),
                       outputFilePath,
                       null,
                       cancellationToken)
@@ -1749,9 +1759,8 @@ namespace DeepL {
           string outputFilePath,
           TimeSpan? timeout,
           CancellationToken cancellationToken = default) =>
-          // A null object reaches the wrapped empty-ID check, like an empty ID.
           await ExportTranslationMemoryToFilepathAsync(
-                      translationMemory?.TranslationMemoryId!,
+                      () => TranslationMemoryId(translationMemory),
                       outputFilePath,
                       timeout,
                       cancellationToken)
@@ -3782,12 +3791,10 @@ namespace DeepL {
 
     /// <summary>Checks the given translation memory ID is usable, otherwise throws an exception.</summary>
     /// <param name="translationMemoryId">The translation memory ID to check.</param>
+    /// <exception cref="ArgumentNullException">If the translation memory ID is <c>null</c>.</exception>
     /// <exception cref="ArgumentException">If the translation memory ID is empty.</exception>
-    private static void CheckTranslationMemoryId(string translationMemoryId) {
-      if (string.IsNullOrWhiteSpace(translationMemoryId)) {
-        throw new ArgumentException($"Parameter {nameof(translationMemoryId)} must not be empty");
-      }
-    }
+    private static void CheckTranslationMemoryId(string translationMemoryId) =>
+          Argument.NotEmpty(translationMemoryId, nameof(translationMemoryId));
 
     /// <summary>Creates a <see cref="TranslationMemoryJob" /> from the JSON-deserialized DeepL API response.</summary>
     /// <param name="response">The deserialized job response.</param>

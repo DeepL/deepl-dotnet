@@ -161,6 +161,15 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
+    public async Task UploadsWithDefaultContentTypeWhenContentTypeIsNull() {
+      Http.Expect(HttpMethod.Put, UploadUrl)
+            .WithHeaders("Content-Type", "application/xml")
+            .WithContent(Tmx)
+            .Respond(HttpStatusCode.OK);
+      await CreateClient().UploadTranslationMemoryFileAsync(UploadUrl, new MemoryStream(Encoding.UTF8.GetBytes(Tmx)), null);
+    }
+
+    [Fact]
     public async Task ThrowsDeepLExceptionWhenUploadIsRejected() {
       Http.Expect(HttpMethod.Put, UploadUrl).Respond(HttpStatusCode.Forbidden, "text/plain", "denied");
       var exception = await Assert.ThrowsAsync<DeepLException>(
@@ -452,6 +461,36 @@ namespace DeepLTests.Offline {
       }
     }
 
+    [Fact]
+    public async Task ThrowsArgumentNullExceptionNamingTheNullArgument() {
+      var client = CreateClient();
+      var noId = (string)null!;
+      var exportPath = Path.Combine(Fixtures.TempDir(), "export.tmx");
+      var calls = new (string Param, Func<Task> Call)[] {
+        ("translationMemoryId", () => client.GetTranslationMemoryAsync(noId)),
+        ("translationMemoryId", () => client.ListTranslationMemorySegmentsAsync(noId, (TranslationMemorySegmentsOptions?)null)),
+        ("translationMemoryId", () => client.DeleteTranslationMemoryAsync(noId)),
+        ("translationMemoryId", () => client.CreateTranslationMemoryExportAsync(noId)),
+        ("jobId", () => client.GetTranslationMemoryJobAsync(noId)),
+        ("jobId", () => client.WaitUntilTranslationMemoryJobDoneAsync(noId)),
+        ("fileName", () => client.CreateTranslationMemoryImportAsync(null!, 100)),
+        ("uploadUrl", () => client.UploadTranslationMemoryFileAsync(noId, new MemoryStream())),
+        ("translationMemoryImport", () => client.UploadTranslationMemoryFileAsync(
+              (TranslationMemoryImport)null!,
+              new MemoryStream())),
+        ("fileContent", () => client.UploadTranslationMemoryFileAsync(UploadUrl, null!)),
+        ("job", () => client.DownloadTranslationMemoryExportAsync(null!, new MemoryStream())),
+        ("job", () => client.DownloadTranslationMemoryExportAsync(null!, exportPath)),
+        ("outputFile", () => client.DownloadTranslationMemoryExportAsync(CompletedJob(), (Stream)null!)),
+      };
+      foreach (var (param, call) in calls) {
+        var exception = await Assert.ThrowsAsync<ArgumentNullException>(call);
+        Assert.Equal(param, exception.ParamName);
+      }
+
+      Assert.False(File.Exists(exportPath));
+    }
+
     [Theory]
     [InlineData("not a url")]
     [InlineData("/upload?sig=abc")]
@@ -524,7 +563,7 @@ namespace DeepLTests.Offline {
       };
       foreach (var call in calls) {
         var exception = await Assert.ThrowsAsync<TranslationMemoryJobException>(call);
-        Assert.IsType<ArgumentException>(exception.InnerException);
+        Assert.Equal("translationMemory", Assert.IsType<ArgumentNullException>(exception.InnerException).ParamName);
         Assert.Null(exception.JobId);
         Assert.False(File.Exists(path));
       }

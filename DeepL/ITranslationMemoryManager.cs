@@ -27,6 +27,7 @@ namespace DeepL {
     /// <param name="translationMemoryId">The ID of the translation memory to retrieve.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="TranslationMemoryInfo" /> object for the requested translation memory.</returns>
+    /// <exception cref="ArgumentNullException">If <paramref name="translationMemoryId" /> is <c>null</c>.</exception>
     /// <exception cref="NotFoundException">If the specified translation memory was not found.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -40,8 +41,8 @@ namespace DeepL {
     /// <param name="translationMemory">The translation memory to retrieve.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="TranslationMemoryInfo" /> object for the requested translation memory.</returns>
+    /// <exception cref="ArgumentNullException">If <paramref name="translationMemory" /> is <c>null</c>.</exception>
     /// <exception cref="NotFoundException">If the specified translation memory was not found.</exception>
-    /// <exception cref="ArgumentNullException">If <paramref name="translationMemory" /> is null.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -67,6 +68,7 @@ namespace DeepL {
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="TranslationMemorySegments" /> object holding the requested page.</returns>
+    /// <exception cref="ArgumentNullException">If <paramref name="translationMemoryId" /> is <c>null</c>.</exception>
     /// <exception cref="NotFoundException">If the specified translation memory was not found.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -92,8 +94,8 @@ namespace DeepL {
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="TranslationMemorySegments" /> object holding the requested page.</returns>
+    /// <exception cref="ArgumentNullException">If <paramref name="translationMemory" /> is <c>null</c>.</exception>
     /// <exception cref="NotFoundException">If the specified translation memory was not found.</exception>
-    /// <exception cref="ArgumentNullException">If <paramref name="translationMemory" /> is null.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -116,6 +118,7 @@ namespace DeepL {
     /// <param name="options">Optional <see cref="TranslationMemorySegmentsOptions" /> for paging and filtering.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="TranslationMemorySegments" /> object holding the requested page.</returns>
+    /// <exception cref="ArgumentNullException">If <paramref name="translationMemoryId" /> is <c>null</c>.</exception>
     /// <exception cref="NotFoundException">If the specified translation memory was not found.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -131,8 +134,8 @@ namespace DeepL {
     /// <param name="options">Optional <see cref="TranslationMemorySegmentsOptions" /> for paging and filtering.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="TranslationMemorySegments" /> object holding the requested page.</returns>
+    /// <exception cref="ArgumentNullException">If <paramref name="translationMemory" /> is <c>null</c>.</exception>
     /// <exception cref="NotFoundException">If the specified translation memory was not found.</exception>
-    /// <exception cref="ArgumentNullException">If <paramref name="translationMemory" /> is null.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -145,6 +148,7 @@ namespace DeepL {
     /// <summary>Deletes a translation memory.</summary>
     /// <param name="translationMemoryId">The ID of the translation memory to delete.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <exception cref="ArgumentNullException">If <paramref name="translationMemoryId" /> is <c>null</c>.</exception>
     /// <exception cref="NotFoundException">If the specified translation memory was not found.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -157,8 +161,8 @@ namespace DeepL {
     /// <summary>Deletes the given translation memory.</summary>
     /// <param name="translationMemory">The translation memory to delete.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <exception cref="ArgumentNullException">If <paramref name="translationMemory" /> is <c>null</c>.</exception>
     /// <exception cref="NotFoundException">If the specified translation memory was not found.</exception>
-    /// <exception cref="ArgumentNullException">If <paramref name="translationMemory" /> is null.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -187,6 +191,7 @@ namespace DeepL {
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="TranslationMemoryImport" /> object with the job ID and upload URL.</returns>
+    /// <exception cref="ArgumentNullException">If <paramref name="fileName" /> is <c>null</c>.</exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -219,6 +224,7 @@ namespace DeepL {
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="TranslationMemoryImport" /> object with the job ID and upload URL.</returns>
+    /// <exception cref="ArgumentNullException">If <paramref name="fileName" /> is <c>null</c>.</exception>
     /// <exception cref="ArgumentException">If any argument is invalid.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -237,8 +243,12 @@ namespace DeepL {
     /// <param name="fileContent">Stream containing the TMX file content.</param>
     /// <param name="contentType">
     ///   MIME type of the file, which must match the content type declared when the import job was created.
+    ///   <c>null</c> uses the default.
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="translationMemoryImport" /> or <paramref name="fileContent" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">
     ///   If any argument is invalid, for example the upload URL is empty or not an absolute http or https URL.
     /// </exception>
@@ -246,7 +256,7 @@ namespace DeepL {
     Task UploadTranslationMemoryFileAsync(
           TranslationMemoryImport translationMemoryImport,
           Stream fileContent,
-          string contentType = "application/xml",
+          string? contentType = "application/xml",
           CancellationToken cancellationToken = default);
 
     /// <summary>Uploads a TMX file to the upload URL of an import job, which starts processing.</summary>
@@ -257,8 +267,12 @@ namespace DeepL {
     /// <param name="fileContent">Stream containing the TMX file content.</param>
     /// <param name="contentType">
     ///   MIME type of the file, which must match the content type declared when the import job was created.
+    ///   <c>null</c> uses the default.
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="uploadUrl" /> or <paramref name="fileContent" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="ArgumentException">
     ///   If any argument is invalid, for example the upload URL is empty or not an absolute http or https URL.
     /// </exception>
@@ -266,7 +280,7 @@ namespace DeepL {
     Task UploadTranslationMemoryFileAsync(
           string uploadUrl,
           Stream fileContent,
-          string contentType = "application/xml",
+          string? contentType = "application/xml",
           CancellationToken cancellationToken = default);
 
     /// <summary>Creates an export job for a translation memory.</summary>
@@ -282,6 +296,7 @@ namespace DeepL {
     /// <param name="translationMemoryId">The ID of the translation memory to export.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="TranslationMemoryExport" /> object with the job ID.</returns>
+    /// <exception cref="ArgumentNullException">If <paramref name="translationMemoryId" /> is <c>null</c>.</exception>
     /// <exception cref="NotFoundException">If the specified translation memory was not found.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -295,8 +310,8 @@ namespace DeepL {
     /// <param name="translationMemory">The translation memory to export.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="TranslationMemoryExport" /> object with the job ID.</returns>
+    /// <exception cref="ArgumentNullException">If <paramref name="translationMemory" /> is <c>null</c>.</exception>
     /// <exception cref="NotFoundException">If the specified translation memory was not found.</exception>
-    /// <exception cref="ArgumentNullException">If <paramref name="translationMemory" /> is null.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -317,6 +332,7 @@ namespace DeepL {
     /// </param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="TranslationMemoryJob" /> object with the current status.</returns>
+    /// <exception cref="ArgumentNullException">If <paramref name="jobId" /> is <c>null</c>.</exception>
     /// <exception cref="NotFoundException">If the specified job was not found.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
@@ -330,8 +346,8 @@ namespace DeepL {
     /// <param name="job">The job to query.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="TranslationMemoryJob" /> object with the current status.</returns>
+    /// <exception cref="ArgumentNullException">If <paramref name="job" /> is <c>null</c>.</exception>
     /// <exception cref="NotFoundException">If the specified job was not found.</exception>
-    /// <exception cref="ArgumentNullException">If <paramref name="job" /> is null.</exception>
     /// <exception cref="DeepLException">
     ///   If any error occurs while communicating with the DeepL API, a
     ///   <see cref="DeepLException" /> or a derived class will be thrown.
@@ -356,6 +372,7 @@ namespace DeepL {
     ///   observed every 5 seconds between polls.
     /// </param>
     /// <returns>A <see cref="TranslationMemoryJob" /> object holding the status once the job has finished.</returns>
+    /// <exception cref="ArgumentNullException">If <paramref name="jobId" /> is <c>null</c>.</exception>
     /// <exception cref="DeepLException">
     ///   If the job failed or expired, or if any error occurs while communicating with the DeepL API.
     /// </exception>
@@ -374,6 +391,7 @@ namespace DeepL {
     /// <param name="timeout">Maximum time to wait, or <c>null</c> to wait without a limit.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="TranslationMemoryJob" /> object holding the status once the job has finished.</returns>
+    /// <exception cref="ArgumentNullException">If <paramref name="jobId" /> is <c>null</c>.</exception>
     /// <exception cref="DeepLException">
     ///   If the job failed or expired, the <paramref name="timeout" /> expires before it finishes, or any error occurs
     ///   while communicating with the DeepL API.
@@ -387,7 +405,7 @@ namespace DeepL {
     /// <param name="job">The job to wait for.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="TranslationMemoryJob" /> object holding the status once the job has finished.</returns>
-    /// <exception cref="ArgumentNullException">If <paramref name="job" /> is null.</exception>
+    /// <exception cref="ArgumentNullException">If <paramref name="job" /> is <c>null</c>.</exception>
     /// <exception cref="DeepLException">
     ///   If the job failed or expired, or if any error occurs while communicating with the DeepL API.
     /// </exception>
@@ -400,7 +418,7 @@ namespace DeepL {
     /// <param name="timeout">Maximum time to wait, or <c>null</c> to wait without a limit.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>A <see cref="TranslationMemoryJob" /> object holding the status once the job has finished.</returns>
-    /// <exception cref="ArgumentNullException">If <paramref name="job" /> is null.</exception>
+    /// <exception cref="ArgumentNullException">If <paramref name="job" /> is <c>null</c>.</exception>
     /// <exception cref="DeepLException">
     ///   If the job failed or expired, the <paramref name="timeout" /> expires before it finishes, or any error occurs
     ///   while communicating with the DeepL API.
@@ -414,6 +432,9 @@ namespace DeepL {
     /// <param name="job">Completed export job carrying the download URL.</param>
     /// <param name="outputFile">Stream to write the downloaded TMX file to.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="job" /> or <paramref name="outputFile" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="DeepLException">
     ///   If the job carries no download URL, or any error occurs while downloading the file.
     /// </exception>
@@ -426,6 +447,7 @@ namespace DeepL {
     /// <param name="job">Completed export job carrying the download URL.</param>
     /// <param name="outputFilePath">Path of the file to write the downloaded TMX file to.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+    /// <exception cref="ArgumentNullException">If <paramref name="job" /> is <c>null</c>.</exception>
     /// <exception cref="DeepLException">
     ///   If the job carries no download URL, or any error occurs while downloading the file.
     /// </exception>
@@ -503,7 +525,8 @@ namespace DeepL {
     /// <exception cref="TranslationMemoryJobException">
     ///   If any step fails; the cause is the <see cref="System.Exception.InnerException" />: the output file already
     ///   exists, cannot be created or cannot be written (it is created before any job is created; an
-    ///   <see cref="IOException" /> or <see cref="System.UnauthorizedAccessException" /> cause), an argument is invalid,
+    ///   <see cref="IOException" /> or <see cref="System.UnauthorizedAccessException" /> cause), an argument is invalid
+    ///   (an <see cref="ArgumentNullException" /> cause for a <c>null</c> translation memory or ID),
     ///   the translation memory was not found (a <see cref="NotFoundException" /> cause), the export job failed, or any
     ///   error occurs while communicating with the DeepL API. Once the job was created,
     ///   <see cref="TranslationMemoryJobException.JobId" /> is set, and <see cref="TranslationMemoryJobException.Job" />
@@ -528,7 +551,8 @@ namespace DeepL {
     /// <exception cref="TranslationMemoryJobException">
     ///   If any step fails; the cause is the <see cref="System.Exception.InnerException" />: the output file already
     ///   exists, cannot be created or cannot be written (it is created before any job is created; an
-    ///   <see cref="IOException" /> or <see cref="System.UnauthorizedAccessException" /> cause), an argument is invalid,
+    ///   <see cref="IOException" /> or <see cref="System.UnauthorizedAccessException" /> cause), an argument is invalid
+    ///   (an <see cref="ArgumentNullException" /> cause for a <c>null</c> translation memory or ID),
     ///   the translation memory was not found (a <see cref="NotFoundException" /> cause), the export job failed, or any
     ///   error occurs while communicating with the DeepL API. Once the job was created,
     ///   <see cref="TranslationMemoryJobException.JobId" /> is set, and <see cref="TranslationMemoryJobException.Job" />
@@ -554,7 +578,8 @@ namespace DeepL {
     /// <exception cref="TranslationMemoryJobException">
     ///   If any step fails; the cause is the <see cref="System.Exception.InnerException" />: the output file already
     ///   exists, cannot be created or cannot be written (it is created before any job is created; an
-    ///   <see cref="IOException" /> or <see cref="System.UnauthorizedAccessException" /> cause), an argument is invalid,
+    ///   <see cref="IOException" /> or <see cref="System.UnauthorizedAccessException" /> cause), an argument is invalid
+    ///   (an <see cref="ArgumentNullException" /> cause for a <c>null</c> translation memory or ID),
     ///   the translation memory was not found (a <see cref="NotFoundException" /> cause), the export job failed, the <paramref name="timeout" /> expired, or any
     ///   error occurs while communicating with the DeepL API. Once the job was created,
     ///   <see cref="TranslationMemoryJobException.JobId" /> is set, and <see cref="TranslationMemoryJobException.Job" />
@@ -581,7 +606,8 @@ namespace DeepL {
     /// <exception cref="TranslationMemoryJobException">
     ///   If any step fails; the cause is the <see cref="System.Exception.InnerException" />: the output file already
     ///   exists, cannot be created or cannot be written (it is created before any job is created; an
-    ///   <see cref="IOException" /> or <see cref="System.UnauthorizedAccessException" /> cause), an argument is invalid,
+    ///   <see cref="IOException" /> or <see cref="System.UnauthorizedAccessException" /> cause), an argument is invalid
+    ///   (an <see cref="ArgumentNullException" /> cause for a <c>null</c> translation memory or ID),
     ///   the translation memory was not found (a <see cref="NotFoundException" /> cause), the export job failed, the <paramref name="timeout" /> expired, or any
     ///   error occurs while communicating with the DeepL API. Once the job was created,
     ///   <see cref="TranslationMemoryJobException.JobId" /> is set, and <see cref="TranslationMemoryJobException.Job" />

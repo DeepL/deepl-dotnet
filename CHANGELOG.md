@@ -168,7 +168,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** the overloads taking a `MultilingualGlossaryInfo`, `TranslationMemoryInfo`, `TranslationMemoryJob`,
   `StyleProfile` or `SpokenTerms` now throw an `ArgumentNullException` (an `ArgumentException`) for a `null` object,
   without sending a request. They threw a `NullReferenceException` before. `ExportTranslationMemoryToFilepathAsync()`
-  throws a `TranslationMemoryJobException` with an `ArgumentException` cause instead, as for an empty ID. Catch
+  throws a `TranslationMemoryJobException` with the `ArgumentNullException` as its cause instead. Catch
   `ArgumentException` instead of `NullReferenceException`.
 - **Breaking:** operations that create a resource, such as `CreateDeveloperKeyAsync()`, now also retry when
   connecting fails because the host or network is unreachable, as they do for a refused connection. The request was
@@ -226,6 +226,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `ArgumentNullException` (an `ArgumentException`) naming the parameter before any request. It threw a
   `NullReferenceException` or a plain `ArgumentException`, or was sent as JSON `null`, before. Catch
   `ArgumentException` (or `ArgumentNullException`) instead of `NullReferenceException`.
+- **Breaking:** `null` IDs, file names, upload URLs, `TranslationMemoryImport` and `TranslationMemoryJob` objects and
+  streams of the translation memory methods now throw an `ArgumentNullException` (an `ArgumentException`) naming the
+  parameter before any request (for `ExportTranslationMemoryToFilepathAsync()` it is the `InnerException` of the
+  `TranslationMemoryJobException`). They threw a `NullReferenceException` or a plain `ArgumentException` before. A
+  `null` `contentType` of `UploadTranslationMemoryFileAsync()` now uses `application/xml`; it threw an
+  `ArgumentException` before. Catch `ArgumentException` (or `ArgumentNullException`) instead of
+  `NullReferenceException`.
 
 ### Removed
 - Removed `Usage.Document` and `Usage.TeamDocument`; the API no longer returns document usage. `Usage.ToString()` no
