@@ -2352,7 +2352,8 @@ namespace DeepL {
           CreateSpokenTermsOptions? options = null,
           CancellationToken cancellationToken = default) {
       var requestData = new Dictionary<string, object?> {
-            ["name"] = name, ["term_lists"] = CreateSpokenTermsListsBody(termLists)
+            ["name"] = Argument.NotNull(name, nameof(name)),
+            ["term_lists"] = CreateSpokenTermsListsBody(termLists, nameof(termLists))
       };
       AddExtraBodyParameters(requestData, options);
       using var responseMessage = await _client
@@ -2400,7 +2401,7 @@ namespace DeepL {
       // With neither field set the body is {} and the API reports the error.
       var requestData = new Dictionary<string, object?>();
       if (options?.Name != null) requestData["name"] = options.Name;
-      if (options?.TermLists != null) requestData["term_lists"] = CreateSpokenTermsListsBody(options.TermLists);
+      if (options?.TermLists != null) requestData["term_lists"] = CreateSpokenTermsListsBody(options.TermLists, nameof(options.TermLists));
       AddExtraBodyParameters(requestData, options);
       using var responseMessage = await _client
             .ApiPatchJsonAsync(path, cancellationToken, requestData, SerializationOptions)
@@ -2448,7 +2449,8 @@ namespace DeepL {
           SpokenTermsEntries entries,
           ReplaceSpokenTermsListOptions? options = null,
           CancellationToken cancellationToken = default) {
-      var requestData = CreateSpokenTermsListBody(entries).ToDictionary(pair => pair.Key, pair => (object?)pair.Value);
+      var requestData = CreateSpokenTermsListBody(Argument.NotNull(entries, nameof(entries)))
+            .ToDictionary(pair => pair.Key, pair => (object?)pair.Value);
       AddExtraBodyParameters(requestData, options);
       using var responseMessage = await _client
             .ApiPutJsonAsync(
@@ -3598,11 +3600,10 @@ namespace DeepL {
     /// <summary>Returns the API path of the given Spoken Terms collection.</summary>
     /// <param name="spokenTermsId">ID of the Spoken Terms collection.</param>
     /// <returns>The relative path of the collection.</returns>
+    /// <exception cref="ArgumentNullException">If the ID is <c>null</c>.</exception>
     /// <exception cref="ArgumentException">If the ID is empty.</exception>
     private static string SpokenTermsPath(string spokenTermsId) {
-      if (string.IsNullOrWhiteSpace(spokenTermsId)) {
-        throw new ArgumentException($"Parameter {nameof(spokenTermsId)} must not be empty");
-      }
+      Argument.NotEmpty(spokenTermsId, nameof(spokenTermsId));
 
       return $"v3/spoken-terms/{Uri.EscapeDataString(spokenTermsId)}";
     }
@@ -3737,10 +3738,12 @@ namespace DeepL {
 
     /// <summary>Returns the JSON <c>term_lists</c> array for the given term lists.</summary>
     /// <param name="termLists">The language and terms of each term list.</param>
+    /// <param name="paramName">Name of the public parameter or option holding the term lists, for the null check.</param>
     /// <returns>List to serialize as the JSON <c>term_lists</c> array.</returns>
     private static List<Dictionary<string, string>> CreateSpokenTermsListsBody(
-          IEnumerable<SpokenTermsEntries> termLists) =>
-          termLists.Select(CreateSpokenTermsListBody).ToList();
+          IEnumerable<SpokenTermsEntries> termLists,
+          string paramName) =>
+          Argument.NoNullEntries(termLists, paramName).Select(CreateSpokenTermsListBody).ToList();
 
     /// <summary>Class used for JSON-deserialization of the Spoken Terms list result.</summary>
     private readonly struct SpokenTermsListResult {

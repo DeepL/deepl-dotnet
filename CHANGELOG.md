@@ -222,6 +222,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `TranslationMemoryIds` of the style profile methods now throw an `ArgumentNullException` (an `ArgumentException`)
   before any request. They threw a plain `ArgumentException` or sent the request before. `catch (ArgumentException)`
   still catches them; code comparing the exact exception type must expect `ArgumentNullException`.
+- **Breaking:** a `null` name, spoken terms ID, term list, term list entry or term now throws an
+  `ArgumentNullException` (an `ArgumentException`) naming the parameter before any request. It threw a
+  `NullReferenceException` or a plain `ArgumentException`, or was sent as JSON `null`, before. Catch
+  `ArgumentException` (or `ArgumentNullException`) instead of `NullReferenceException`.
 
 ### Removed
 - Removed `Usage.Document` and `Usage.TeamDocument`; the API no longer returns document usage. `Usage.ToString()` no

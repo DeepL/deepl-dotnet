@@ -2,8 +2,9 @@
 // Use of this source code is governed by an MIT
 // license that can be found in the LICENSE file.
 
+using System;
 using System.Collections.Generic;
-using System.Linq;
+using DeepL.Internal;
 
 namespace DeepL.Model {
   /// <summary>
@@ -13,10 +14,11 @@ namespace DeepL.Model {
   public sealed class SpokenTermsEntries {
     /// <summary>Initializes a new <see cref="SpokenTermsEntries" /> object.</summary>
     /// <param name="lang">Language code (ISO 639-1) of the terms, for example "en".</param>
-    /// <param name="entries">The terms, one string per term.</param>
+    /// <param name="entries">The terms, one string per term; neither the list nor a term may be <c>null</c>.</param>
+    /// <exception cref="ArgumentNullException">If <paramref name="entries" /> or one of its terms is <c>null</c>.</exception>
     public SpokenTermsEntries(string lang, IEnumerable<string> entries) {
       Lang = lang;
-      Entries = entries.ToArray();
+      Entries = Argument.NoNullEntries(entries, nameof(entries));
     }
 
     /// <summary>Language code (ISO 639-1) of the terms.</summary>

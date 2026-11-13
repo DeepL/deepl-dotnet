@@ -675,7 +675,7 @@ sure that specific words and phrases, such as product names or technical terms,
 are transcribed correctly. A collection holds one term list per language
 (ISO 639-1 code, e.g. `en`); each term list is a list of strings. Every method
 that takes a collection accepts either its ID or a `SpokenTerms` object. An
-empty ID throws an `ArgumentException`, and a `null` object an
+empty ID throws an `ArgumentException`, and a `null` ID or object an
 `ArgumentNullException`, without sending a request.
 
 Before sending, the library trims leading and trailing whitespace from each

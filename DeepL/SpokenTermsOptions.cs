@@ -23,7 +23,7 @@ namespace DeepL {
     /// <summary>New name for the collection.</summary>
     public string? Name { get; set; }
 
-    /// <summary>Terms to merge into the existing term list of each language.</summary>
+    /// <summary>Terms to merge into the existing term list of each language. An entry must not be <c>null</c>.</summary>
     public IEnumerable<SpokenTermsEntries>? TermLists { get; set; }
   }
 

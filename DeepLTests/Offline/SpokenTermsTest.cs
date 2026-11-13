@@ -115,6 +115,33 @@ namespace DeepLTests.Offline {
     }
 
     [Fact]
+    public async Task ThrowsArgumentNullExceptionNamingTheNullArgument() {
+      var client = CreateClient();
+      var entries = new SpokenTermsEntries("en", new[] { "DeepL" });
+      var calls = new (string Param, Func<Task> Call)[] {
+        ("name", () => client.CreateSpokenTermsAsync(null!, new[] { entries })),
+        ("termLists", () => client.CreateSpokenTermsAsync("n", null!)),
+        ("termLists", () => client.CreateSpokenTermsAsync("n", new SpokenTermsEntries[] { null! })),
+        ("TermLists", () => client.UpdateSpokenTermsAsync(
+              "st1",
+              new UpdateSpokenTermsOptions { TermLists = new SpokenTermsEntries[] { null! } })),
+        ("entries", () => client.ReplaceSpokenTermsListAsync("st1", null!)),
+        ("entries", () => Task.FromResult(new SpokenTermsEntries("en", null!))),
+        ("entries", () => Task.FromResult(new SpokenTermsEntries("en", new[] { "a", null! }))),
+        ("spokenTermsId", () => client.GetSpokenTermsAsync((string)null!)),
+        ("spokenTermsId", () => client.UpdateSpokenTermsAsync((string)null!, new UpdateSpokenTermsOptions { Name = "n" })),
+        ("spokenTermsId", () => client.GetSpokenTermsEntriesAsync((string)null!, "en")),
+        ("spokenTermsId", () => client.ReplaceSpokenTermsListAsync((string)null!, entries)),
+        ("spokenTermsId", () => client.DeleteSpokenTermsAsync((string)null!)),
+        ("spokenTermsId", () => client.DeleteSpokenTermsListAsync((string)null!, "en")),
+      };
+      foreach (var (param, call) in calls) {
+        var exception = await Assert.ThrowsAsync<ArgumentNullException>(call);
+        Assert.Equal(param, exception.ParamName);
+      }
+    }
+
+    [Fact]
     public async Task RejectsEmptyOrNullLanguageWithoutSendingARequest() {
       var client = CreateClient();
       foreach (var lang in new string?[] { "", " ", null }) {
