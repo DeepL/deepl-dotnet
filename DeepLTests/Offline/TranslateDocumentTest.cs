@@ -249,7 +249,6 @@ namespace DeepLTests.Offline {
       var output = new FileInfo(Path.Combine(directory, "out.txt"));
       var calls = new (string Param, Func<Task> Call)[] {
         ("inputFileInfo", () => client.TranslateDocumentAsync((FileInfo)null!, output, null, "DE")),
-        ("outputFileInfo", () => client.TranslateDocumentAsync(input, (FileInfo)null!, null, "DE")),
         ("inputFileInfo", () => client.TranslateDocumentUploadAsync((FileInfo)null!, null, "DE")),
         ("inputFile", () => client.TranslateDocumentUploadAsync((Stream)null!, "a.txt", null, "DE")),
         ("outputFileInfo", () => client.TranslateDocumentDownloadAsync(Handle, (FileInfo)null!)),
@@ -270,6 +269,7 @@ namespace DeepLTests.Offline {
       }
 
       var wrappedCalls = new (string Param, Func<Task> Call)[] {
+        ("outputFileInfo", () => client.TranslateDocumentAsync(input, (FileInfo)null!, null, "DE")),
         ("inputFile", () => client.TranslateDocumentAsync((Stream)null!, "a.txt", new MemoryStream(), null, "DE")),
         ("outputFile", () => client.TranslateDocumentAsync(Text("hello"), "a.txt", (Stream)null!, null, "DE")),
       };

@@ -324,8 +324,9 @@ Note that file paths are not accepted as strings, to avoid mixing up the file an
 `TranslateDocumentAsync()` returns the final `DocumentStatus` of the translation, for example to read
 `BilledCharacters`.
 
-A missing input file (or a directory as input) throws an `ArgumentException`, and a `null` input or output an
-`ArgumentNullException`, before any request is sent.
+A missing input file (or a directory as input) throws an `ArgumentException`, and a `null` input an
+`ArgumentNullException`, before any request is sent; a `null` output is the `InnerException` of a
+`DocumentTranslationException`.
 The input and output files are opened before any request is sent; if the input cannot be read or the
 output file already exists or cannot be created, a `DocumentTranslationException` is thrown with the
 `IOException` or `UnauthorizedAccessException` as `InnerException`. An existing output file is never

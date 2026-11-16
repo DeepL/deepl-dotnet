@@ -22,8 +22,7 @@ namespace DeepL {
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <returns>The final <see cref="DocumentStatus" /> of the translation, with status done.</returns>
     /// <exception cref="ArgumentNullException">
-    ///   If <paramref name="inputFileInfo" /> or <paramref name="outputFileInfo" /> is <c>null</c>; raised before any
-    ///   request.
+    ///   If <paramref name="inputFileInfo" /> is <c>null</c>; raised before any request.
     /// </exception>
     /// <exception cref="ArgumentException">
     ///   If the input file does not exist or is not a file; raised before any request.
@@ -34,7 +33,8 @@ namespace DeepL {
     /// <exception cref="DocumentTranslationException">
     ///   If an error occurs while translating the document, including local file failures: the input cannot be read
     ///   or the output path is occupied (both checked before any request; an existing output file is left
-    ///   unchanged), with the <see cref="IOException" /> or <see cref="UnauthorizedAccessException" /> as
+    ///   unchanged), and a <c>null</c> <paramref name="outputFileInfo" /> (an <see cref="ArgumentNullException" />
+    ///   cause), with the <see cref="IOException" /> or <see cref="UnauthorizedAccessException" /> as
     ///   <see cref="Exception.InnerException" />. If the document was uploaded successfully, then the
     ///   <see cref="DocumentTranslationException.DocumentHandle" /> contains the document ID and key that may be used
     ///   to retrieve the document.

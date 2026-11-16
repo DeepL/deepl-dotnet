@@ -234,7 +234,15 @@ namespace DeepL {
           DocumentTranslateOptions? options = null,
           CancellationToken cancellationToken = default) {
       CheckDocumentInputFile(inputFileInfo);
-      Argument.NotNull(outputFileInfo, nameof(outputFileInfo));
+      if (outputFileInfo == null) {
+        // Wrapped like the null output of the Stream overload; only input file errors are thrown directly.
+        var exception = new ArgumentNullException(nameof(outputFileInfo));
+        throw new DocumentTranslationException(
+              $"Error occurred during document translation: {exception.Message}",
+              exception,
+              null);
+      }
+
       // Local file failures are wrapped like the failures of the translation itself. The output is opened with
       // CreateNew and outside the try below, so an occupied path is never deleted.
       using var inputFile = OpenLocalDocumentFile(inputFileInfo.OpenRead);

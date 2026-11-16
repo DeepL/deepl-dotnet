@@ -213,10 +213,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** a `null` input or output file or stream, or a `null` `inputFileName`, in the
   `TranslateDocumentAsync()`, `TranslateDocumentUploadAsync()` and `TranslateDocumentDownloadAsync()` overloads, and a
   `null` argument of the `DocumentTranslateOptions` constructors now throw an `ArgumentNullException` (an
-  `ArgumentException`; for `TranslateDocumentAsync()` with streams it is the `InnerException` of the
-  `DocumentTranslationException`) before any request. They threw a `NullReferenceException` or a plain
-  `ArgumentException`, or failed only after the upload, before. Catch `ArgumentException` (or `ArgumentNullException`)
-  instead of `NullReferenceException`.
+  `ArgumentException`; for `TranslateDocumentAsync()` it is the `InnerException` of the
+  `DocumentTranslationException`, except for a `null` input `FileInfo`) before any request. They threw a
+  `NullReferenceException` or a plain `ArgumentException`, or failed only after the upload, before. Catch
+  `ArgumentException` (or `ArgumentNullException`) instead of `NullReferenceException`.
 - **Breaking:** `null` IDs, names, language codes, entries, CSV streams and dictionaries of the glossary methods, and
   `null` arguments or terms of `GlossaryEntries` and `MultilingualGlossaryDictionaryEntries`, now throw an
   `ArgumentNullException` (an `ArgumentException`) naming the parameter before any request. They threw a
