@@ -52,7 +52,7 @@ namespace DeepLTests.Offline {
       Expect(HttpMethod.Post, "v2/document")
             .With(
                   request => {
-                    var file = ((MultipartFormDataContent)request.Content!).Single(
+                    var file = ((MultipartFormDataContent)Body(request)!).Single(
                           part => part.Headers.ContentDisposition!.Name == "file");
                     sent = file.ReadAsByteArrayAsync().Result;
                     return file.Headers.ContentDisposition!.FileName == "a.docx";

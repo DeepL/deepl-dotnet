@@ -121,6 +121,38 @@ namespace DeepLTests.Offline {
       Assert.False(exception.ShouldRetry);
     }
 
+    [Theory]
+    [InlineData("TranslateDocumentUpload")]
+    [InlineData("CreateGlossary")]
+    [InlineData("CreateTranslationMemoryImport")]
+    [InlineData("CreateTranslationMemoryExport")]
+    [InlineData("CreateStyleRule")]
+    [InlineData("CreateStyleRuleCustomInstruction")]
+    [InlineData("CreateStyleProfile")]
+    [InlineData("CreateSpokenTerms")]
+    [InlineData("CreateMultilingualGlossary")]
+    [InlineData("CreateMultilingualGlossaryFromCsv")]
+    public async Task CreatesAreRetriedAfterAResetBeforeTheRequestIsWritten(string name) {
+      var (path, call) = Create(name);
+      var attempts = 0;
+      // The handler fails without reading the body, as during connecting: no request byte was written.
+      Http.When(HttpMethod.Post, ApiUrl + "/" + path)
+            .With(
+                  _ => {
+                    attempts++;
+                    return true;
+                  })
+            .Throw(
+                  new HttpRequestException(
+                        "reset",
+                        new IOException("read", new SocketException((int)SocketError.ConnectionReset))));
+
+      var exception = await Assert.ThrowsAsync<ConnectionException>(
+            () => call(CreateClientWithRetries(1, PerRetryTimeout)));
+      Assert.Equal(2, attempts);
+      Assert.True(exception.ShouldRetry);
+    }
+
     [Fact]
     public async Task RetriesCutOffResponseBody() {
       ExpectNoBody(HttpMethod.Get, "v2/usage").Respond(CutOffReply("{\"character_count\":"));
@@ -239,6 +271,18 @@ namespace DeepLTests.Offline {
             new HttpRequestException(
                   "reset",
                   new IOException("read", new SocketException((int)SocketError.ConnectionReset))));
+      var exception = await Assert.ThrowsAsync<ConnectionException>(
+            () => CreateClientWithRetries(1, PerRetryTimeout).GetUsageAsync());
+      Assert.Equal(2, attempts());
+      Assert.True(exception.ShouldRetry);
+    }
+
+    [Fact]
+    public async Task RetriesProxyNameResolutionFailure() {
+      var attempts = ThrowOnUsage(
+            new HttpRequestException(
+                  "proxy",
+                  new WebException("proxy", WebExceptionStatus.ProxyNameResolutionFailure)));
       var exception = await Assert.ThrowsAsync<ConnectionException>(
             () => CreateClientWithRetries(1, PerRetryTimeout).GetUsageAsync());
       Assert.Equal(2, attempts());

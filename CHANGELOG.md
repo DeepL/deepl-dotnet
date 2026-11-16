@@ -114,16 +114,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`Character`) or this API key's character limit (`ApiKeyCharacter`) is reached. The speech minutes have their own
   details (`SpeechToTextMinutes`, `SpeechToSpeechMinutes`). Code that needs only the account-wide limit must check
   `Character` directly.
-- **Breaking:** operations that create a resource are now retried only when the request was not sent: after HTTP
-  429, a name resolution failure, a refused connection or a connect timeout. They are `TranslateDocumentAsync()` and
-  `TranslateDocumentUploadAsync()`, `CreateGlossaryAsync()`, `CreateGlossaryFromCsvAsync()`,
-  `CreateMultilingualGlossaryAsync()`, `CreateMultilingualGlossaryFromCsvAsync()`, `CreateStyleRuleAsync()`,
-  `CreateStyleRuleCustomInstructionAsync()`, `CreateStyleProfileAsync()`, `CreateSpokenTermsAsync()`,
-  `CreateTranslationMemoryImportAsync()` and `CreateTranslationMemoryExportAsync()`, like
+- **Breaking:** operations that create a resource are now retried only when the request was not sent: after HTTP 429
+  and after a transient network failure before any request byte is written, such as a name resolution failure, a
+  refused, reset or timed-out connection, an unreachable host or network, or a reset or timeout in the TLS handshake
+  or the proxy tunnel. A TLS or certificate error and an error answer of a proxy are never retried. They are
+  `TranslateDocumentAsync()` and `TranslateDocumentUploadAsync()`, `CreateGlossaryAsync()`,
+  `CreateGlossaryFromCsvAsync()`, `CreateMultilingualGlossaryAsync()`, `CreateMultilingualGlossaryFromCsvAsync()`,
+  `CreateStyleRuleAsync()`, `CreateStyleRuleCustomInstructionAsync()`, `CreateStyleProfileAsync()`,
+  `CreateSpokenTermsAsync()`, `CreateTranslationMemoryImportAsync()` and `CreateTranslationMemoryExportAsync()`, like
   `DeepLAdminClient.CreateDeveloperKeyAsync()` before. After a 5xx, a timeout or a broken connection they no longer
   retry, and `DeepLException.ShouldRetry` is `false`, because the resource may already exist; check whether it exists
-  before creating it again. `ImportTranslationMemoryFromFilepathAsync()` and `ExportTranslationMemoryToFilepathAsync()`
-  create their jobs the same way.
+  before creating it again. `ImportTranslationMemoryFromFilepathAsync()` and
+  `ExportTranslationMemoryToFilepathAsync()` create their jobs the same way.
 - **Breaking:** a response body cut off mid-read (the connection breaks after the status line) is now retried like a
   connection reset, by every method except the resource creates above. It was not retried before.
 - **Breaking:** a response body cut off mid-read now throws a `ConnectionException` with `ShouldRetry` `true` for the
@@ -170,10 +172,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   without sending a request. They threw a `NullReferenceException` before. `ExportTranslationMemoryToFilepathAsync()`
   throws a `TranslationMemoryJobException` with the `ArgumentNullException` as its cause instead. Catch
   `ArgumentException` instead of `NullReferenceException`.
-- **Breaking:** operations that create a resource, such as `CreateDeveloperKeyAsync()`, now also retry when
-  connecting fails because the host or network is unreachable, as they do for a refused connection. The request was
-  not sent, so a repeat is safe. They failed after one attempt before, and a failed create had `ShouldRetry` `false`;
-  it is `true` now.
+- **Breaking:** `DeepLAdminClient.CreateDeveloperKeyAsync()` is now retried after every transient network failure
+  raised before the request is written: besides name resolution failures, refused connections and connect timeouts
+  also an unreachable host or network, a reset or timeout while connecting to the server or proxy, in the proxy tunnel
+  or in the TLS handshake. The same failures after the request was written are not retried. It threw a
+  `ConnectionException` with `ShouldRetry` `false` after one attempt before; `ShouldRetry` is `true` now. On .NET 8
+  and later the connect timeout (half of `PerRetryConnectionTimeout`) also covers the proxy tunnel and the TLS
+  handshake. Migration: none needed; code that retries `CreateDeveloperKeyAsync()` itself after such an error now sees
+  the library's retries first.
+- **Breaking:** on .NET Framework a failure to resolve the proxy's name
+  (`WebExceptionStatus.ProxyNameResolutionFailure`) is retried like a failure to resolve the server's name and has
+  `ShouldRetry` `true`; it was not retried before.
 - **Breaking:** language codes are checked before any request, by one rule: a required code that is `null` or empty or
   whitespace-only throws, and an optional one that is empty or whitespace-only throws (`null` leaves it unset). A
   `null` target language of `TranslateTextAsync()`, `TranslateDocumentUploadAsync()` and `TranslateDocumentAsync()`

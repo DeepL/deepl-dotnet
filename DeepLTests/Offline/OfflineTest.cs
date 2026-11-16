@@ -117,7 +117,7 @@ namespace DeepLTests.Offline {
 
     /// <summary>Reads the parts of a multipart request through the framework's own part objects.</summary>
     protected static (string Name, string? FileName, string Value)[] MultipartParts(HttpRequestMessage request) =>
-          ((MultipartFormDataContent)request.Content!)
+          ((MultipartFormDataContent)Body(request)!)
           .Select<HttpContent, (string Name, string? FileName, string Value)>(
                 part => (part.Headers.ContentDisposition!.Name!, part.Headers.ContentDisposition.FileName,
                       part.ReadAsStringAsync().Result))
@@ -167,9 +167,13 @@ namespace DeepLTests.Offline {
       public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
     }
 
+    /// <summary>The request content the client built, without the wrapper it adds to requests that create a resource.</summary>
+    protected static HttpContent? Body(HttpRequestMessage request) =>
+          request.Content is DeepL.Internal.SendTrackingContent tracked ? tracked.Content : request.Content;
+
     /// <summary>Declares a request without a body.</summary>
     protected MockedRequest ExpectNoBody(HttpMethod method, string path) =>
-          Expect(method, path).With(request => request.Content == null);
+          Expect(method, path).With(request => Body(request) == null);
   }
 
   internal static class MockedRequestExtensions {

@@ -27,8 +27,8 @@ namespace DeepL {
     /// <summary>
     ///   The maximum number of failed attempts that the client will retry, per request. By default 5 retries are made.
     ///   Only HTTP 429, 5xx responses and transient network failures (connect, name resolution, timeout, connection
-    ///   reset) are retried; TLS, certificate and proxy failures are not. Only used if <see cref="ClientFactory" /> is
-    ///   unset.
+    ///   reset) are retried; TLS and certificate errors and an error answer of a proxy are not. Only used if
+    ///   <see cref="ClientFactory" /> is unset.
     /// </summary>
     public int MaximumNetworkRetries { get; set; } = 5;
 
@@ -42,8 +42,8 @@ namespace DeepL {
     /// <summary>
     ///   Timeout for each attempt of an HTTP request, the default is 10 seconds. An attempt may run longer, until the
     ///   time the client would wait before retrying it (the backoff delay), when that is longer. On .NET 8 and later,
-    ///   connecting to the server or proxy is limited to half of this timeout, so that a connect timeout is detected as
-    ///   such.
+    ///   connecting to the server or proxy, including the proxy tunnel and the TLS handshake, is limited to half of
+    ///   this timeout, so that a hanging connection attempt is given up and retried.
     ///   <see cref="System.Threading.Timeout.InfiniteTimeSpan" /> disables it; zero and other negative values throw an
     ///   <see cref="ArgumentOutOfRangeException" /> when the client is created. Only used if
     ///   <see cref="ClientFactory" /> is unset.

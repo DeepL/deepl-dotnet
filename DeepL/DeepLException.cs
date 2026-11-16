@@ -27,12 +27,13 @@ namespace DeepL {
 
     /// <summary>
     ///   <c>true</c> if repeating the request could succeed: HTTP 429, any 5xx status, and transient network failures
-    ///   (connect, DNS, timeout, connection reset). <c>false</c> for other HTTP statuses and for TLS, certificate and
-    ///   proxy failures; <c>null</c> if unknown. For operations that create a resource (document upload, developer
-    ///   key, glossary, style rule, custom instruction, style profile, spoken terms and translation memory import and
-    ///   export creates), it is <c>true</c> only when the request was certainly not processed: HTTP 429, a name
-    ///   resolution failure, a refused connection, an unreachable host or network or a connect timeout. A response body
-    ///   cut off mid-read is always <c>true</c>, also for these creates, which do not retry it themselves.
+    ///   (connect, DNS, timeout, connection reset). <c>false</c> for other HTTP statuses, for TLS and certificate
+    ///   errors and for an error answer of a proxy; <c>null</c> if unknown. For operations that create a resource
+    ///   (document upload, developer key, glossary, style rule, custom instruction, style profile, spoken terms and
+    ///   translation memory import and export creates), it is <c>true</c> only when the request was certainly not
+    ///   processed: HTTP 429, or a transient network failure before any request byte was written (name resolution,
+    ///   connecting to the server or proxy, the proxy tunnel, the TLS handshake). A response body cut off mid-read is
+    ///   always <c>true</c>, also for these creates, which do not retry it themselves.
     /// </summary>
     public bool? ShouldRetry { get; internal set; }
   }

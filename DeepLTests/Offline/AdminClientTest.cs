@@ -11,6 +11,7 @@ using System.Net.Http;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using DeepL;
 using DeepL.Model;
@@ -673,22 +674,34 @@ namespace DeepLTests.Offline {
       await CreateAdminClientWithRetries(1).CreateDeveloperKeyAsync();
     }
 
-    [Fact]
-    public async Task TestCreateDeveloperKeyIsRetriedAfterNameResolutionFailure() {
-      ExpectJson(HttpMethod.Post, "v2/admin/developer-keys", "{}")
-            .Throw(new HttpRequestException("dns", new SocketException((int)SocketError.HostNotFound)));
+    [Theory]
+    [InlineData(SocketError.HostNotFound, false)]
+    [InlineData(SocketError.HostUnreachable, false)]
+    [InlineData(SocketError.NetworkUnreachable, false)]
+    [InlineData(SocketError.NetworkDown, false)]
+    [InlineData(SocketError.HostDown, false)]
+    [InlineData(SocketError.ConnectionReset, true)]
+    [InlineData(SocketError.TimedOut, true)]
+    public async Task TestCreateDeveloperKeyIsRetriedAfterNetworkFailureBeforeRequestIsWritten(
+          SocketError error,
+          bool wrappedInIOException) {
+      Exception cause = new SocketException((int)error);
+      if (wrappedInIOException) {
+        cause = new IOException("read", cause);
+      }
+
+      // Matches without reading the body, as a failure while connecting: no request byte was written.
+      Http.Expect(HttpMethod.Post, ApiUrl + "/v2/admin/developer-keys").Throw(new HttpRequestException("failed", cause));
       ExpectJson(HttpMethod.Post, "v2/admin/developer-keys", "{}").RespondJson(DeveloperKeyJson);
 
       await CreateAdminClientWithRetries(1).CreateDeveloperKeyAsync();
     }
 
-    [Theory]
-    [InlineData(SocketError.HostUnreachable)]
-    [InlineData(SocketError.NetworkUnreachable)]
-    [InlineData(SocketError.NetworkDown)]
-    public async Task TestCreateDeveloperKeyIsRetriedAfterUnreachableHostOrNetwork(SocketError error) {
-      ExpectJson(HttpMethod.Post, "v2/admin/developer-keys", "{}")
-            .Throw(new HttpRequestException("unreachable", new SocketException((int)error)));
+    [Fact]
+    public async Task TestCreateDeveloperKeyIsRetriedAfterBareSocketErrorBeforeRequestIsWritten() {
+      // .NET 8 throws a reset right after the TCP connect unwrapped, from reading the remote end point.
+      Http.Expect(HttpMethod.Post, ApiUrl + "/v2/admin/developer-keys")
+            .Throw(new SocketException((int)SocketError.NotConnected));
       ExpectJson(HttpMethod.Post, "v2/admin/developer-keys", "{}").RespondJson(DeveloperKeyJson);
 
       await CreateAdminClientWithRetries(1).CreateDeveloperKeyAsync();
@@ -709,6 +722,55 @@ namespace DeepLTests.Offline {
       // The first backoff is 1 s ± 23 %; without a retry the refused connection fails at once.
       Assert.True(stopwatch.Elapsed >= TimeSpan.FromSeconds(0.7), $"Failed after {stopwatch.Elapsed}");
       Assert.True(exception.ShouldRetry);
+    }
+
+    /// <summary>
+    ///   Starts a listener on 127.0.0.1 that accepts connections and, with <paramref name="reset" />, resets each one
+    ///   at once; otherwise it never answers. Returns the port and a function counting the connections.
+    /// </summary>
+    private static (int Port, Func<int> Connections) StartSilentServer(Socket listener, bool reset) {
+      listener.Bind(new IPEndPoint(IPAddress.Loopback, 0));
+      listener.Listen(10);
+      var connections = 0;
+      _ = Task.Run(
+            async () => {
+              while (true) {
+                Socket socket;
+                try {
+                  socket = await listener.AcceptAsync();
+                } catch (Exception) {
+                  return;
+                }
+
+                Interlocked.Increment(ref connections);
+                if (reset) {
+                  socket.LingerState = new LingerOption(true, 0);
+                  socket.Close();
+                }
+              }
+            });
+      return (((IPEndPoint)listener.LocalEndPoint!).Port, () => Volatile.Read(ref connections));
+    }
+
+    private static DeepLAdminClient CreateAdminClientFor(int port) =>
+          new DeepLAdminClient(
+                AuthKey,
+                new DeepLAdminClientOptions {
+                  ServerUrl = $"https://127.0.0.1:{port}",
+                  MaximumNetworkRetries = 1,
+                  PerRetryConnectionTimeout = TimeSpan.FromSeconds(1)
+                });
+
+    [Fact]
+    public async Task CreateDeveloperKeyRetriesResetDuringTlsHandshake() {
+      using var listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+      var (port, connections) = StartSilentServer(listener, reset: true);
+
+      var exception = await Assert.ThrowsAsync<ConnectionException>(
+            () => CreateAdminClientFor(port).CreateDeveloperKeyAsync());
+
+      Assert.True(exception.ShouldRetry);
+      Assert.Equal(2, connections());
     }
 
     // The library's netstandard2.0 build has no separate connect timeout.
@@ -745,8 +807,7 @@ namespace DeepLTests.Offline {
 
         var stopwatch = Stopwatch.StartNew();
         var exception = await Assert.ThrowsAsync<ConnectionException>(() => client.CreateDeveloperKeyAsync());
-        // Each connect gives up after 0.5 s and the first backoff is 1 s ± 23 %; a per-attempt timeout instead
-        // fails after about 1 s without a retry.
+        // Each connect gives up after 0.5 s and the first backoff is 1 s ± 23 %.
         Assert.True(stopwatch.Elapsed >= TimeSpan.FromSeconds(1.7), $"Failed after {stopwatch.Elapsed}");
         Assert.True(exception.ShouldRetry);
       } finally {
@@ -754,6 +815,19 @@ namespace DeepLTests.Offline {
           filler.Dispose();
         }
       }
+    }
+
+    [Fact]
+    public async Task CreateDeveloperKeyRetriesTlsHandshakeTimeout() {
+      using var listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+      var (port, connections) = StartSilentServer(listener, reset: false);
+
+      var exception = await Assert.ThrowsAsync<ConnectionException>(
+            () => CreateAdminClientFor(port).CreateDeveloperKeyAsync());
+
+      // Each TLS handshake gives up after half of the 1 s timeout; the retry opens a new connection.
+      Assert.True(exception.ShouldRetry);
+      Assert.Equal(2, connections());
     }
 #endif
 

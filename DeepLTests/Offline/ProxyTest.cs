@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 using DeepL;
 using Xunit;
@@ -48,6 +49,56 @@ namespace DeepLTests.Offline {
                     line => line.StartsWith("Proxy-Authorization: Basic ", StringComparison.OrdinalIgnoreCase)));
       }
     }
+
+    /// <summary>Creates a style rule through a local proxy that handles each CONNECT with the given handler.</summary>
+    private static async Task<(ConnectionException Exception, int Connects)> CreateThroughProxyAsync(
+          Func<NetworkStream, Task> afterConnect) {
+      var connects = 0;
+      using var proxy = new LocalProxy(
+            async stream => {
+              if ((await LocalProxy.ReadHeaderAsync(stream)).Count > 0) {
+                Interlocked.Increment(ref connects);
+                await afterConnect(stream);
+              }
+            });
+      using var client = new DeepLClient(
+            "test-key",
+            new DeepLClientOptions {
+              ServerUrl = "https://api.deepl.test",
+              Proxy = new Uri($"http://127.0.0.1:{proxy.Port}"),
+              MaximumNetworkRetries = 1,
+              PerRetryConnectionTimeout = TimeSpan.FromSeconds(1)
+            });
+      var exception = await Assert.ThrowsAsync<ConnectionException>(() => client.CreateStyleRuleAsync("n", "en"));
+      return (exception, Volatile.Read(ref connects));
+    }
+
+#if NET5_0_OR_GREATER
+    [Fact]
+    public async Task RetriesCreateWhenProxyResetsBeforeAnsweringConnect() {
+      var (exception, connects) = await CreateThroughProxyAsync(
+            stream => {
+              // Closed here with linger 0, a reset; the proxy's own close would shut the socket down first (FIN).
+              stream.Socket.LingerState = new LingerOption(true, 0);
+              stream.Socket.Close();
+              return Task.CompletedTask;
+            });
+
+      Assert.True(exception.ShouldRetry);
+      Assert.Equal(2, connects);
+    }
+#endif
+
+    // The library's netstandard2.0 build has no separate connect timeout, so its retry waits for the same tunnel.
+#if NET5_0_OR_GREATER && !DEEPL_NETSTANDARD2_0
+    [Fact]
+    public async Task RetriesCreateWhenProxyDoesNotAnswerConnect() {
+      var (exception, connects) = await CreateThroughProxyAsync(_ => Task.Delay(TimeSpan.FromSeconds(5)));
+
+      Assert.True(exception.ShouldRetry);
+      Assert.Equal(2, connects);
+    }
+#endif
 
     /// <summary>Answers every request on the connection with 407 until the client closes it.</summary>
     private async Task HandleAsync(NetworkStream stream) {

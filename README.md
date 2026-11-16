@@ -1445,10 +1445,12 @@ not return them; within `UsageLimits`, a `null` limit means unlimited.
 `null` removes a limit and `0` blocks that usage.
 
 To avoid duplicate keys, `CreateDeveloperKeyAsync()` is retried only when the
-API cannot have processed the request: after HTTP 429, a failure to resolve
-the server name, a refused connection, an unreachable host or network or a
-connect timeout. Server errors, other timeouts, broken connections and response
-bodies cut off mid-read are not retried. If it throws, check
+API cannot have processed the request: after HTTP 429, and after a network
+failure before any request byte is written, such as a failure to resolve the
+server name, a refused, reset or timed-out connection, an unreachable host or
+network, or a reset or timeout in the TLS handshake or the proxy tunnel. Server
+errors, timeouts and broken connections after the request was written, and
+response bodies cut off mid-read, are not retried. If it throws, check
 `ListDeveloperKeysAsync()` before trying again.
 
 #### Retrieving usage analytics
@@ -1544,13 +1546,14 @@ its `message` field or from a nested `error.message` field.
 `DeepLException.HttpStatusCode` holds the HTTP status of the failed response, or
 `null` if there was no response. `DeepLException.ShouldRetry` is `true` if
 repeating the request could succeed (HTTP 429, 5xx, timeouts, failed and reset
-connections), `false` for other HTTP statuses and for TLS, certificate and proxy
-failures, and `null` if unknown.
-Operations that create a resource are not safe to repeat after a server error
-or a timeout, because the resource may already exist; for them, `ShouldRetry`
-is `true` only for HTTP 429, name resolution failures, refused connections,
-unreachable hosts or networks and connect timeouts, and for a response body cut
-off mid-read, which they do not retry themselves. They are
+connections), `false` for other HTTP statuses, for TLS and certificate errors
+and for an error answer of a proxy, and `null` if unknown.
+Operations that create a resource are not safe to repeat after a server error or
+a timeout, because the resource may already exist; for them, `ShouldRetry` is
+`true` only for HTTP 429 and for a transient network failure before any request
+byte was written (name resolution, connecting to the server or proxy, the proxy
+tunnel, the TLS handshake), and for a response body cut off mid-read, which they
+do not retry themselves. They are
 `TranslateDocumentAsync()` and `TranslateDocumentUploadAsync()`,
 `DeepLAdminClient.CreateDeveloperKeyAsync()`,
 the glossary, style rule, custom instruction, style profile and spoken terms
@@ -1601,18 +1604,20 @@ The available options:
   default 5. Only HTTP 429, 5xx responses and transient network failures
   (timeouts, failed and reset connections, a response body cut off mid-read,
   name resolution failures) are retried, with exponential backoff: the first wait is 1 second, each next one
-  1.6 times the previous, at most 120 seconds, with ±23 % jitter. TLS,
-  certificate and proxy failures are not retried. Operations that create a
-  resource are retried only when the request was not sent: after HTTP 429, a
-  name resolution failure, a refused connection, an unreachable host or network
-  or a connect timeout (see [Exceptions](#exceptions)).
+  1.6 times the previous, at most 120 seconds, with ±23 % jitter. TLS and
+  certificate errors and an error answer of a proxy are not retried. Operations
+  that create a resource are retried only when the request was not sent: after
+  HTTP 429, and after a transient network failure before any request byte is
+  written, also through a proxy (see [Exceptions](#exceptions)).
 - `PerRetryConnectionTimeout`: the timeout of each attempt, by default 10
   seconds. An attempt may run longer, until the time the client would wait
   before retrying it (the backoff delay), when that is longer. On .NET 8 and
-  later, connecting to the server (or proxy) is limited to half of this timeout,
-  so that a connect timeout is detected as such and `CreateDeveloperKeyAsync()`
-  can retry it. With the netstandard2.0 build (.NET Framework, and .NET 5, 6 and
-  7), only the operating system's connect timeout counts as a connect timeout.
+  later, connecting to the server (or proxy), including the proxy tunnel and the
+  TLS handshake, is limited to half of this timeout, so that a hanging
+  connection attempt is given up and the retry opens a new one. With the
+  netstandard2.0 build (.NET Framework, and .NET 5, 6 and 7) connecting has no
+  separate limit: a hanging connection attempt ends with the attempt's timeout
+  and is retried, but the retry may wait for the same attempt.
 - `OverallConnectionTimeout`: the timeout of a request including all retries
   and the waits between them, by default 100 seconds.
   `Timeout.InfiniteTimeSpan` disables it.

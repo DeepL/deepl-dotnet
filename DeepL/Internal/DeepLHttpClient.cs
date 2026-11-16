@@ -231,16 +231,22 @@ namespace DeepL.Internal {
                   responseMessage => responseMessage.StatusCode == HttpStatusCodeTooManyRequests ||
                                      responseMessage.StatusCode >= HttpStatusCode.InternalServerError)
             .WaitAndRetryAsync(maximumNetworkRetries, getSleepDuration, onRetry);
-      var waitAndRetryUnprocessed = Policy.Handle<HttpRequestException>(IsCertainlyNotSent)
-            .OrResult<HttpResponseMessage>(
-                  responseMessage => responseMessage.StatusCode == HttpStatusCodeTooManyRequests)
-            .WaitAndRetryAsync(maximumNetworkRetries, getSleepDuration, onRetry);
+      // Requests that are unsafe to repeat carry a SendTrackingContent (ApiCallAsync); one policy per request reads it.
+      // On .NET 8, a connection reset right after the TCP connect can surface as a bare SocketException.
+      var waitAndRetryUnprocessed = new Func<HttpRequestMessage, IAsyncPolicy<HttpResponseMessage>>(
+            request => Policy.Handle<HttpRequestException>(ex => IsNotSent(request) && IsTransientNetworkFailure(ex))
+                  .Or<SocketException>(_ => IsNotSent(request))
+                  .Or<TimeoutRejectedException>(_ => IsNotSent(request))
+                  .Or<TaskCanceledException>(_ => IsNotSent(request))
+                  .OrResult<HttpResponseMessage>(
+                        responseMessage => responseMessage.StatusCode == HttpStatusCodeTooManyRequests)
+                  .WaitAndRetryAsync(maximumNetworkRetries, getSleepDuration, onRetry));
       // The body is read between the retry and the timeout policies: a cut-off body fails the attempt, but reading a
       // large body is not limited by the per-attempt timeout. Both handlers share the request's policy context.
       var timeoutHandler = new PolicyHttpMessageHandler(timeout) { InnerHandler = innerHandler };
       return new PolicyHttpMessageHandler(
             request => request.GetPolicyExecutionContext()?.OperationKey == RetryOnlyUnprocessedOperationKey
-                  ? waitAndRetryUnprocessed
+                  ? waitAndRetryUnprocessed(request)
                   : waitAndRetry) { InnerHandler = new ResponseBufferingHandler(timeoutHandler) };
     }
 
@@ -266,6 +272,7 @@ namespace DeepL.Internal {
             switch (webException.Status) {
               case WebExceptionStatus.ConnectFailure:
               case WebExceptionStatus.NameResolutionFailure:
+              case WebExceptionStatus.ProxyNameResolutionFailure:
               case WebExceptionStatus.Timeout:
               case WebExceptionStatus.ConnectionClosed:
               case WebExceptionStatus.KeepAliveFailure:
@@ -275,7 +282,6 @@ namespace DeepL.Internal {
                 return true;
               case WebExceptionStatus.TrustFailure:
               case WebExceptionStatus.SecureChannelFailure:
-              case WebExceptionStatus.ProxyNameResolutionFailure:
                 return false;
             }
 
@@ -287,77 +293,12 @@ namespace DeepL.Internal {
     }
 
     /// <summary>
-    ///   Whether the request failed before it was sent: the server name could not be resolved, the connection was
-    ///   refused, the host or network was unreachable or connecting timed out.
+    ///   Whether the request was not sent: it carries a <see cref="SendTrackingContent" /> that no attempt started to
+    ///   write. Every failure raised before that (name resolution, TCP connect, proxy tunnel, TLS handshake, waiting for
+    ///   a connection) happened before any request byte was written.
     /// </summary>
-    private static bool IsCertainlyNotSent(HttpRequestException exception) =>
-          IsNameResolutionFailure(exception) || IsConnectionRefused(exception) ||
-          IsHostOrNetworkUnreachable(exception) || IsConnectTimeout(exception);
-
-    /// <summary>
-    ///   Whether the request failed because the server name could not be resolved, so it was never sent.
-    /// </summary>
-    private static bool IsNameResolutionFailure(HttpRequestException exception) {
-      for (Exception? inner = exception; inner != null; inner = inner.InnerException) {
-        switch (inner) {
-          case SocketException socketException
-                when socketException.SocketErrorCode == SocketError.HostNotFound ||
-                     socketException.SocketErrorCode == SocketError.TryAgain ||
-                     socketException.SocketErrorCode == SocketError.NoData:
-          case WebException webException when webException.Status == WebExceptionStatus.NameResolutionFailure:
-            return true;
-        }
-      }
-
-      return false;
-    }
-
-    /// <summary>Whether the request failed because the server refused the connection, so it was never sent.</summary>
-    private static bool IsConnectionRefused(HttpRequestException exception) {
-      for (Exception? inner = exception; inner != null; inner = inner.InnerException) {
-        if (inner is SocketException socketException &&
-            socketException.SocketErrorCode == SocketError.ConnectionRefused) {
-          return true;
-        }
-      }
-
-      return false;
-    }
-
-    /// <summary>Whether connecting to the server timed out, so the request was never sent.</summary>
-    private static bool IsConnectTimeout(HttpRequestException exception) {
-      for (Exception? inner = exception; inner != null; inner = inner.InnerException) {
-        switch (inner) {
-          // Socket errors while sending or receiving are wrapped in an IOException; connect errors are not.
-          case IOException _:
-            return false;
-          case SocketException socketException when socketException.SocketErrorCode == SocketError.TimedOut:
-            return true;
-        }
-      }
-
-      return false;
-    }
-
-    /// <summary>
-    ///   Whether the connection failed because the host or network is unreachable, so the request was never sent.
-    /// </summary>
-    private static bool IsHostOrNetworkUnreachable(HttpRequestException exception) {
-      for (Exception? inner = exception; inner != null; inner = inner.InnerException) {
-        switch (inner) {
-          // As for a connect timeout: the same error while sending or receiving is wrapped in an IOException.
-          case IOException _:
-            return false;
-          case SocketException socketException
-                when socketException.SocketErrorCode == SocketError.HostUnreachable ||
-                     socketException.SocketErrorCode == SocketError.NetworkUnreachable ||
-                     socketException.SocketErrorCode == SocketError.NetworkDown:
-            return true;
-        }
-      }
-
-      return false;
-    }
+    private static bool IsNotSent(HttpRequestMessage request) =>
+          request.Content is SendTrackingContent content && !content.WriteStarted;
 
     /// <summary>
     ///   Creates a default HttpClient with exponential-backoff policy for retrying failed requests, configured from the
@@ -412,9 +353,9 @@ namespace DeepL.Internal {
     }
 
     /// <summary>
-    ///   Creates the handler sending requests, using the given proxy if set. In the net8.0 build, connecting is limited
-    ///   to half of the per-attempt timeout, so that a hanging connect fails as a connect timeout before the attempt
-    ///   times out: unlike a per-attempt timeout, a connect timeout shows that the request was not sent.
+    ///   Creates the handler sending requests, using the given proxy if set. In the net8.0 build, connecting (TCP, proxy
+    ///   tunnel, TLS handshake) is limited to half of the per-attempt timeout, so that a hanging connection attempt is
+    ///   given up and the retry opens a new connection.
     /// </summary>
     /// <param name="proxy">URL of the proxy, or <c>null</c> to use the system proxy settings.</param>
     /// <param name="perRetryConnectionTimeout">Timeout of each attempt, or an infinite timeout.</param>
@@ -422,9 +363,7 @@ namespace DeepL.Internal {
 #if NET5_0_OR_GREATER
       var handler = new SocketsHttpHandler();
       if (perRetryConnectionTimeout > TimeSpan.Zero) {
-        var connectTimeout = TimeSpan.FromTicks(perRetryConnectionTimeout.Ticks / 2);
-        handler.ConnectCallback = (context, cancellationToken) =>
-              ConnectAsync(context.DnsEndPoint, connectTimeout, cancellationToken);
+        handler.ConnectTimeout = TimeSpan.FromTicks(perRetryConnectionTimeout.Ticks / 2);
       }
 #else
       var handler = new HttpClientHandler();
@@ -444,32 +383,6 @@ namespace DeepL.Internal {
 
       return handler;
     }
-
-#if NET5_0_OR_GREATER
-    /// <summary>
-    ///   Opens a TCP connection to the given server or proxy like <see cref="SocketsHttpHandler" /> does by default, but
-    ///   within the given time. A connect timeout is thrown as a <see cref="SocketException" /> with
-    ///   <see cref="SocketError.TimedOut" />, which the handler wraps in an <see cref="HttpRequestException" />.
-    /// </summary>
-    private static async ValueTask<Stream> ConnectAsync(
-          DnsEndPoint endPoint,
-          TimeSpan connectTimeout,
-          CancellationToken cancellationToken) {
-      var socket = new Socket(SocketType.Stream, ProtocolType.Tcp) { NoDelay = true };
-      using var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-      timeoutSource.CancelAfter(connectTimeout);
-      try {
-        await socket.ConnectAsync(endPoint, timeoutSource.Token).ConfigureAwait(false);
-        return new NetworkStream(socket, true);
-      } catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested) {
-        socket.Dispose();
-        throw new SocketException((int)SocketError.TimedOut);
-      } catch {
-        socket.Dispose();
-        throw;
-      }
-    }
-#endif
 
     /// <summary>Headers describing the request the client builds, which configured headers cannot replace.</summary>
     private static readonly string[] TechnicalHeaders = { "Content-Type", "Content-Length", "Transfer-Encoding", "Host" };
@@ -656,9 +569,8 @@ namespace DeepL.Internal {
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <param name="bodyParams">Parameters to embed in the HTTP request body.</param>
     /// <param name="retryOnlyUnprocessed">
-    ///   <c>true</c> for requests that are unsafe to repeat: they are retried only after HTTP 429, a name resolution
-    ///   failure, a refused connection, an unreachable host or network or a connect timeout, not after server errors or
-    ///   other timeouts.
+    ///   <c>true</c> for requests that are unsafe to repeat: they are retried only after HTTP 429 and after a transient
+    ///   network failure before any request byte is written, not after server errors or after the request was written.
     /// </param>
     /// <returns><see cref="HttpResponseMessage" /> received from DeepL API.</returns>
     /// <exception cref="ConnectionException">If any failure occurs while sending the request.</exception>
@@ -688,9 +600,8 @@ namespace DeepL.Internal {
     /// <param name="body">Object to serialize as JSON for the request body.</param>
     /// <param name="jsonOptions">Optional JSON serializer options.</param>
     /// <param name="retryOnlyUnprocessed">
-    ///   <c>true</c> for requests that are unsafe to repeat: they are retried only after HTTP 429, a name resolution
-    ///   failure, a refused connection, an unreachable host or network or a connect timeout, not after server errors or
-    ///   other timeouts.
+    ///   <c>true</c> for requests that are unsafe to repeat: they are retried only after HTTP 429 and after a transient
+    ///   network failure before any request byte is written, not after server errors or after the request was written.
     /// </param>
     /// <returns><see cref="HttpResponseMessage" /> received from DeepL API.</returns>
     /// <exception cref="ConnectionException">If any failure occurs while sending the request.</exception>
@@ -762,9 +673,8 @@ namespace DeepL.Internal {
     /// <param name="file">Optional file content to upload in request.</param>
     /// <param name="fileName">If <see cref="file" /> is used, the name of file.</param>
     /// <param name="retryOnlyUnprocessed">
-    ///   <c>true</c> for requests that are unsafe to repeat: they are retried only after HTTP 429, a name resolution
-    ///   failure, a refused connection, an unreachable host or network or a connect timeout, not after server errors or
-    ///   other timeouts.
+    ///   <c>true</c> for requests that are unsafe to repeat: they are retried only after HTTP 429 and after a transient
+    ///   network failure before any request byte is written, not after server errors or after the request was written.
     /// </param>
     /// <returns><see cref="HttpResponseMessage" /> received from DeepL API.</returns>
     /// <exception cref="ConnectionException">If any failure occurs while sending the request.</exception>
@@ -879,6 +789,10 @@ namespace DeepL.Internal {
           }
         }
 
+        if (retryOnlyUnprocessed) {
+          requestMessage.Content = new SendTrackingContent(requestMessage.Content);
+        }
+
         // The body is read below, so that a body cut off mid-read is told apart from a failure to send.
         response = await _httpClient
               .SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
@@ -887,14 +801,20 @@ namespace DeepL.Internal {
       } catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) {
         throw;
       } catch (TaskCanceledException ex) {
-        throw new ConnectionException($"Request timed out: {ex.Message}", ex) { ShouldRetry = !retryOnlyUnprocessed };
+        throw new ConnectionException($"Request timed out: {ex.Message}", ex) {
+          ShouldRetry = !retryOnlyUnprocessed || IsNotSent(requestMessage)
+        };
       } catch (TimeoutRejectedException ex) {
-        throw new ConnectionException($"Request timed out: {ex.Message}", ex) { ShouldRetry = !retryOnlyUnprocessed };
+        throw new ConnectionException($"Request timed out: {ex.Message}", ex) {
+          ShouldRetry = !retryOnlyUnprocessed || IsNotSent(requestMessage)
+        };
       } catch (HttpRequestException ex) {
         throw new ConnectionException($"Request failed: {ex.Message}", ex) {
           ShouldRetry = IsResponseBodyCutOff(ex) ||
-                        (retryOnlyUnprocessed ? IsCertainlyNotSent(ex) : IsTransientNetworkFailure(ex))
+                        ((!retryOnlyUnprocessed || IsNotSent(requestMessage)) && IsTransientNetworkFailure(ex))
         };
+      } catch (SocketException ex) when (retryOnlyUnprocessed) {
+        throw new ConnectionException($"Request failed: {ex.Message}", ex) { ShouldRetry = IsNotSent(requestMessage) };
       } catch (Exception ex) {
         throw new ConnectionException($"Unexpected request failure: {ex.Message}", ex);
       }
