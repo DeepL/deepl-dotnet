@@ -1552,7 +1552,7 @@ namespace DeepL {
           string outputFilePath,
           CancellationToken cancellationToken = default) {
       Argument.NotNull(job, nameof(job));
-      var outputFileInfo = new FileInfo(outputFilePath);
+      var outputFileInfo = new FileInfo(Argument.NotNull(outputFilePath, nameof(outputFilePath)));
       // CreateNew rather than Create: the catch below deletes the file to clean up a partial
       // download, so truncating an existing one would let a failed export destroy the caller's
       // data. Matches TranslateDocumentDownloadAsync.
@@ -1587,7 +1587,7 @@ namespace DeepL {
           string inputFilePath,
           ImportTranslationMemoryOptions? options,
           CancellationToken cancellationToken = default) {
-      var inputFileInfo = new FileInfo(inputFilePath);
+      var inputFileInfo = new FileInfo(Argument.NotNull(inputFilePath, nameof(inputFilePath)));
       if (!inputFileInfo.Exists) {
         throw new ArgumentException($"File does not exist: {inputFilePath}");
       }
@@ -1705,6 +1705,7 @@ namespace DeepL {
           Action<TranslationMemoryJob> onJob,
           CancellationToken cancellationToken) {
       CheckTranslationMemoryId(translationMemoryId);
+      Argument.NotNull(outputFilePath, nameof(outputFilePath));
       // Create the output file before creating the job, so that an existing file or an unwritable path fails before
       // the export runs. CreateNew rather than Create: the file is deleted again if the export fails, so truncating
       // an existing one would destroy the caller's data.

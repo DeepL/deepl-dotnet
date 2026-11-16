@@ -455,7 +455,9 @@ namespace DeepL {
     /// <param name="job">Completed export job carrying the download URL.</param>
     /// <param name="outputFilePath">Path of the file to write the downloaded TMX file to.</param>
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
-    /// <exception cref="ArgumentNullException">If <paramref name="job" /> is <c>null</c>.</exception>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="job" /> or <paramref name="outputFilePath" /> is <c>null</c>.
+    /// </exception>
     /// <exception cref="DeepLException">
     ///   If the job carries no download URL, or any error occurs while downloading the file.
     /// </exception>
@@ -477,6 +479,9 @@ namespace DeepL {
     ///   A <see cref="TranslationMemoryJob" /> object for the completed import; its result carries the ID of the
     ///   new translation memory.
     /// </returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="inputFilePath" /> is <c>null</c>; raised before any request.
+    /// </exception>
     /// <exception cref="ArgumentException">If the input file does not exist; raised before any request.</exception>
     /// <exception cref="TranslationMemoryJobException">
     ///   If any other step fails; the cause is the <see cref="System.Exception.InnerException" />: the input file is
@@ -505,6 +510,9 @@ namespace DeepL {
     ///   A <see cref="TranslationMemoryJob" /> object for the completed import; its result carries the ID of the
     ///   new translation memory.
     /// </returns>
+    /// <exception cref="ArgumentNullException">
+    ///   If <paramref name="inputFilePath" /> is <c>null</c>; raised before any request.
+    /// </exception>
     /// <exception cref="ArgumentException">If the input file does not exist; raised before any request.</exception>
     /// <exception cref="TranslationMemoryJobException">
     ///   If any other step fails; the cause is the <see cref="System.Exception.InnerException" />: the input file is
@@ -534,7 +542,7 @@ namespace DeepL {
     ///   If any step fails; the cause is the <see cref="System.Exception.InnerException" />: the output file already
     ///   exists, cannot be created or cannot be written (it is created before any job is created; an
     ///   <see cref="IOException" /> or <see cref="System.UnauthorizedAccessException" /> cause), an argument is invalid
-    ///   (an <see cref="ArgumentNullException" /> cause for a <c>null</c> translation memory or ID),
+    ///   (an <see cref="ArgumentNullException" /> cause for a <c>null</c> translation memory, ID or output file path),
     ///   the translation memory was not found (a <see cref="NotFoundException" /> cause), the export job failed, or any
     ///   error occurs while communicating with the DeepL API. Once the job was created,
     ///   <see cref="TranslationMemoryJobException.JobId" /> is set, and <see cref="TranslationMemoryJobException.Job" />
@@ -560,7 +568,7 @@ namespace DeepL {
     ///   If any step fails; the cause is the <see cref="System.Exception.InnerException" />: the output file already
     ///   exists, cannot be created or cannot be written (it is created before any job is created; an
     ///   <see cref="IOException" /> or <see cref="System.UnauthorizedAccessException" /> cause), an argument is invalid
-    ///   (an <see cref="ArgumentNullException" /> cause for a <c>null</c> translation memory or ID),
+    ///   (an <see cref="ArgumentNullException" /> cause for a <c>null</c> translation memory, ID or output file path),
     ///   the translation memory was not found (a <see cref="NotFoundException" /> cause), the export job failed, or any
     ///   error occurs while communicating with the DeepL API. Once the job was created,
     ///   <see cref="TranslationMemoryJobException.JobId" /> is set, and <see cref="TranslationMemoryJobException.Job" />
@@ -587,7 +595,7 @@ namespace DeepL {
     ///   If any step fails; the cause is the <see cref="System.Exception.InnerException" />: the output file already
     ///   exists, cannot be created or cannot be written (it is created before any job is created; an
     ///   <see cref="IOException" /> or <see cref="System.UnauthorizedAccessException" /> cause), an argument is invalid
-    ///   (an <see cref="ArgumentNullException" /> cause for a <c>null</c> translation memory or ID),
+    ///   (an <see cref="ArgumentNullException" /> cause for a <c>null</c> translation memory, ID or output file path),
     ///   the translation memory was not found (a <see cref="NotFoundException" /> cause), the export job failed, the <paramref name="timeout" /> expired, or any
     ///   error occurs while communicating with the DeepL API. Once the job was created,
     ///   <see cref="TranslationMemoryJobException.JobId" /> is set, and <see cref="TranslationMemoryJobException.Job" />
@@ -615,7 +623,7 @@ namespace DeepL {
     ///   If any step fails; the cause is the <see cref="System.Exception.InnerException" />: the output file already
     ///   exists, cannot be created or cannot be written (it is created before any job is created; an
     ///   <see cref="IOException" /> or <see cref="System.UnauthorizedAccessException" /> cause), an argument is invalid
-    ///   (an <see cref="ArgumentNullException" /> cause for a <c>null</c> translation memory or ID),
+    ///   (an <see cref="ArgumentNullException" /> cause for a <c>null</c> translation memory, ID or output file path),
     ///   the translation memory was not found (a <see cref="NotFoundException" /> cause), the export job failed, the <paramref name="timeout" /> expired, or any
     ///   error occurs while communicating with the DeepL API. Once the job was created,
     ///   <see cref="TranslationMemoryJobException.JobId" /> is set, and <see cref="TranslationMemoryJobException.Job" />

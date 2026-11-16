@@ -482,6 +482,9 @@ namespace DeepLTests.Offline {
         ("job", () => client.DownloadTranslationMemoryExportAsync(null!, new MemoryStream())),
         ("job", () => client.DownloadTranslationMemoryExportAsync(null!, exportPath)),
         ("outputFile", () => client.DownloadTranslationMemoryExportAsync(CompletedJob(), (Stream)null!)),
+        ("outputFilePath", () => client.DownloadTranslationMemoryExportAsync(CompletedJob(), (string)null!)),
+        ("inputFilePath", () => client.ImportTranslationMemoryFromFilepathAsync(null!)),
+        ("inputFilePath", () => client.ImportTranslationMemoryFromFilepathAsync(null!, new ImportTranslationMemoryOptions())),
       };
       foreach (var (param, call) in calls) {
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(call);
@@ -551,6 +554,19 @@ namespace DeepLTests.Offline {
             () => CreateClient().ExportTranslationMemoryToFilepathAsync("", path));
       Assert.IsType<ArgumentException>(exception.InnerException);
       Assert.Null(exception.JobId);
+    }
+
+    [Fact]
+    public async Task ExportToFilepathWrapsArgumentErrorOfNullOutputFilePath() {
+      var calls = new Func<Task>[] {
+        () => CreateClient().ExportTranslationMemoryToFilepathAsync("tm1", null!),
+        () => CreateClient().ExportTranslationMemoryToFilepathAsync("tm1", null!, TimeSpan.FromSeconds(1)),
+      };
+      foreach (var call in calls) {
+        var exception = await Assert.ThrowsAsync<TranslationMemoryJobException>(call);
+        Assert.Equal("outputFilePath", Assert.IsType<ArgumentNullException>(exception.InnerException).ParamName);
+        Assert.Null(exception.JobId);
+      }
     }
 
     [Fact]

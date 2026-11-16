@@ -235,13 +235,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `ArgumentNullException` (an `ArgumentException`) naming the parameter before any request. It threw a
   `NullReferenceException` or a plain `ArgumentException`, or was sent as JSON `null`, before. Catch
   `ArgumentException` (or `ArgumentNullException`) instead of `NullReferenceException`.
-- **Breaking:** `null` IDs, file names, upload URLs, `TranslationMemoryImport` and `TranslationMemoryJob` objects and
-  streams of the translation memory methods now throw an `ArgumentNullException` (an `ArgumentException`) naming the
-  parameter before any request (for `ExportTranslationMemoryToFilepathAsync()` it is the `InnerException` of the
-  `TranslationMemoryJobException`). They threw a `NullReferenceException` or a plain `ArgumentException` before. A
-  `null` `contentType` of `UploadTranslationMemoryFileAsync()` now uses `application/xml`; it threw an
-  `ArgumentException` before. Catch `ArgumentException` (or `ArgumentNullException`) instead of
-  `NullReferenceException`.
+- **Breaking:** `null` IDs, file names, file paths, upload URLs, `TranslationMemoryImport` and `TranslationMemoryJob`
+  objects and streams of the translation memory methods now throw an `ArgumentNullException` (an `ArgumentException`)
+  naming the parameter before any request (for `ExportTranslationMemoryToFilepathAsync()` it is the `InnerException`
+  of the `TranslationMemoryJobException`). They threw a `NullReferenceException` or a plain `ArgumentException`
+  before. A `null` `contentType` of `UploadTranslationMemoryFileAsync()` now uses `application/xml`; it threw an
+  `ArgumentException` before. A `null` file path named the framework's `fileName` parameter before. Catch
+  `ArgumentException` (or `ArgumentNullException`) instead of `NullReferenceException`.
 - **Breaking:** `IsFreeAccountAuthKey(null)`, a `null` resource or `include` entry of
   `GetLanguagesForResourceAsync()`, and a `null` key ID or label of the developer key methods now throw an
   `ArgumentNullException` (an `ArgumentException`) naming the parameter before any request. They threw a
