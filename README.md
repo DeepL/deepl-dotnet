@@ -1317,13 +1317,13 @@ optional `Formality` parameter.
 // Source and target languages
 var sourceLanguages = await client.GetSourceLanguagesAsync();
 foreach (var lang in sourceLanguages) {
-  Console.WriteLine($"{lang.Name} ({lang.Code})"); // Example: "English (EN)"
+  Console.WriteLine($"{lang.Name} ({lang.Code})"); // Example: "English (en)"
 }
 var targetLanguages = await client.GetTargetLanguagesAsync();
 foreach (var lang in targetLanguages) {
   if (lang.SupportsFormality) {
     Console.WriteLine($"{lang.Name} ({lang.Code}) supports formality");
-     // Example: "German (DE) supports formality"
+     // Example: "German (de) supports formality"
   }
 }
 ```
