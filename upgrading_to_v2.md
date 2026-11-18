@@ -33,6 +33,7 @@ Upgrade to 1.23.0 first and fix the deprecation warnings it reports: many remova
 8. [Replace `Usage.AnyLimitReached`, `Usage.Document` and `Usage.TeamDocument`](#usage)
 9. [Declare `ExtraBodyParameters` as `Dictionary<string, object?>` and pass typed values](#extra-body-parameters)
 10. [Review exception handling and retries](#errors-validation-and-retries)
+11. [Pass the `CustomInstruction` argument by the name `instructionId:`](#custom-instruction-parameter-is-renamed)
 
 ## Client and options
 
@@ -147,6 +148,21 @@ var options = new TextTranslateOptions { GlossaryId = glossaryId, StyleId = styl
 
 // after
 var options = new TextTranslateOptions { Glossary = glossaryId, StyleRule = styleId };
+```
+
+### Empty resource IDs are rejected
+
+An empty or whitespace-only `Glossary`, `StyleRule`, `StyleProfile` or `TranslationMemory`, and an empty or
+whitespace-only entry of `GlossaryIds`, in `TextTranslateOptions` or `DocumentTranslateOptions` throw an
+`ArgumentException` without sending a request. For `TranslateDocumentAsync()` it is the `InnerException` of the
+`DocumentTranslationException`. They were sent to the API before. Leave the option unset (`null`) instead.
+
+```csharp
+// before
+var options = new TextTranslateOptions { Glossary = glossaryId ?? "" };
+
+// after
+var options = new TextTranslateOptions { Glossary = string.IsNullOrWhiteSpace(glossaryId) ? null : glossaryId };
 ```
 
 ### Billed characters are `long`
@@ -273,6 +289,20 @@ var created = await client.CreateStyleRuleAsync("Rules", "en", configured);
 var era = created.ConfiguredRules?["dates_and_times"];
 ```
 
+### Custom instruction parameter is renamed
+
+The `CustomInstruction` parameter of the `GetStyleRuleCustomInstructionAsync()`,
+`UpdateStyleRuleCustomInstructionAsync()` and `DeleteStyleRuleCustomInstructionAsync()` overloads is renamed from
+`instruction` to `instructionId`, the name it has in the overloads taking an ID. Positional calls compile unchanged.
+
+```csharp
+// before
+await translator.DeleteStyleRuleCustomInstructionAsync(styleId, instruction: customInstruction);
+
+// after
+await client.DeleteStyleRuleCustomInstructionAsync(styleId, instructionId: customInstruction);
+```
+
 ## Translation memories
 
 ### Job status values
@@ -314,8 +344,9 @@ if (job.Done || !job.Ok) { }
 
 `ImportTranslationMemoryFromFilepathAsync()` and `ExportTranslationMemoryToFilepathAsync()` wrap every failure in the
 new `TranslationMemoryJobException`, a `DeepLException` with the cause as `InnerException`. `JobId` and `Job` are set
-once the job exists, and `HttpStatusCode` and `ShouldRetry` are copied from a `DeepLException` cause. A missing or
-empty input file still throws an `ArgumentException` before any request, and cancellation is not wrapped. Code
+once the job exists, and `HttpStatusCode` and `ShouldRetry` are copied from a `DeepLException` cause. A missing
+input file still throws an `ArgumentException` before any request, an empty input file throws a
+`TranslationMemoryJobException` before any request, and cancellation is not wrapped. Code
 catching a subclass such as `NotFoundException` must catch `TranslationMemoryJobException` and inspect
 `InnerException`.
 
@@ -357,13 +388,24 @@ if (usage.AnyCharacterLimitReached) { }
 
 ### Retries of resource-creating calls
 
-Calls that create a resource are retried only when the request was not sent: after HTTP 429, a name resolution
-failure, a refused connection or a connect timeout. They are `TranslateDocumentAsync()`,
+Calls that create a resource are retried only when the request was not sent: after HTTP 429 and after a transient
+network failure before any request byte is written, such as a name resolution failure, a refused, reset or timed-out
+connection, an unreachable host or network, or a reset or timeout in the TLS handshake or the proxy tunnel. A TLS or
+certificate error and an error answer of a proxy are never retried. They are `TranslateDocumentAsync()`,
 `TranslateDocumentUploadAsync()`, the glossary, style rule, style profile, spoken terms and translation memory
 `Create*` methods, and `ImportTranslationMemoryFromFilepathAsync()` and `ExportTranslationMemoryToFilepathAsync()`.
 `DeepLAdminClient.CreateDeveloperKeyAsync()` already behaved this way. After a 5xx, a timeout or a broken connection
 they no longer retry and `DeepLException.ShouldRetry` is `false`, because the resource may already exist. Check
 whether it exists before creating it again.
+
+`DeepLAdminClient.CreateDeveloperKeyAsync()` is now retried after every one of these failures before the request is
+written; it retried only name resolution failures, refused connections and connect timeouts before. Such an error has
+`ShouldRetry` set to `true` (it was `false`). On .NET 8 and later the connect timeout (half of
+`PerRetryConnectionTimeout`) also covers the proxy tunnel and the TLS handshake. Code that retries
+`CreateDeveloperKeyAsync()` itself now sees the library's retries first.
+
+On .NET Framework a failure to resolve the proxy's name (`WebExceptionStatus.ProxyNameResolutionFailure`) is retried
+like a failure to resolve the server's name and has `ShouldRetry` set to `true`. It was not retried before.
 
 ### Cut-off response bodies
 
@@ -375,8 +417,62 @@ For the creates it throws a `ConnectionException` with `ShouldRetry` set to `tru
 The overloads taking a `MultilingualGlossaryInfo`, `TranslationMemoryInfo`, `TranslationMemoryJob`, `StyleProfile` or
 `SpokenTerms` throw an `ArgumentNullException` for a `null` object, without sending a request. They threw a
 `NullReferenceException` before. The exception is `ExportTranslationMemoryToFilepathAsync()`: it throws a
-`TranslationMemoryJobException` with an `ArgumentException` cause, like for an empty ID (see "File methods wrap
+`TranslationMemoryJobException` with an `ArgumentNullException` cause, like for an empty ID (see "File methods wrap
 failures").
+
+The other `null` arguments below also throw an `ArgumentNullException` (an `ArgumentException`) naming the parameter
+before any request. They threw a `NullReferenceException` or a plain `ArgumentException`, sent JSON `null`, or sent the
+request before.
+
+- Text: a `null` text, texts list or text entry of `TranslateTextAsync()`, `RephraseTextAsync()` and
+  `CorrectTextAsync()`, a `null` entry of `GlossaryIds`, `IgnoreTags`, `NonSplittingTags`, `SplittingTags` or
+  `CustomInstructions`, and a `null` argument of the `TextTranslateOptions` constructors.
+- Documents: a `null` input or output file or stream, or a `null` `inputFileName`, of `TranslateDocumentAsync()`,
+  `TranslateDocumentUploadAsync()` and `TranslateDocumentDownloadAsync()`, and a `null` argument of the
+  `DocumentTranslateOptions` constructors. For `TranslateDocumentAsync()` the `ArgumentNullException` is the
+  `InnerException` of a `DocumentTranslationException`, except for a `null` input `FileInfo`.
+- Glossaries: `null` IDs, names, language codes, entries, CSV streams and dictionaries of the glossary methods, and
+  `null` arguments or terms of `GlossaryEntries` and `MultilingualGlossaryDictionaryEntries`.
+- Style rules: `null` IDs, names, languages, labels, prompts, `StyleRuleInfo` and `CustomInstruction` objects and
+  `customInstructions` entries.
+- Style profiles: a `null` name or style profile ID, and a `null` entry of `GlossaryIds`, `StyleRuleIds` or
+  `TranslationMemoryIds`.
+- Spoken terms: a `null` name, spoken terms ID, term list, term list entry or term.
+- Translation memories: `null` IDs, file names, file paths, upload URLs, `TranslationMemoryImport` and
+  `TranslationMemoryJob` objects and streams. For `ExportTranslationMemoryToFilepathAsync()` the
+  `ArgumentNullException` is the `InnerException` of the `TranslationMemoryJobException`. A `null` file path is named
+  `inputFilePath` or `outputFilePath` (it was the framework's `fileName`). A `null` `contentType` of
+  `UploadTranslationMemoryFileAsync()` now uses `application/xml`; it threw an `ArgumentException` before.
+- Other: `IsFreeAccountAuthKey(null)`, a `null` resource or `include` entry of `GetLanguagesForResourceAsync()`, and a
+  `null` key ID or label of the developer key methods.
+
+```csharp
+// before
+catch (NullReferenceException) { }
+
+// after
+catch (ArgumentNullException) { }
+```
+
+### Language codes
+
+Language codes are checked before any request, by one rule: a required code that is `null`, empty or whitespace-only
+throws, and an optional one that is empty or whitespace-only throws (`null` leaves it unset).
+
+- A `null` target language of `TranslateTextAsync()`, `TranslateDocumentUploadAsync()` and `TranslateDocumentAsync()`
+  throws an `ArgumentNullException` instead of a `NullReferenceException`; for `TranslateDocumentAsync()` it is the
+  `InnerException` of the `DocumentTranslationException`.
+- A whitespace-only source or target language of those methods, of `RephraseTextAsync()` and of `CorrectTextAsync()`
+  throws an `ArgumentException`. It was sent to the API before.
+- An empty, whitespace-only or `null` language of a dictionary in `CreateMultilingualGlossaryAsync()` and
+  `UpdateMultilingualGlossaryAsync()`, of a term list of the spoken terms creates, updates and
+  `ReplaceSpokenTermsListAsync()`, and the `lang` of `GetSpokenTermsEntriesAsync()` and `DeleteSpokenTermsListAsync()`
+  throws an `ArgumentException` instead of being sent to the API.
+- An empty or whitespace-only `sourceLanguage` of a custom instruction in `CreateStyleRuleAsync()`,
+  `CreateStyleRuleCustomInstructionAsync()` and `UpdateStyleRuleCustomInstructionAsync()` throws an
+  `ArgumentException`; `null` still leaves it unset.
+
+Pass `null` for an optional language you do not want to set, instead of an empty string.
 
 ### Error messages
 
