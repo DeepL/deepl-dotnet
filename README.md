@@ -114,10 +114,10 @@ Console.WriteLine(translatedText); // "Bonjour, le monde !"
 var translations = await client.TranslateTextAsync(
       new[] { "お元気ですか？", "¿Cómo estás?" }, null, "EN-GB");
 Console.WriteLine(translations[0].Text); // "How are you?"
-Console.WriteLine(translations[0].DetectedSourceLanguageCode); // "JA"
+Console.WriteLine(translations[0].DetectedSourceLanguageCode); // "ja"
 Console.WriteLine(translations[0].BilledCharacters); // 7 - the number of characters in the source text "お元気ですか？"
 Console.WriteLine(translations[1].Text); // "How are you?"
-Console.WriteLine(translations[1].DetectedSourceLanguageCode); // "ES"
+Console.WriteLine(translations[1].DetectedSourceLanguageCode); // "es"
 Console.WriteLine(translations[1].BilledCharacters); // 12 - the number of characters in the source text "¿Cómo estás?"
 
 // Translate into German with less and more Formality:
@@ -478,7 +478,7 @@ Console.WriteLine($"Created '{glossaryEnToDe.Name}' ({glossaryEnToDe.GlossaryId}
     $"containing {glossaryDictEnToDe.EntryCount} entries"
 );
 // Example: Created 'My glossary' (559192ed-8e23-...) with 1 dictionary where
-// its language pair is EN->DE containing 2 entries
+// its language pair is en->de containing 2 entries
 ```
 
 You can also upload a glossary downloaded from the DeepL website using
