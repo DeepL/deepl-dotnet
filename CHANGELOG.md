@@ -13,61 +13,63 @@ TL;DR: this release has breaking changes. See [Upgrading to 2.0.0](upgrading_to_
   `TranslateDocumentDownloadAsync()`, all overloads), `ILanguageProvider` (`GetSourceLanguagesAsync()`,
   `GetTargetLanguagesAsync()`, `GetGlossaryLanguagesAsync()`) and `IUsageProvider` (`GetUsageAsync()`), implemented
   by `DeepLClient`. They take the place of the removed `ITranslator`, for example for mocking.
-- `IGlossaryManager` now also declares the v2 glossary methods `CreateGlossaryAsync()`, `CreateGlossaryFromCsvAsync()`,
+- **Breaking:** `IGlossaryManager` now also declares the v2 glossary methods `CreateGlossaryAsync()`, `CreateGlossaryFromCsvAsync()`,
   `GetGlossaryAsync()`, `WaitUntilGlossaryReadyAsync()`, `ListGlossariesAsync()`, `GetGlossaryEntriesAsync()` and
   `DeleteGlossaryAsync()`. Classes implementing `IGlossaryManager` themselves must add them.
-- `IGlossaryManager` now also declares the `DeepLClient` overloads that take `CreateMultilingualGlossaryOptions`,
+- **Breaking:** `IGlossaryManager` now also declares the `DeepLClient` overloads that take `CreateMultilingualGlossaryOptions`,
   `ReplaceMultilingualGlossaryDictionaryOptions` or `BaseRequestOptions`, the `MultilingualGlossaryInfo` overloads
   of `GetMultilingualGlossaryAsync()` and `UpdateMultilingualGlossaryNameAsync()`, and both
   `UpdateMultilingualGlossaryAsync()` overloads. Classes implementing `IGlossaryManager` themselves must add them.
-- `ITranslationMemoryManager` now also declares the `DeepLClient` overloads that take
+- **Breaking:** `ITranslationMemoryManager` now also declares the `DeepLClient` overloads that take
   `TranslationMemorySegmentsOptions`, `CreateTranslationMemoryImportOptions`, `ImportTranslationMemoryOptions`, a
   timeout or a `TranslationMemoryJob`. Classes implementing `ITranslationMemoryManager` themselves must add them.
-- `IWriter` now also declares both `CorrectTextAsync()` overloads. Classes implementing `IWriter` themselves must
+- **Breaking:** `IWriter` now also declares both `CorrectTextAsync()` overloads. Classes implementing `IWriter` themselves must
   add them.
-- `IStyleRuleManager` now also declares the `DeepLClient` overloads that take a `StyleRuleInfo` or
+- **Breaking:** `IStyleRuleManager` now also declares the `DeepLClient` overloads that take a `StyleRuleInfo` or
   `CustomInstruction`, and those that take `CreateStyleRuleOptions`, `UpdateStyleRuleNameOptions`,
   `UpdateStyleRuleConfiguredRulesOptions`, `CreateStyleRuleCustomInstructionOptions` or
   `UpdateStyleRuleCustomInstructionOptions`. Classes implementing `IStyleRuleManager` themselves must add them.
 
 ### Changed
-- The package now targets `net8.0` and `netstandard2.0`; the `net5.0` target is removed. .NET 5, 6 and 7
+- **Breaking:** The package now targets `net8.0` and `netstandard2.0`; the `net5.0` target is removed. .NET 5, 6 and 7
   applications now use the `netstandard2.0` build, which has no separate connect timeout (see
   `PerRetryConnectionTimeout` in the README) and does not honour cancellation while it copies a translation
   memory export to a stream. The library is supported on .NET 8 and later, and on .NET Framework 4.6.2 and later.
-- The `System.Text.Json` dependency is now `10.0.14` and applies to the `netstandard2.0` build only; `net8.0` uses
+  Move applications on .NET 5, 6 or 7 to .NET 8 or later.
+- **Breaking:** The `System.Text.Json` dependency is now `10.0.14` and applies to the `netstandard2.0` build only; `net8.0` uses
   the framework's own `System.Text.Json`. Applications on `netstandard2.0` platforms that pin an older
   `System.Text.Json` must raise it to at least `10.0.14`.
-- The `Microsoft.Extensions.Http.Polly` dependency is now `8.0.33` (still Polly 7). Retry and timeout behaviour
+- **Breaking:** The `Microsoft.Extensions.Http.Polly` dependency is now `8.0.33` (still Polly 7). Retry and timeout behaviour
   are unchanged. Applications that pin `Microsoft.Extensions.Http` or `Microsoft.Extensions.Http.Polly` below 8.0
   must raise them.
-- The library is now tested on .NET 8 and .NET 10, instead of .NET 5 and .NET Core 3.1; the `netstandard2.0` build
+- **Breaking:** The library is now tested on .NET 8 and .NET 10, instead of .NET 5 and .NET Core 3.1; the `netstandard2.0` build
   is tested on the .NET 8 runtime. .NET Core 3.1 and .NET 5 to 7 are not supported: the `System.Text.Json` 10 and
   `Microsoft.Extensions.Http` 8 dependencies do not support them, and applications targeting them get a build
   warning that the package "doesn't support" their target framework (an error with `TreatWarningsAsErrors`). Set
   the `SuppressTfmSupportBuildWarnings` MSBuild property to `true` to silence it, at your own risk.
-- Glossary endpoints (v2 and v3 multilingual) now throw `NotFoundException` on HTTP 404, like every other endpoint;
+- **Breaking:** Glossary endpoints (v2 and v3 multilingual) now throw `NotFoundException` on HTTP 404, like every other endpoint;
   they threw its subclass `GlossaryNotFoundException` before. Code catching `NotFoundException` is unaffected.
-- `DeepL.Internal.LargeFormUrlEncodedContent`, `MultilingualGlossaryDictionaryEntriesResult` and the
+  Catch `NotFoundException` instead of `GlossaryNotFoundException`.
+- **Breaking:** `DeepL.Internal.LargeFormUrlEncodedContent`, `MultilingualGlossaryDictionaryEntriesResult` and the
   `MultilingualGlossaryDictionaryEntries` constructor taking a `MultilingualGlossaryDictionaryEntriesResult` are now
   internal. Construct `MultilingualGlossaryDictionaryEntries` from the language codes and a `GlossaryEntries`
   object instead.
-- `StyleRuleInfo.ConfiguredRules` is now a `Dictionary<string, Dictionary<string, string>>`, the API's
+- **Breaking:** `StyleRuleInfo.ConfiguredRules` is now a `Dictionary<string, Dictionary<string, string>>`, the API's
   `configured_rules` object as sent (category to rule to value, keyed by the API names), the same shape
   `CreateStyleRuleAsync()` and `UpdateStyleRuleConfiguredRulesAsync()` take. Categories the removed
   `ConfiguredRules` class lacked are no longer dropped. Replace `rule.ConfiguredRules.DatesAndTimes` with
   `rule.ConfiguredRules["dates_and_times"]` (or `TryGetValue("dates_and_times", ...)`), and likewise for the other
   categories. The `IStyleRuleManager` methods `CreateStyleRuleAsync()` and `UpdateStyleRuleConfiguredRulesAsync()`
   now take this map too.
-- Text translation, rephrasing and correction, v2 glossary creation, and v3 glossary creation, renaming and
+- **Breaking:** Text translation, rephrasing and correction, v2 glossary creation, and v3 glossary creation, renaming and
   dictionary updates (`CreateMultilingualGlossaryAsync()`, `CreateMultilingualGlossaryFromCsvAsync()`,
   `UpdateMultilingualGlossaryNameAsync()`, `UpdateMultilingualGlossaryDictionaryAsync()` and
   `UpdateMultilingualGlossaryDictionaryFromCsvAsync()`) now send JSON request bodies instead of form-encoded ones.
   `text`, the tag lists, `custom_instructions` and `glossary_ids` are sent as JSON arrays, the v3 `dictionaries` as
   an array of objects, and booleans and numbers with their JSON types. Code that intercepts or asserts on request
   bodies (proxies, test doubles) sees JSON with `Content-Type: application/json`. Document upload stays multipart,
-  with `glossary_ids` comma-separated as before.
-- `BaseRequestOptions.ExtraBodyParameters` (on every options class, including those of `DeepLAdminClient`) is now a
+  with `glossary_ids` comma-separated as before. Such code must parse the JSON body instead of form fields.
+- **Breaking:** `BaseRequestOptions.ExtraBodyParameters` (on every options class, including those of `DeepLAdminClient`) is now a
   `Dictionary<string, object?>`, so extra parameters can be booleans, numbers, arrays or objects. In JSON bodies each
   value is sent with its JSON type, and a `null` value removes that key from the body. In the multipart document
   upload, strings are sent as given, collections comma-joined, booleans as `true`/`false`, numbers in the invariant
@@ -76,43 +78,43 @@ TL;DR: this release has breaking changes. See [Upgrading to 2.0.0](upgrading_to_
   (`["outline_detection"] = false`) or use the matching option. Collection initializers with string values compile
   unchanged; variables or helpers declared as `Dictionary<string, string>` must be declared as
   `Dictionary<string, object?>`.
-- `TranslateDocumentAsync()` (all overloads) now returns `Task<DocumentStatus>`, the final status of the
+- **Breaking:** `TranslateDocumentAsync()` (all overloads) now returns `Task<DocumentStatus>`, the final status of the
   translation (for example with `BilledCharacters`). Code that awaits it without using a result compiles unchanged;
   classes implementing `IDocumentTranslator` must change the return type.
-- `TranslateDocumentWaitUntilDoneAsync()` (both overloads) now returns `Task<DocumentStatus>`, the final status with
+- **Breaking:** `TranslateDocumentWaitUntilDoneAsync()` (both overloads) now returns `Task<DocumentStatus>`, the final status with
   status done, instead of discarding it. Classes implementing `IDocumentTranslator` must change the return type.
-- `TranslateDocumentAsync()` no longer wraps a cancellation requested through its `CancellationToken` in a
+- **Breaking:** `TranslateDocumentAsync()` no longer wraps a cancellation requested through its `CancellationToken` in a
   `DocumentTranslationException`: the `OperationCanceledException` (usually a `TaskCanceledException`) propagates
   as is, as in the step methods. Code catching `DocumentTranslationException` to detect cancellation must catch
   `OperationCanceledException` instead. Timeouts and other failures are still wrapped.
-- `TranslateDocumentAsync(FileInfo, ...)` and `TranslateDocumentUploadAsync(FileInfo, ...)` now throw an
+- **Breaking:** `TranslateDocumentAsync(FileInfo, ...)` and `TranslateDocumentUploadAsync(FileInfo, ...)` now throw an
   `ArgumentException` before any request when the input file does not exist or is a directory, instead of a
   `FileNotFoundException`, `DirectoryNotFoundException` or `UnauthorizedAccessException`. Other local file failures of
   `TranslateDocumentAsync(FileInfo, ...)` (the input cannot be read, the output file already exists or cannot be
   created) now throw a `DocumentTranslationException` with the `IOException` or `UnauthorizedAccessException` as
   `InnerException`, still before any request; an existing output file is still left unchanged. Catch
   `ArgumentException` and `DocumentTranslationException` instead of the I/O exceptions.
-- `TranslationMemoryJob.Done` and `TranslationMemoryJobResult.Done` are now `true` only for
+- **Breaking:** `TranslationMemoryJob.Done` and `TranslationMemoryJobResult.Done` are now `true` only for
   `TranslationMemoryJobStatus.Completed`; a failed or expired job is no longer done (check `Ok` for those). Code that
   used `Done` to mean "finished, successfully or not" must check `Done || !Ok`.
   `WaitUntilTranslationMemoryJobDoneAsync()` still returns a completed job and throws a `DeepLException` for a failed or expired one.
-- `ImportTranslationMemoryFromFilepathAsync()` and `ExportTranslationMemoryToFilepathAsync()` now wrap local file
+- **Breaking:** `ImportTranslationMemoryFromFilepathAsync()` and `ExportTranslationMemoryToFilepathAsync()` now wrap local file
   failures in a `TranslationMemoryJobException` (see below), with the original `IOException` or
   `UnauthorizedAccessException` as `InnerException`: an input file that cannot be read, an output file that already
   exists or cannot be created, and errors writing the output. The checks still run before any job is created, and a
   missing input file still throws an `ArgumentException`. Catch `DeepLException` or
   `TranslationMemoryJobException` instead of the I/O exceptions.
-- `TextResult.BilledCharacters` is now a `long` and `DocumentStatus.BilledCharacters` a `long?`, so counts above
+- **Breaking:** `TextResult.BilledCharacters` is now a `long` and `DocumentStatus.BilledCharacters` a `long?`, so counts above
   `int.MaxValue` are kept; `DocumentStatus` read such a count as `null` before. The `TextResult` and
   `DocumentStatus` constructors take `long` and `long?`. Code assigning the value to an `int` must cast or use
   `long`.
-- `TranslationMemoryJobResult.SkippedSegmentCount` is now a `long?` instead of an `int?`. Code assigning it to an
+- **Breaking:** `TranslationMemoryJobResult.SkippedSegmentCount` is now a `long?` instead of an `int?`. Code assigning it to an
   `int?` must cast or use `long?`.
-- `TranslationMemoryJob.Product` is now a non-nullable `string`, and `CreationTime` and `UpdatedTime` are non-nullable
+- **Breaking:** `TranslationMemoryJob.Product` is now a non-nullable `string`, and `CreationTime` and `UpdatedTime` are non-nullable
   `DateTime`s; a job response without one of them throws a `DeepLException`. The `TranslationMemoryJob`
   constructor takes them as required parameters after `results`. Remove null checks and `.Value` on these
   properties.
-- `Usage.AnyLimitReached` is replaced by `Usage.AnyCharacterLimitReached`: `true` if the account's character limit
+- **Breaking:** `Usage.AnyLimitReached` is replaced by `Usage.AnyCharacterLimitReached`: `true` if the account's character limit
   (`Character`) or this API key's character limit (`ApiKeyCharacter`) is reached. The speech minutes have their own
   details (`SpeechToTextMinutes`, `SpeechToSpeechMinutes`). Code that needs only the account-wide limit must check
   `Character` directly.
@@ -140,8 +142,9 @@ TL;DR: this release has breaking changes. See [Upgrading to 2.0.0](upgrading_to_
 - **Breaking:** creating a `DeepLClient` or `DeepLAdminClient` now throws an `ArgumentException` if the `Proxy` option
   is not an absolute `http` or `https` URL. A relative URL threw an `InvalidOperationException` before, and another
   scheme, for example `ftp://`, was accepted and failed only at the first request.
-- Error messages now include the API's message from a nested `error.message` field of the response body, as the API
+- **Breaking:** Error messages now include the API's message from a nested `error.message` field of the response body, as the API
   sends for some statuses (for example 414, 500 and 503), when there is no top-level `message`. It was dropped before.
+  Code that compares the whole message must match its start or check `HttpStatusCode` instead.
 - **Breaking:** `UploadTranslationMemoryFileAsync()` now throws an `ArgumentException` if the upload URL is not an
   absolute `http` or `https` URL, before reading the stream. It threw a `UriFormatException` before (or, for a path
   such as `/upload`, failed at the request).
@@ -166,9 +169,9 @@ TL;DR: this release has breaking changes. See [Upgrading to 2.0.0](upgrading_to_
 - **Breaking:** a `null` value in `ExtraBodyParameters` is now sent as JSON `null` in JSON request bodies, instead of
   removing the key (including a field the library sets). Leave the key out to not send it. In the multipart body of
   a document upload, a `null` value still removes the key.
-- `UpdateMultilingualGlossaryDictionaryFromCsvAsync()` and `ReplaceMultilingualGlossaryDictionaryFromCsvAsync()` now
+- **Breaking:** `UpdateMultilingualGlossaryDictionaryFromCsvAsync()` and `ReplaceMultilingualGlossaryDictionaryFromCsvAsync()` now
   throw an `ArgumentException` for empty or whitespace-only CSV content, without sending a request. The request was
-  sent to the API before.
+  sent to the API before. Catch `ArgumentException` for empty CSV content.
 - **Breaking:** the overloads taking a `MultilingualGlossaryInfo`, `TranslationMemoryInfo`, `TranslationMemoryJob`,
   `StyleProfile` or `SpokenTerms` now throw an `ArgumentNullException` (an `ArgumentException`) for a `null` object,
   without sending a request. They threw a `NullReferenceException` before. `ExportTranslationMemoryToFilepathAsync()`
@@ -251,39 +254,39 @@ TL;DR: this release has breaking changes. See [Upgrading to 2.0.0](upgrading_to_
   JSON `null`, before. Catch `ArgumentException` (or `ArgumentNullException`) instead of `NullReferenceException`.
 
 ### Removed
-- Removed `Usage.Document` and `Usage.TeamDocument`; the API no longer returns document usage. `Usage.ToString()` no
+- **Breaking:** Removed `Usage.Document` and `Usage.TeamDocument`; the API no longer returns document usage. `Usage.ToString()` no
   longer has the "Documents" and "Team documents" lines. Responses that still contain the `document_*` or
-  `team_document_*` fields are parsed as before; the fields are ignored.
-- Removed the `ConfiguredRules` class and the `DeepLClient.CreateStyleRuleAsync()` and
+  `team_document_*` fields are parsed as before; the fields are ignored. Remove code that reads these properties.
+- **Breaking:** Removed the `ConfiguredRules` class and the `DeepLClient.CreateStyleRuleAsync()` and
   `UpdateStyleRuleConfiguredRulesAsync()` overloads taking it. Pass the configured rules as a
   `Dictionary<string, Dictionary<string, string>>` keyed by the API names instead, for example
   `new() { ["dates_and_times"] = new() { ["calendar_era"] = "use_bc_and_ad" } }` for
   `new ConfiguredRules(datesAndTimes: ...)`.
-- Removed the `Translator` class, its `ITranslator` interface and `TranslatorOptions`. `DeepLClient` no longer
+- **Breaking:** Removed the `Translator` class, its `ITranslator` interface and `TranslatorOptions`. `DeepLClient` no longer
   derives from `Translator` and now holds all of its methods. Replace `new Translator(authKey, new TranslatorOptions
   { ... })` with `new DeepLClient(authKey, new DeepLClientOptions { ... })`, and variables or parameters typed
   `Translator` or `ITranslator` with `DeepLClient` or the interfaces listed under Added. `DeepLClientOptions` now
   derives from `BaseClientOptions`.
-- Removed `Translator.AuthKeyIsFreeAccount()`; use `DeepLClient.IsFreeAccountAuthKey()` instead.
-- Removed `TranslateDocumentStatusAsync()`; use `TranslateDocumentGetStatusAsync()` instead.
-- Removed `GlossaryNotFoundException`; catch `NotFoundException` instead.
-- Removed `TranslationMemoryJobStatus.Downloaded`; the DeepL API does not define that status. A `"downloaded"` status
+- **Breaking:** Removed `Translator.AuthKeyIsFreeAccount()`; use `DeepLClient.IsFreeAccountAuthKey()` instead.
+- **Breaking:** Removed `TranslateDocumentStatusAsync()`; use `TranslateDocumentGetStatusAsync()` instead.
+- **Breaking:** Removed `GlossaryNotFoundException`; catch `NotFoundException` instead.
+- **Breaking:** Removed `TranslationMemoryJobStatus.Downloaded`; the DeepL API does not define that status. A `"downloaded"` status
   is now `TranslationMemoryJobStatus.Unknown`, with `"downloaded"` in `StatusValue`, and
   `WaitUntilTranslationMemoryJobDoneAsync()` keeps polling on it instead of returning. Compare `StatusValue` with
   `"downloaded"` where you compared `Status` with `TranslationMemoryJobStatus.Downloaded`.
   Removing it also renumbers `TranslationMemoryJobStatus`: `Failed` is now 3 (was 4), `Expired` 4 (was 5) and
   `Unknown` 5 (was 6). Code that stores or compares the numeric values must change.
-- Removed document minification: `DocumentTranslateOptions.EnableDocumentMinification`, `DocumentMinifier`,
+- **Breaking:** Removed document minification: `DocumentTranslateOptions.EnableDocumentMinification`, `DocumentMinifier`,
   `IDocumentMinifier`, `DocumentMinificationException` and `DocumentDeminificationException`. Translate the document
   as is; the DeepL API accepts larger documents than when minification was added. A missing or unreadable input
   file of `TranslateDocumentAsync()` no longer throws a `DocumentMinificationException`; see Changed for the
   exceptions it throws now.
-- Removed the language code constants of the `LanguageCode` class (for example `LanguageCode.German`). Pass the
+- **Breaking:** Removed the language code constants of the `LanguageCode` class (for example `LanguageCode.German`). Pass the
   language code as a string, for example `"de"`, and use `GetSourceLanguagesAsync()` and `GetTargetLanguagesAsync()`
   to retrieve the supported languages. `LanguageCode.RemoveRegionalVariant()` remains.
-- Removed `Usage.JsonFieldsStruct` and the `Usage(in Usage.JsonFieldsStruct)` constructor; `GetUsageAsync()` does not
+- **Breaking:** Removed `Usage.JsonFieldsStruct` and the `Usage(in Usage.JsonFieldsStruct)` constructor; `GetUsageAsync()` does not
   use them, and `Usage` no longer has a public constructor. Obtain `Usage` from `GetUsageAsync()`.
-- Removed the obsolete `GlossaryId`, `StyleId` and `TranslationMemoryId` properties of `TextTranslateOptions` and
+- **Breaking:** Removed the obsolete `GlossaryId`, `StyleId` and `TranslationMemoryId` properties of `TextTranslateOptions` and
   `DocumentTranslateOptions`. Use `Glossary`, `StyleRule` and `TranslationMemory` instead; they take the same ID.
 
 ## [1.23.0] - 2026-11-02
