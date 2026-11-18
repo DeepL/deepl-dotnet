@@ -7,7 +7,7 @@ using System.Collections.Generic;
 namespace DeepL {
   /// <summary>
   ///   Changes to the usage limits of a developer key, passed to
-  ///   <see cref="IAdminManager.SetDeveloperKeyUsageLimitsAsync(string, DeveloperKeyUsageLimitsUpdate, System.Threading.CancellationToken)" />.
+  ///   <see cref="IAdminManager.SetDeveloperKeyUsageLimitsAsync(string, DeveloperKeyUsageLimitsUpdate, SetDeveloperKeyUsageLimitsOptions, System.Threading.CancellationToken)" />.
   ///   Only the limits you assign are changed; limits you do not assign keep their current value. Assigning
   ///   <c>null</c> removes a limit (unlimited usage) and assigning 0 blocks that usage. The property getters return
   ///   <c>null</c> both for a limit that was not assigned and for one assigned <c>null</c>.

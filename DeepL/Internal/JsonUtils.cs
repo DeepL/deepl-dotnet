@@ -18,24 +18,24 @@ namespace DeepL.Internal {
       };
 
     /// <summary>
-    ///   Deserializes JSON data in given HTTP response into a new object of <see cref="TValue" /> type, with fields named in
+    ///   Deserializes JSON data in given HTTP response into a new object of <typeparamref name="TValue" /> type, with fields named in
     ///   lower-snake-case.
     /// </summary>
     /// <param name="responseMessage"><see cref="HttpResponseMessage" /> containing HTTP response received from DeepL API.</param>
     /// <typeparam name="TValue">Type of deserialized object.</typeparam>
-    /// <returns>Object of <see cref="TValue" /> type initialized with values from JSON data.</returns>
+    /// <returns>Object of <typeparamref name="TValue" /> type initialized with values from JSON data.</returns>
     /// <exception cref="DeepLException">If the JSON data could not be deserialized correctly.</exception>
     internal static async Task<TValue> DeserializeAsync<TValue>(HttpResponseMessage responseMessage) =>
           await DeserializeAsync<TValue>(await responseMessage.Content.ReadAsStreamAsync().ConfigureAwait(false))
                 .ConfigureAwait(false);
 
     /// <summary>
-    ///   Deserializes JSON data in given stream into a new object of <see cref="TValue" /> type, with fields named in
+    ///   Deserializes JSON data in given stream into a new object of <typeparamref name="TValue" /> type, with fields named in
     ///   lower-snake-case.
     /// </summary>
     /// <param name="contentStream">Stream containing JSON data.</param>
     /// <typeparam name="TValue">Type of deserialized object.</typeparam>
-    /// <returns>Object of <see cref="TValue" /> type initialized with values from JSON data.</returns>
+    /// <returns>Object of <typeparamref name="TValue" /> type initialized with values from JSON data.</returns>
     /// <exception cref="DeepLException">If the JSON data could not be deserialized correctly.</exception>
     internal static async Task<TValue> DeserializeAsync<TValue>(Stream contentStream) {
       using var reader = new StreamReader(contentStream);

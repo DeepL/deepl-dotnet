@@ -175,7 +175,7 @@ namespace DeepL {
     /// <remarks>
     ///   The job only declares the file; upload the TMX file itself to the returned upload URL with
     ///   <see cref="UploadTranslationMemoryFileAsync(TranslationMemoryImport, Stream, string, CancellationToken)" />,
-    ///   then poll <see cref="GetTranslationMemoryJobAsync" /> for the outcome. Use
+    ///   then poll <see cref="GetTranslationMemoryJobAsync(string, CancellationToken)" /> for the outcome. Use
     ///   <see cref="ImportTranslationMemoryFromFilepathAsync(string, string, CancellationToken)" /> to do all three
     ///   steps at once.
     ///   Because the request creates a resource, it is retried only when it was not sent: after HTTP 429, and after a
@@ -242,7 +242,8 @@ namespace DeepL {
 
     /// <summary>Uploads a TMX file to the upload URL of an import job, which starts processing.</summary>
     /// <param name="translationMemoryImport">
-    ///   The <see cref="TranslationMemoryImport" /> returned by <see cref="CreateTranslationMemoryImportAsync" />.
+    ///   The <see cref="TranslationMemoryImport" /> returned by
+    ///   <see cref="CreateTranslationMemoryImportAsync(string, long, string, string, CancellationToken)" />.
     /// </param>
     /// <param name="fileContent">Stream containing the TMX file content.</param>
     /// <param name="contentType">
@@ -289,7 +290,8 @@ namespace DeepL {
 
     /// <summary>Creates an export job for a translation memory.</summary>
     /// <remarks>
-    ///   Poll <see cref="GetTranslationMemoryJobAsync" /> for the download URL of the exported TMX file. Use
+    ///   Poll <see cref="GetTranslationMemoryJobAsync(string, CancellationToken)" /> for the download URL of the exported
+    ///   TMX file. Use
     ///   <see cref="ExportTranslationMemoryToFilepathAsync(string, string, CancellationToken)" /> to do both steps
     ///   and write the file at once.
     ///   Because the request creates a resource, it is retried only when it was not sent: after HTTP 429, and after a

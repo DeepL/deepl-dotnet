@@ -447,8 +447,12 @@ namespace DeepL.Internal {
 
     /// <summary>Checks the response HTTP status is 2xx, otherwise throws corresponding exception.</summary>
     /// <param name="responseMessage"><see cref="HttpResponseMessage" /> received from DeepL API.</param>
-    /// <param name="usingGlossary"><c>true</c> if a glossary function is used, otherwise <c>false</c>.</param>
+    /// <param name="resourceType">Type of the resource accessed, for the error message of HTTP 404.</param>
     /// <param name="downloadingDocument"><c>true</c> if document download function is used, otherwise <c>false</c>.</param>
+    /// <param name="retryOnlyUnprocessed">
+    ///   <c>true</c> for requests that are unsafe to repeat; the thrown exception then allows a retry only after
+    ///   HTTP 429.
+    /// </param>
     /// <exception cref="AuthorizationException">If authorization failed.</exception>
     /// <exception cref="QuotaExceededException">If the translation quota has been exceeded.</exception>
     /// <exception cref="NotFoundException">If the specified resource was not found.</exception>
@@ -671,7 +675,7 @@ namespace DeepL.Internal {
     /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
     /// <param name="bodyParams">Parameters to embed in the HTTP request body.</param>
     /// <param name="file">Optional file content to upload in request.</param>
-    /// <param name="fileName">If <see cref="file" /> is used, the name of file.</param>
+    /// <param name="fileName">If <paramref name="file" /> is used, the name of file.</param>
     /// <param name="retryOnlyUnprocessed">
     ///   <c>true</c> for requests that are unsafe to repeat: they are retried only after HTTP 429 and after a transient
     ///   network failure before any request byte is written, not after server errors or after the request was written.

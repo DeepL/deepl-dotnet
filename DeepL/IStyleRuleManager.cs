@@ -63,7 +63,7 @@ namespace DeepL {
 
     /// <summary>
     ///   Creates a new style rule, like
-    ///   <see cref="CreateStyleRuleAsync(string, string, Dictionary{string, Dictionary{string, string}}?, CustomInstruction[]?, CancellationToken)" />
+    ///   <see cref="CreateStyleRuleAsync(string, string, Dictionary{string, Dictionary{string, string}}, CustomInstruction[], CancellationToken)" />
     ///   .
     /// </summary>
     /// <param name="name">Name for the new style rule.</param>

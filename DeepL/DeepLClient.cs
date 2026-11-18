@@ -3805,7 +3805,7 @@ namespace DeepL {
       DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
-    /// <summary>Interval between polls of a translation memory job in <see cref="WaitUntilTranslationMemoryJobDoneAsync" />.</summary>
+    /// <summary>Interval between polls of a translation memory job in <see cref="WaitUntilTranslationMemoryJobDoneAsync(string, CancellationToken)" />.</summary>
     private static readonly TimeSpan TranslationMemoryJobPollInterval = TimeSpan.FromSeconds(5);
 
     /// <summary>Checks the given translation memory ID is usable, otherwise throws an exception.</summary>

@@ -289,6 +289,10 @@ TL;DR: this release has breaking changes. See [Upgrading to 2.0.0](upgrading_to_
 - **Breaking:** Removed the obsolete `GlossaryId`, `StyleId` and `TranslationMemoryId` properties of `TextTranslateOptions` and
   `DocumentTranslateOptions`. Use `Glossary`, `StyleRule` and `TranslationMemory` instead; they take the same ID.
 
+### Fixed
+- The NuGet package now contains the XML documentation file (`DeepL.net.xml`) for each target framework, so IDEs
+  show the API documentation of the library.
+
 ## [1.23.0] - 2026-11-02
 TL;DR: new APIs in this release: the Admin API, spoken terms, style profiles and text correction.
 Translation memories, style rules and multilingual glossaries gained many options and fixes.

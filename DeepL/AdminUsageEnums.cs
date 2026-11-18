@@ -5,7 +5,10 @@
 using System;
 
 namespace DeepL {
-  /// <summary>Options for grouping the usage in <see cref="IAdminManager.GetUsageAnalyticsAsync" />.</summary>
+  /// <summary>
+  ///   Options for grouping the usage in
+  ///   <see cref="IAdminManager.GetUsageAnalyticsAsync(DateTime, DateTime, AdminUsageGroupBy?, System.Threading.CancellationToken)" />.
+  /// </summary>
   public enum AdminUsageGroupBy {
     /// <summary>Group usage by API key.</summary>
     Key,
@@ -14,7 +17,10 @@ namespace DeepL {
     KeyAndDay
   }
 
-  /// <summary>Options for aggregating the usage in <see cref="IAdminManager.GetCustomTagUsageAnalyticsAsync" />.</summary>
+  /// <summary>
+  ///   Options for aggregating the usage in
+  ///   <see cref="IAdminManager.GetCustomTagUsageAnalyticsAsync(DateTime, DateTime, CustomTagUsageAggregateBy?, int?, System.Threading.CancellationToken)" />.
+  /// </summary>
   public enum CustomTagUsageAggregateBy {
     /// <summary>Aggregate usage over the entire date range.</summary>
     Period,
