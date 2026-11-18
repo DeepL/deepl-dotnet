@@ -612,35 +612,35 @@ foreach (KeyValuePair<string, string> entry in entriesResponse.Entries.ToDiction
 //   prize: Gewinn
 
 // Update a glossary dictionary from CSV
-var csvStream =  File.OpenRead("myGlossary.csv");
-var csvGlossary = await client.UpdateMultilingualGlossaryDictionaryFromCsvAsync("4c81ffb4-2e...", "EN", "DE", csvStream);
+var updateCsvStream = File.OpenRead("myGlossary.csv");
+var csvUpdatedGlossary = await client.UpdateMultilingualGlossaryDictionaryFromCsvAsync("4c81ffb4-2e...", "EN", "DE", updateCsvStream);
 
 // Replace glossary dictionary
 var replacementEntries = new Dictionary<string, string>{{"goodbye", "Auf Wiedersehen"}};
-var glossaryDict = new MultilingualGlossaryDictionaryEntries("EN", "DE", new GlossaryEntries(replacementEntries));
-var updatedGlossary = await client.ReplaceMultilingualGlossaryDictionaryAsync(
+var replacementDict = new MultilingualGlossaryDictionaryEntries("EN", "DE", new GlossaryEntries(replacementEntries));
+var replacedDictionary = await client.ReplaceMultilingualGlossaryDictionaryAsync(
   myGlossary,
-  glossaryDict);
-var entriesResponse = await client.GetMultilingualGlossaryDictionaryEntriesAsync(myGlossary, "EN", "DE");
-foreach (KeyValuePair<string, string> entry in entriesResponse.Entries.ToDictionary()) {
+  replacementDict);
+var replacedEntriesResponse = await client.GetMultilingualGlossaryDictionaryEntriesAsync(myGlossary, "EN", "DE");
+foreach (KeyValuePair<string, string> entry in replacedEntriesResponse.Entries.ToDictionary()) {
   Console.WriteLine($"{entry.Key}: {entry.Value}");
 }
 // prints:
 //   goodbye: Auf Wiedersehen
 
 // Replace a glossary dictionary from CSV
-var csvStream =  File.OpenRead("myGlossary.csv");
-var csvGlossary = await client.ReplaceMultilingualGlossaryDictionaryFromCsvAsync("4c81ffb4-2e...", "EN", "DE", csvStream);
+var replaceCsvStream = File.OpenRead("myGlossary.csv");
+var csvReplacedGlossary = await client.ReplaceMultilingualGlossaryDictionaryFromCsvAsync("4c81ffb4-2e...", "EN", "DE", replaceCsvStream);
 
 // Update the glossary name
-var updatedGlossary = await client.UpdateMultilingualGlossaryNameAsync(
+var renamedGlossary = await client.UpdateMultilingualGlossaryNameAsync(
   myGlossary,
   "My new glossary name"
 );
-Console.WriteLine(updatedGlossary.Name); // 'My new glossary name'
+Console.WriteLine(renamedGlossary.Name); // 'My new glossary name'
 
 // Rename the glossary and merge entries into a dictionary in one request
-var updatedGlossary = await client.UpdateMultilingualGlossaryAsync(
+var mergedGlossary = await client.UpdateMultilingualGlossaryAsync(
   myGlossary,
   new UpdateMultilingualGlossaryOptions {
     Name = "My renamed glossary",
