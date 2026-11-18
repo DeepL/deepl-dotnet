@@ -883,11 +883,11 @@ Console.WriteLine($"Created instruction: {instruction.Id}");
 
 // Get a custom instruction
 var retrieved = await client.GetStyleRuleCustomInstructionAsync(
-    "YOUR_STYLE_ID", instruction.Id);
+    "YOUR_STYLE_ID", instruction);
 
 // Update a custom instruction
 var updated = await client.UpdateStyleRuleCustomInstructionAsync(
-    "YOUR_STYLE_ID", instruction.Id, "Updated label", "Use very formal language");
+    "YOUR_STYLE_ID", instruction, "Updated label", "Use very formal language");
 
 // Delete a custom instruction, passing the CustomInstruction object
 await client.DeleteStyleRuleCustomInstructionAsync("YOUR_STYLE_ID", instruction);
