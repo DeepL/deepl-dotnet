@@ -57,10 +57,10 @@ TL;DR: this release has breaking changes. See [Upgrading to 2.0.0](upgrading_to_
 - **Breaking:** `StyleRuleInfo.ConfiguredRules` is now a `Dictionary<string, Dictionary<string, string>>`, the API's
   `configured_rules` object as sent (category to rule to value, keyed by the API names), the same shape
   `CreateStyleRuleAsync()` and `UpdateStyleRuleConfiguredRulesAsync()` take. Categories the removed
-  `ConfiguredRules` class lacked are no longer dropped. Replace `rule.ConfiguredRules.DatesAndTimes` with
-  `rule.ConfiguredRules["dates_and_times"]` (or `TryGetValue("dates_and_times", ...)`), and likewise for the other
+  `ConfiguredRules` class lacked are no longer dropped. Replace `rule.ConfiguredRules?.DatesAndTimes` with
+  `rule.ConfiguredRules?["dates_and_times"]` (or `TryGetValue("dates_and_times", ...)`), and likewise for the other
   categories. The `IStyleRuleManager` methods `CreateStyleRuleAsync()` and `UpdateStyleRuleConfiguredRulesAsync()`
-  now take this map too.
+  now take this map too, and so does the `StyleRuleInfo` constructor.
 - **Breaking:** Text translation, rephrasing and correction, v2 glossary creation, and v3 glossary creation, renaming and
   dictionary updates (`CreateMultilingualGlossaryAsync()`, `CreateMultilingualGlossaryFromCsvAsync()`,
   `UpdateMultilingualGlossaryNameAsync()`, `UpdateMultilingualGlossaryDictionaryAsync()` and
@@ -71,7 +71,7 @@ TL;DR: this release has breaking changes. See [Upgrading to 2.0.0](upgrading_to_
   with `glossary_ids` comma-separated as before. Such code must parse the JSON body instead of form fields.
 - **Breaking:** `BaseRequestOptions.ExtraBodyParameters` (on every options class, including those of `DeepLAdminClient`) is now a
   `Dictionary<string, object?>`, so extra parameters can be booleans, numbers, arrays or objects. In JSON bodies each
-  value is sent with its JSON type, and a `null` value removes that key from the body. In the multipart document
+  value is sent with its JSON type, and a `null` value is sent as JSON `null`. In the multipart document
   upload, strings are sent as given, collections comma-joined, booleans as `true`/`false`, numbers in the invariant
   culture and other values as their JSON text. The API does not convert types, so a string for a field it types as
   boolean, number or array (for example `["outline_detection"] = "0"`) is now rejected: pass the typed value
@@ -108,8 +108,8 @@ TL;DR: this release has breaking changes. See [Upgrading to 2.0.0](upgrading_to_
   `int.MaxValue` are kept; `DocumentStatus` read such a count as `null` before. The `TextResult` and
   `DocumentStatus` constructors take `long` and `long?`. Code assigning the value to an `int` must cast or use
   `long`.
-- **Breaking:** `TranslationMemoryJobResult.SkippedSegmentCount` is now a `long?` instead of an `int?`. Code assigning it to an
-  `int?` must cast or use `long?`.
+- **Breaking:** `TranslationMemoryJobResult.SkippedSegmentCount` is now a `long?` instead of an `int?`. The
+  `TranslationMemoryJobResult` constructor takes a `long?`. Code assigning it to an `int?` must cast or use `long?`.
 - **Breaking:** `TranslationMemoryJob.Product` is now a non-nullable `string`, and `CreationTime` and `UpdatedTime` are non-nullable
   `DateTime`s; a job response without one of them throws a `DeepLException`. The `TranslationMemoryJob`
   constructor takes them as required parameters after `results`. Remove null checks and `.Value` on these
@@ -137,8 +137,8 @@ TL;DR: this release has breaking changes. See [Upgrading to 2.0.0](upgrading_to_
   was `false` for them before. This also applies to an `HttpClient` from `ClientFactory`: the client now reads the
   response body after the headers, so a cut-off body is told apart from a failure to send.
 - **Breaking:** `UpdateMultilingualGlossaryNameAsync()` now throws an `ArgumentException` for an empty or whitespace
-  glossary ID (also from a `MultilingualGlossaryInfo`), like `UpdateMultilingualGlossaryAsync()`. It sent a request
-  to the glossary collection path before.
+  glossary ID (also from a `MultilingualGlossaryInfo`), like `UpdateMultilingualGlossaryAsync()`. An empty ID sent
+  the request to the glossary collection path before, and a whitespace ID was sent as the ID.
 - **Breaking:** creating a `DeepLClient` or `DeepLAdminClient` now throws an `ArgumentException` if the `Proxy` option
   is not an absolute `http` or `https` URL. A relative URL threw an `InvalidOperationException` before, and another
   scheme, for example `ftp://`, was accepted and failed only at the first request.
@@ -146,8 +146,9 @@ TL;DR: this release has breaking changes. See [Upgrading to 2.0.0](upgrading_to_
   sends for some statuses (for example 414, 500 and 503), when there is no top-level `message`. It was dropped before.
   Code that compares the whole message must match its start or check `HttpStatusCode` instead.
 - **Breaking:** `UploadTranslationMemoryFileAsync()` now throws an `ArgumentException` if the upload URL is not an
-  absolute `http` or `https` URL, before reading the stream. It threw a `UriFormatException` before (or, for a path
-  such as `/upload`, failed at the request).
+  absolute `http` or `https` URL, before reading the stream. It threw a `UriFormatException` for an unparsable URL
+  before, and a `ConnectionException` at the request for a relative path such as `/upload` or another scheme such as
+  `ftp://`.
 - **Breaking:** `DownloadTranslationMemoryExportAsync()` now throws a `DeepLException` instead of an
   `ArgumentException` if the job has no download URL: the job state comes from the API. Catch `DeepLException`.
 - **Breaking:** `ImportTranslationMemoryFromFilepathAsync()` and `ExportTranslationMemoryToFilepathAsync()` now wrap
@@ -166,9 +167,10 @@ TL;DR: this release has breaking changes. See [Upgrading to 2.0.0](upgrading_to_
   option is not an absolute `http` or `https` URL. An unparsable URL threw a `UriFormatException` before, and another
   scheme, for example `ftp://`, was accepted and failed only at the first request. Catch `ArgumentException` instead
   of `UriFormatException`.
-- **Breaking:** a `null` value in `ExtraBodyParameters` is now sent as JSON `null` in JSON request bodies, instead of
-  removing the key (including a field the library sets). Leave the key out to not send it. In the multipart body of
-  a document upload, a `null` value still removes the key.
+- **Breaking:** a `null` value in `ExtraBodyParameters` is now sent as JSON `null` in the bodies that became JSON (text
+  translation, rephrasing and correction, and v3 glossary creation, renaming and dictionary updates), where 1.x sent
+  an empty form value; leave the key out to not send it. In a document upload a `null` value now removes the key,
+  where 1.x threw an `ArgumentNullException`.
 - **Breaking:** `UpdateMultilingualGlossaryDictionaryFromCsvAsync()` and `ReplaceMultilingualGlossaryDictionaryFromCsvAsync()` now
   throw an `ArgumentException` for empty or whitespace-only CSV content, without sending a request. The request was
   sent to the API before. Catch `ArgumentException` for empty CSV content.
@@ -212,9 +214,9 @@ TL;DR: this release has breaking changes. See [Upgrading to 2.0.0](upgrading_to_
 - **Breaking:** a `null` text, texts list or text entry in `TranslateTextAsync()`, `RephraseTextAsync()` and
   `CorrectTextAsync()`, a `null` entry of `GlossaryIds`, `IgnoreTags`, `NonSplittingTags`, `SplittingTags` or
   `CustomInstructions`, and a `null` argument of the `TextTranslateOptions` constructors now throw an
-  `ArgumentNullException` (an `ArgumentException`) naming it before any request. They threw a `NullReferenceException`
-  or sent the request before. Catch `ArgumentException` (or `ArgumentNullException`) instead of
-  `NullReferenceException`.
+  `ArgumentNullException` (an `ArgumentException`) naming it before any request. They threw a `NullReferenceException`,
+  an `ArgumentNullException` naming `source` (a `null` list), or sent the request before. Catch `ArgumentException`
+  (or `ArgumentNullException`) instead of `NullReferenceException`.
 - **Breaking:** a `null` input or output file or stream, or a `null` `inputFileName`, in the
   `TranslateDocumentAsync()`, `TranslateDocumentUploadAsync()` and `TranslateDocumentDownloadAsync()` overloads, and a
   `null` argument of the `DocumentTranslateOptions` constructors now throw an `ArgumentNullException` (an
@@ -225,8 +227,9 @@ TL;DR: this release has breaking changes. See [Upgrading to 2.0.0](upgrading_to_
 - **Breaking:** `null` IDs, names, language codes, entries, CSV streams and dictionaries of the glossary methods, and
   `null` arguments or terms of `GlossaryEntries` and `MultilingualGlossaryDictionaryEntries`, now throw an
   `ArgumentNullException` (an `ArgumentException`) naming the parameter before any request. They threw a
-  `NullReferenceException` or a plain `ArgumentException`, or sent a request to `v2/glossaries/`, before. Catch
-  `ArgumentException` (or `ArgumentNullException`) instead of `NullReferenceException`.
+  `NullReferenceException`, a plain `ArgumentException` or an `ArgumentNullException` naming `source` (a `null`
+  list), or sent a request to `v2/glossaries/`, before. Catch `ArgumentException` (or `ArgumentNullException`)
+  instead of `NullReferenceException`.
 - **Breaking:** `null` IDs, names, languages, labels, prompts, `StyleRuleInfo` and `CustomInstruction` objects and
   `customInstructions` entries of the style rule methods now throw an `ArgumentNullException` (an `ArgumentException`)
   naming the parameter before any request. They threw a plain `ArgumentException` or sent JSON `null` before. `catch
