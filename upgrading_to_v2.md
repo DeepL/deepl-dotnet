@@ -106,8 +106,9 @@ Dictionary<string, object?> extra = new() { ["outline_detection"] = false };
 var options = new TextTranslateOptions { ExtraBodyParameters = extra };
 ```
 
-A `null` value is now sent as JSON `null` in JSON request bodies instead of removing the key. Leave the key out to not
-send it. In the multipart body of a document upload, a `null` value still removes the key.
+A `null` value is now sent as JSON `null` in the bodies that became JSON (text translation, rephrasing and correction,
+and v3 glossary creation, renaming and dictionary updates), where 1.x sent an empty form value; leave the key out to not
+send it. In a document upload a `null` value now removes the key, where 1.x threw an `ArgumentNullException`.
 
 ### Request bodies are JSON
 
@@ -251,8 +252,8 @@ catch (NotFoundException) { }
 
 ### Validation changes
 
-- `UpdateMultilingualGlossaryNameAsync()` throws an `ArgumentException` for an empty or whitespace glossary ID. It
-  sent a request to the glossary collection path before.
+- `UpdateMultilingualGlossaryNameAsync()` throws an `ArgumentException` for an empty or whitespace glossary ID. An
+  empty ID sent the request to the glossary collection path before, and a whitespace ID was sent as the ID.
 - `UpdateMultilingualGlossaryDictionaryFromCsvAsync()` and `ReplaceMultilingualGlossaryDictionaryFromCsvAsync()` throw
   an `ArgumentException` for empty or whitespace CSV content, without sending a request.
 
@@ -279,7 +280,7 @@ categories the class did not model are no longer dropped.
 ```csharp
 // before
 await translator.CreateStyleRuleAsync("Rules", "en", new ConfiguredRules(datesAndTimes: new() { ["calendar_era"] = "use_bc_and_ad" }));
-var era = rule.ConfiguredRules.DatesAndTimes;
+var era = rule.ConfiguredRules?.DatesAndTimes;
 
 // after
 var configured = new Dictionary<string, Dictionary<string, string>> {
@@ -360,8 +361,9 @@ catch (TranslationMemoryJobException e) when (e.InnerException is NotFoundExcept
 
 ### Other errors
 
-- `UploadTranslationMemoryFileAsync()` throws an `ArgumentException` (was `UriFormatException`) when the upload URL is
-  not an absolute `http` or `https` URL.
+- `UploadTranslationMemoryFileAsync()` throws an `ArgumentException` when the upload URL is not an absolute `http` or
+  `https` URL; 1.x threw a `UriFormatException` for an unparsable URL and a `ConnectionException` at the request for a
+  relative path or another scheme.
 - `DownloadTranslationMemoryExportAsync()` throws a `DeepLException` (was `ArgumentException`) when the job has no
   download URL.
 
@@ -421,8 +423,8 @@ The overloads taking a `MultilingualGlossaryInfo`, `TranslationMemoryInfo`, `Tra
 failures").
 
 The other `null` arguments below also throw an `ArgumentNullException` (an `ArgumentException`) naming the parameter
-before any request. They threw a `NullReferenceException` or a plain `ArgumentException`, sent JSON `null`, or sent the
-request before.
+before any request. They threw a `NullReferenceException`, a plain `ArgumentException` or an `ArgumentNullException`
+naming `source` (a `null` list), sent JSON `null`, or sent the request before.
 
 - Text: a `null` text, texts list or text entry of `TranslateTextAsync()`, `RephraseTextAsync()` and
   `CorrectTextAsync()`, a `null` entry of `GlossaryIds`, `IgnoreTags`, `NonSplittingTags`, `SplittingTags` or
