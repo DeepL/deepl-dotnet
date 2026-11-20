@@ -343,10 +343,11 @@ determine the file type. Pass it as the `inputFileName` argument, or set the
 
 ```c#
 ...
+  using var outputFile = File.OpenWrite(outputDocumentPath);
   await client.TranslateDocumentAsync(
         new MemoryStream(buffer),
         "Input file.docx", // An extension like ".docx" is also sufficient
-        File.OpenWrite(outputDocumentPath),
+        outputFile,
         "EN",
         "DE",
         new DocumentTranslateOptions { Formality = Formality.More });
