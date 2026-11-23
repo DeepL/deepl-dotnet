@@ -82,7 +82,7 @@ export default {
           "CHANGELOG.md",
           ".bumpversion.toml",
           "DeepL/DeepL.csproj",
-          "DeepLTests/Offline/TranslatorOptionsTest.cs",
+          "DeepLTests/Offline/DeepLClientOptionsTest.cs",
         ],
         // The body is what .github/workflows/release.yml reads to fill the
         // GitHub release, so it must stay the changelog section.
