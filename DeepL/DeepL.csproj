@@ -22,10 +22,10 @@
     <PackageTags>deepl;translation;api;i18n;language;translator</PackageTags>
     <PackageIcon>icon.png</PackageIcon>
     <PackageProjectUrl>https://www.deepl.com/pro-api</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/DeepLcom/deepl-dotnet</RepositoryUrl>
+    <RepositoryUrl>https://github.com/DeepL/deepl-dotnet</RepositoryUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageReleaseNotes>Release notes can be found at https://github.com/DeepLcom/deepl-dotnet/blob/main/CHANGELOG.md</PackageReleaseNotes>
+    <PackageReleaseNotes>Release notes can be found at https://github.com/DeepL/deepl-dotnet/blob/main/CHANGELOG.md</PackageReleaseNotes>
     <IsPackable>true</IsPackable>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>

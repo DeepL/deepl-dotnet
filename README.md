@@ -1,8 +1,8 @@
 # DeepL .NET Library
 
 [![NuGet](https://img.shields.io/nuget/v/deepl.net.svg)](https://www.nuget.org/packages/DeepL.net/)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blueviolet.svg)](https://github.com/DeepLcom/deepl-dotnet/blob/main/LICENSE)
-[![.NET](https://github.com/DeepLcom/deepl-dotnet/actions/workflows/build_default.yml/badge.svg)](https://github.com/DeepLcom/deepl-dotnet/actions/workflows/build_default.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blueviolet.svg)](https://github.com/DeepL/deepl-dotnet/blob/main/LICENSE)
+[![.NET](https://github.com/DeepL/deepl-dotnet/actions/workflows/build_default.yml/badge.svg)](https://github.com/DeepL/deepl-dotnet/actions/workflows/build_default.yml)
 
 The [DeepL API](https://www.deepl.com/docs-api?utm_source=github&utm_medium=github-dotnet-readme) is a language
 AI API that allows other computer programs to send texts and documents to DeepL's servers and receive
@@ -1727,6 +1727,6 @@ API usage.
 
 [api-docs-xml-handling]: https://www.deepl.com/docs-api/handling-xml/?utm_source=github&utm_medium=github-dotnet-readme
 
-[issues]: https://www.github.com/DeepLcom/deepl-dotnet/issues
+[issues]: https://github.com/DeepL/deepl-dotnet/issues
 
 [mockhttp]: https://github.com/richardszalay/mockhttp

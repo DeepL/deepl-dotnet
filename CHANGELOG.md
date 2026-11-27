@@ -686,7 +686,7 @@ Read Changed and Deprecated before upgrading; no public API is removed in this r
   preserved when constructing API request URLs. Previously, API paths starting with
   `/` were treated as absolute paths by RFC 3986 URI resolution, causing the base
   path to be silently discarded.
-  - Thanks to [vernou](https://github.com/vernou) for the report in [#73](https://github.com/DeepLcom/deepl-dotnet/issues/73)
+  - Thanks to [vernou](https://github.com/vernou) for the report in [#73](https://github.com/DeepL/deepl-dotnet/issues/73)
 
 ## [1.19.0] - 2025-12-10
 ### Added
@@ -722,7 +722,7 @@ Read Changed and Deprecated before upgrading; no public API is removed in this r
 ## [1.14.0] - 2025-02-25
 ### Added
 - Added support for the `output_format` parameter when translating documents.
-  * [#50](https://github.com/DeepLcom/deepl-dotnet/pull/50) thanks for [JuergenRB](https://github.com/JuergenRB)
+  * [#50](https://github.com/DeepL/deepl-dotnet/pull/50) thanks for [JuergenRB](https://github.com/JuergenRB)
 
 ## [1.13.0] - 2025-01-28
 ### Added
@@ -737,7 +737,7 @@ Read Changed and Deprecated before upgrading; no public API is removed in this r
 
 ### Fixed
 - Fixed code example for getting glossary entries in the README
-  * [#58](https://github.com/DeepLcom/deepl-dotnet/issues/58) thanks to [KurtBildeSDU](https://github.com/KurtBildeSDU)
+  * [#58](https://github.com/DeepL/deepl-dotnet/issues/58) thanks to [KurtBildeSDU](https://github.com/KurtBildeSDU)
 
 ## [1.12.0] - 2025-01-09
 ### Added
@@ -766,13 +766,13 @@ Read Changed and Deprecated before upgrading; no public API is removed in this r
 
   Note: older library versions also support the new language, this update only
   adds new code constants.
-  * [#44](https://github.com/DeepLcom/deepl-dotnet/pull/44) thanks to [Ilmalte](https://github.com/ilmalte)
+  * [#44](https://github.com/DeepL/deepl-dotnet/pull/44) thanks to [Ilmalte](https://github.com/ilmalte)
 
 ### Fixed
 - Change document upload to use the path `/v2/document` instead of `/v2/document/` (no trailing `/`).
   Both paths will continue to work in the v2 version of the API, but `/v2/document` is the intended one.
 - Made `DeepLException` and subclasses, `Usage` and `JsonFieldsStruct` constructors public, to allow for easier mocking of the `ITranslator` interface.
-  * [#40](https://github.com/DeepLcom/deepl-dotnet/issues/40) thanks to [PascalVorwerkSaixon](https://github.com/PascalVorwerkSaxion)
+  * [#40](https://github.com/DeepL/deepl-dotnet/issues/40) thanks to [PascalVorwerkSaixon](https://github.com/PascalVorwerkSaxion)
 
 ## [1.8.0] - 2023-11-03
 ### Added
